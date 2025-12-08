@@ -51,6 +51,11 @@ func (sessionStore) Del(sid string) { session.Del(sid) }
 
 func (u storedUser) ToDBUser() db.User { return u.User }
 
+// Routes registra as rotas de autenticação no mux.
+func Routes(mux *http.ServeMux) {
+	mux.HandleFunc("/logout", Logout)
+}
+
 func Logout(w http.ResponseWriter, r *http.Request) {
 	sid, ok := sessions.GetCookie(r)
 	if ok {

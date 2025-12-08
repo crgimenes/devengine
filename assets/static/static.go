@@ -24,6 +24,18 @@ type AssetMeta struct {
 }
 
 var index map[string]AssetMeta
+var appFS http.FileSystem // FS da aplicação (opcional)
+
+// RegisterAppFS permite que a aplicação registre seu próprio FS de assets.
+// Assets da aplicação têm prioridade sobre os do devengine.
+func RegisterAppFS(fs http.FileSystem) {
+	appFS = fs
+}
+
+// Routes registra o handler de assets no mux.
+func Routes(mux *http.ServeMux) {
+	mux.HandleFunc("/assets/", Handler)
+}
 
 func Init() error {
 	_ = mime.AddExtensionType(".webmanifest", "application/manifest+json")
@@ -34,6 +46,19 @@ func Init() error {
 	}
 
 	index = built
+
+	// Indexar assets da aplicação (se registrado)
+	if appFS != nil {
+		appAssets, err := buildAssetsIndex(appFS)
+		if err != nil {
+			return fmt.Errorf("build app assets index: %w", err)
+		}
+		// Assets da app sobrescrevem os do devengine
+		for k, v := range appAssets {
+			index[k] = v
+		}
+	}
+
 	return nil
 }
 

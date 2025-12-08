@@ -306,7 +306,7 @@ func GetUserAudiosHandler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func APIRoutes(mux *http.ServeMux) {
+func Routes(mux *http.ServeMux) {
 	mux.HandleFunc("/api/markdown/preview", MarkdownToHTMLHandler)
 	mux.HandleFunc("/api/images", GetUserImagesHandler)
 	mux.HandleFunc("/api/videos", GetUserVideosHandler)
