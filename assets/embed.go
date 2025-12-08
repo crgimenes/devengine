@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-//go:embed *.png *.svg *.ico *.css *.min.js bootstrap/css/*.min.css bootstrap/js/*.min.js bootstrap/js/*.min.js.map bootstrap/css/*.min.css.map events.js md-mini.js eav_ui/*/*
+//go:embed *.css *.min.js bootstrap/css/*.min.css bootstrap/js/*.min.js bootstrap/js/*.min.js.map bootstrap/css/*.min.css.map events.js md-mini.js eav_ui/*/*
 var assets embed.FS
 
 var FS = http.FS(assets)

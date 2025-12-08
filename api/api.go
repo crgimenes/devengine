@@ -16,8 +16,8 @@ import (
 	"github.com/crgimenes/devengine/log"
 )
 
-// mdToHTML converts user-provided Markdown to safe HTML.
-func mdToHTML(md []byte) []byte {
+// MdToHTML converts user-provided Markdown to safe HTML.
+func MdToHTML(md []byte) []byte {
 	// Markdown parser with common extensions
 	extensions := parser.CommonExtensions |
 		parser.AutoHeadingIDs |
@@ -74,7 +74,7 @@ func MarkdownToHTMLHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Convert Markdown -> HTML using your existing function
-	html := mdToHTML(md)
+	html := MdToHTML(md)
 
 	// Respond
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
