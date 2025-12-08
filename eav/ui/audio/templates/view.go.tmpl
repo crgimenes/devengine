@@ -1,0 +1,23 @@
+{{define "eav_ui_audio_view"}}
+{{- $label := .Context.Field.Label -}}
+{{- $previewID := printf "audio-view-preview-%d" .Context.Field.ID -}}
+{{- $placeholderID := printf "audio-view-placeholder-%d" .Context.Field.ID -}}
+<div class="mb-3" data-eav-audio-field="true">
+  {{if $label}}
+    <div class="fw-semibold mb-2">{{$label}}</div>
+  {{end}}
+  <div class="eav-audio-wrapper">
+    <div id="{{$placeholderID}}" class="eav-audio-placeholder{{if .Value}} d-none{{end}}" aria-label="{{if $label}}{{$label}}{{else}}{{.Context.Field.MachineName}}{{end}}">
+      <div class="text-center">
+        {{template "icon-audio" .}}
+        <div class="small text-body-secondary mt-2">Nenhum áudio disponível</div>
+      </div>
+    </div>
+    <div id="{{$previewID}}" class="eav-audio-preview{{if not .Value}} d-none{{end}}">
+      {{if .Value}}
+        <audio src="{{.Value}}" class="w-100 eav-ui-audio-player" data-placeholder-id="{{$placeholderID}}" controls></audio>
+      {{end}}
+    </div>
+  </div>
+</div>
+{{end}}

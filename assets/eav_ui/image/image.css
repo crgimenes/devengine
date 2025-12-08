@@ -1,0 +1,124 @@
+.eav-image-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.eav-image-wrapper {
+  position: relative;
+  border: 1px dashed var(--bs-border-color);
+  border-radius: 0.5rem;
+  background-color: var(--bs-body-bg);
+  min-height: 180px;
+  padding: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.eav-image-actions {
+  width: 100%;
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: flex-end;
+  align-self: flex-end;
+}
+
+.eav-image-btn {
+  width: 2.5rem;
+  height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border-radius: 0.5rem;
+}
+
+.eav-image-preview {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.eav-image-placeholder {
+  width: 100%;
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--bs-secondary-color);
+}
+
+.eav-ui-image-preview {
+  max-width: 100%;
+  max-height: 100%;
+  width: auto;
+  height: auto;
+  display: block;
+  object-fit: contain;
+  background-color: var(--bs-body-bg);
+  box-shadow: 0 0.25rem 0.75rem rgba(0, 0, 0, 0.15);
+}
+
+@media (max-width: 576px) {
+  .eav-image-actions {
+    justify-content: flex-end;
+  }
+}
+
+.eav-image-list-row {
+  border: 1px solid var(--bs-border-color);
+  border-radius: 0.5rem;
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.eav-image-list-row + .eav-image-list-row {
+  margin-top: 0.5rem;
+}
+
+.eav-image-list-row:hover {
+  background-color: var(--bs-secondary-bg);
+  border-color: var(--bs-secondary-color);
+}
+
+.eav-image-list-thumb {
+  width: 72px;
+  height: 72px;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: var(--bs-tertiary-bg);
+}
+
+.eav-image-list-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.eav-image-list-meta {
+  min-width: 0;
+}
+
+.eav-image-list-meta .title {
+  font-weight: 600;
+}
+
+.eav-image-list-meta .description {
+  color: var(--bs-secondary-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.eav-image-list-meta .timestamp {
+  color: var(--bs-secondary-color);
+  font-size: 0.9rem;
+}

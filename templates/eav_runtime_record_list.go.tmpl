@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="dark">
+  <head>
+    {{template "head" .}}
+  </head>
+  <body>
+    {{template "navbar" .}}
+
+    <main class="container-fluid container-lg py-4 py-lg-5">
+      {{ $base := printf "/eav/workspaces/%s/forms/%s" .Workspace.ReferenceID .Form.MachineName }}
+      {{ $recordsURL := printf "%s/records" $base }}
+      {{ $newURL := printf "%s/records/new" $base }}
+
+      <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+          <li class="breadcrumb-item"><a href="/eav">Workspaces</a></li>
+          <li class="breadcrumb-item"><a href="/eav/forms?workspace_id={{.Workspace.ID}}">Formulários</a></li>
+          <li class="breadcrumb-item active" aria-current="page">{{.Form.Label}} - Registros</li>
+        </ol>
+      </nav>
+
+      {{if .Message}}
+      <div class="alert alert-success" role="alert">{{.Message}}</div>
+      {{end}}
+
+      <div class="d-flex flex-column flex-md-row gap-3 justify-content-between align-items-start align-items-md-center mb-4">
+        <div>
+          <h1 class="h3 mb-1">Registros do formulário</h1>
+          <p class="text-muted mb-0">{{.Form.Label}} · Workspace {{.Workspace.Name}}</p>
+        </div>
+        <div class="w-100" style="max-width: 240px;">
+          <a href="{{$newURL}}" class="btn btn-primary w-100">Novo Registro</a>
+        </div>
+      </div>
+
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="h5 mb-0">Vista de registros</h2>
+        <div class="btn-group btn-group-sm" role="group" aria-label="Modo de visualização">
+          <button type="button" 
+                  class="btn btn-outline-secondary view-mode-btn {{if eq .Form.DefaultViewMode "list"}}active{{end}}" 
+                  data-view-mode="list"
+                  hx-get="{{$recordsURL}}/partial?view=list&sort={{if .Sort}}{{.Sort}}{{else}}updated_desc{{end}}"
+                  hx-target="#records-container"
+                  hx-swap="innerHTML"
+                  {{if eq .Form.DefaultViewMode "list"}}hx-trigger="load, click"{{end}}>
+            {{template "icon-list" .}}
+            <span class="d-none d-md-inline ms-1">Lista</span>
+          </button>
+          <button type="button" 
+                  class="btn btn-outline-secondary view-mode-btn {{if eq .Form.DefaultViewMode "card"}}active{{end}}" 
+                  data-view-mode="card"
+                  hx-get="{{$recordsURL}}/partial?view=card&sort={{if .Sort}}{{.Sort}}{{else}}updated_desc{{end}}"
+                  hx-target="#records-container"
+                  hx-swap="innerHTML"
+                  {{if eq .Form.DefaultViewMode "card"}}hx-trigger="load, click"{{end}}>
+            {{template "icon-grid" .}}
+            <span class="d-none d-md-inline ms-1">Cards</span>
+          </button>
+          <button type="button" 
+                  class="btn btn-outline-secondary view-mode-btn {{if eq .Form.DefaultViewMode "carousel"}}active{{end}}" 
+                  data-view-mode="carousel"
+                  hx-get="{{$recordsURL}}/partial?view=carousel&sort={{if .Sort}}{{.Sort}}{{else}}updated_desc{{end}}"
+                  hx-target="#records-container"
+                  hx-swap="innerHTML"
+                  {{if eq .Form.DefaultViewMode "carousel"}}hx-trigger="load, click"{{end}}>
+            {{template "icon-carousel" .}}
+            <span class="d-none d-md-inline ms-1">Carrossel</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Search and Sort Controls -->
+      <section aria-label="Controles de busca e ordenação" class="card mb-4 border-0 bg-body-tertiary">
+        <div class="card-body py-3">
+          <form class="row g-2 align-items-end" id="search-form" data-records-url="{{$recordsURL}}">
+            <!-- Search field -->
+            <div class="col-12 col-md-9">
+              <label for="search" class="form-label small text-body-secondary mb-1">Buscar</label>
+              <input
+                id="search"
+                name="q"
+                class="form-control"
+                type="search"
+                placeholder="Buscar em campos indexados..."
+                autocomplete="off"
+                value="{{.Query}}"
+              />
+            </div>
+
+            <!-- Sort select -->
+            <div class="col-12 col-md-3">
+              <label for="sort" class="form-label small text-body-secondary mb-1">Ordenar por</label>
+              <select id="sort" name="sort" class="form-select">
+                {{$currentSort := .Sort}}
+                {{if not $currentSort}}{{$currentSort = "updated_desc"}}{{end}}
+                <option value="created_desc" {{if eq $currentSort "created_desc"}}selected{{end}}>Criado (mais recente)</option>
+                <option value="created_asc" {{if eq $currentSort "created_asc"}}selected{{end}}>Criado (mais antigo)</option>
+                <option value="updated_desc" {{if eq $currentSort "updated_desc"}}selected{{end}}>Atualizado (mais recente)</option>
+                <option value="updated_asc" {{if eq $currentSort "updated_asc"}}selected{{end}}>Atualizado (mais antigo)</option>
+              </select>
+            </div>
+          </form>
+        </div>
+      </section>
+
+
+      <div id="records-container" class="flex-grow-1 d-flex flex-column" style="min-height: 500px;">
+        {{if .Records}}
+          <div class="card border-0 bg-body-secondary bg-opacity-25">
+            <div class="card-body text-center py-5">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Carregando...</span>
+              </div>
+              <p class="text-muted mt-3 mb-0">Carregando registros...</p>
+            </div>
+          </div>
+        {{else}}
+          <div class="card border-0 bg-body-secondary bg-opacity-25">
+            <div class="card-body text-center py-5">
+              <p class="text-muted mb-3">Nenhum registro disponível.</p>
+              <a href="{{$newURL}}" class="btn btn-primary">Criar primeiro registro</a>
+            </div>
+          </div>
+        {{end}}
+      </div>
+
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-start align-items-md-center mt-4 gap-2">
+        <div class="text-muted small">Mostrando até {{.Limit}} itens</div>
+        {{if .HasMore}}
+        <a class="btn btn-outline-light" href="{{$recordsURL}}?offset={{.NextOffset}}&limit={{.Limit}}">Carregar mais</a>
+        {{end}}
+      </div>
+    </main>
+
+    <footer>
+      {{template "footer" .}}
+    </footer>
+    {{template "scripts" .}}
+    <script defer src="/assets/view-mode-selector.min.js?v={{.Config.GitTag}}"></script>
+    <script defer src="/assets/record-click-handler.min.js?v={{.Config.GitTag}}"></script>
+    <script defer src="/assets/carousel-init.min.js?v={{.Config.GitTag}}"></script>
+  </body>
+</html>

@@ -1,0 +1,9 @@
+{{define "eav_ui_divider_edit"}}
+{{- $label := .Context.Field.Label -}}
+<div class="my-3 d-flex flex-column align-items-center">
+  {{if $label}}
+    <div class="fw-semibold text-center mb-2">{{$label}}</div>
+  {{end}}
+  <hr class="{{if .Options.Class}}{{.Options.Class}} {{end}}eav-divider-line" style="width: 90%;">
+</div>
+{{end}}

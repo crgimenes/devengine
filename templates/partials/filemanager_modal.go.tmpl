@@ -1,0 +1,56 @@
+{{define "filemanager_modal"}}
+<div class="modal fade" id="fileManagerModal" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" data-filemanager-title>Selecionar Arquivo</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-4">
+          <label class="form-label" data-filemanager-list-label>Seus arquivos</label>
+          <div id="fileManagerList" class="border rounded" style="max-height: 320px; overflow-y: auto; padding: 0.5rem;">
+            <div class="text-center text-body-secondary py-4"><small>Carregando...</small></div>
+          </div>
+        </div>
+
+        <div class="mb-4 text-center">
+          <small class="text-body-secondary">ou</small>
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label" data-filemanager-upload-label>Fazer Upload</label>
+          <form id="fileManagerUploadForm" enctype="multipart/form-data" class="needs-validation" novalidate>
+            <div class="mb-3">
+              <input class="form-control" type="file" id="fileManagerFileInput" name="file" required>
+              <small class="form-text text-body-secondary" data-filemanager-accept-help>Formatos permitidos</small>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="fileManagerDescription">Descrição (opcional)</label>
+              <textarea class="form-control" id="fileManagerDescription" name="description" rows="2" maxlength="500" placeholder="Descreva o arquivo..."></textarea>
+              <small class="form-text text-body-secondary">Máximo 500 caracteres</small>
+            </div>
+
+            <div id="fileManagerUploadStatus" class="mb-3"></div>
+
+            <button type="submit" class="btn btn-primary w-100" id="fileManagerUploadBtn">Fazer Upload</button>
+          </form>
+        </div>
+
+        <div class="mb-3 text-center">
+          <small class="text-body-secondary">ou</small>
+        </div>
+
+        <div class="mb-0">
+          <label class="form-label" for="fileManagerUrlInput" data-filemanager-url-label>Inserir URL Direta</label>
+          <div class="input-group">
+            <input type="url" class="form-control" id="fileManagerUrlInput" placeholder="https://exemplo.com/arquivo" aria-label="URL do arquivo">
+            <button class="btn btn-outline-secondary" type="button" id="fileManagerInsertUrlBtn">Inserir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{{end}}

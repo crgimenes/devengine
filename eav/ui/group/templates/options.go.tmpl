@@ -1,0 +1,14 @@
+{{define "eav_ui_group_options"}}
+<div class="mb-3">
+  <label class="form-label" for="group_subtitle">Subtítulo (opcional)</label>
+  <input type="text" class="form-control" id="group_subtitle" name="group_subtitle" value="{{.Options.Subtitle}}">
+</div>
+<div class="mb-3">
+  <label class="form-label" for="group_style">Estilo</label>
+  <select class="form-select" id="group_style" name="group_style">
+    <option value="" {{if not .Options.Style}}selected{{end}}>Card</option>
+    <option value="card" {{if eq .Options.Style "card"}}selected{{end}}>Card</option>
+    <option value="plain" {{if eq .Options.Style "plain"}}selected{{end}}>Plano</option>
+  </select>
+</div>
+{{end}}

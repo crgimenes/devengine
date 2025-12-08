@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="dark">
+  <head>
+    {{template "head" .}}
+  </head>
+
+  <body>
+    {{template "navbar" .}}
+
+    <main class="container py-5">
+      <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="/eav">Workspaces</a></li>
+              <li class="breadcrumb-item"><a href="/eav/forms?workspace_id={{.WorkspaceID}}">Formulários</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Novo Formulário</li>
+          </ol>
+      </nav>
+
+          <div class="card">
+          <div class="card-header">
+              <h2 class="h5 mb-0">Criar Novo Formulário</h2>
+          </div>
+          <div class="card-body">
+              {{if .Error}}
+              <div class="alert alert-danger" role="alert">{{.Error}}</div>
+              {{end}}
+              <form method="POST" action="/eav/forms/create?workspace_id={{.WorkspaceID}}" data-machine-name-context="form">
+                  <input type="hidden" name="csrf_token" value="{{.Csrf}}">
+
+                  <div class="mb-3">
+                      <label for="label" class="form-label">Nome (Label)</label>
+                      <input type="text" class="form-control" id="label" name="label" value="{{.Label}}" required>
+                  </div>
+
+                  <div class="mb-3">
+                      <label for="machine_name" class="form-label">Machine name (Identificador único)</label>
+                      <input type="text" class="form-control" id="machine_name" name="machine_name" value="{{.MachineName}}" pattern="[a-z0-9_]+" title="Apenas letras minúsculas, números e underline">
+                      <div class="form-text">Usado em URLs e integrações. Ex: <code>cadastro_cliente</code></div>
+                  </div>
+
+                  <div class="mb-3">
+                      <label for="default_view_mode" class="form-label">Modo de visualização padrão</label>
+                      <select class="form-select" id="default_view_mode" name="default_view_mode" required>
+                          <option value="list" selected>Lista</option>
+                          <option value="card">Cards</option>
+                          <option value="carousel">Carrossel</option>
+                      </select>
+                      <div class="form-text">Visualização padrão para registros deste formulário</div>
+                  </div>
+
+                  <button type="submit" class="btn btn-primary">Criar Formulário</button>
+                  <a href="/eav/forms?workspace_id={{.WorkspaceID}}" class="btn btn-outline-light">Cancelar</a>
+              </form>
+          </div>
+      </div>
+    </main>
+    
+    <footer>
+      {{template "footer" .}}
+    </footer>
+    {{template "scripts" .}}
+    <script defer src="/assets/eav-machine-name.min.js?v={{.Config.GitTag}}"></script>
+  </body>
+</html>

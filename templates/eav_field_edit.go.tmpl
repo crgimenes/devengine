@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="dark">
+  <head>
+    {{template "head" .}}
+  </head>
+
+  <body>
+    {{template "navbar" .}}
+
+    <main class="container py-5">
+      <nav aria-label="breadcrumb">
+          <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="/eav">Workspaces</a></li>
+              <li class="breadcrumb-item"><a href="/eav/forms?workspace_id={{.Form.WorkspaceID}}">Formulários</a></li>
+              <li class="breadcrumb-item"><a href="/eav/forms/edit?id={{.Form.ID}}">Editar formulário</a></li>
+              <li class="breadcrumb-item active" aria-current="page">Editar campo</li>
+          </ol>
+      </nav>
+
+      <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-2 mb-4">
+          <div>
+              <h2 class="h5 mb-1">Editar campo</h2>
+              <p class="text-muted mb-0">Formulário: {{.Form.Label}}</p>
+          </div>
+          <a href="/eav/forms/edit?id={{.Form.ID}}" class="btn btn-outline-light btn-sm">Voltar para formulário</a>
+      </div>
+
+      <form method="POST" action="/eav/fields/edit?id={{.Field.ID}}" class="d-flex flex-column gap-4">
+          <input type="hidden" name="csrf_token" value="{{.Csrf}}">
+          <input type="hidden" name="form_id" value="{{.Form.ID}}">
+          <input type="hidden" name="field_id" value="{{.Field.ID}}">
+
+          <div class="card">
+              <div class="card-header">Dados básicos do campo</div>
+              <div class="card-body">
+                  <div class="row g-3">
+                      <div class="col-md-6">
+                          <label for="label" class="form-label">Label</label>
+                          <input type="text" class="form-control" id="label" name="label" value="{{.Field.Label}}">
+                      </div>
+
+                      <div class="col-md-6">
+                          <label class="form-label">Machine Name</label>
+                          <input type="text" class="form-control" value="{{.Field.MachineName}}" disabled readonly>
+                      </div>
+                  </div>
+
+                  <div class="row g-3 mt-1">
+                      {{template "eav_field_primitive_kind" .PrimitiveKind}}
+                      <div class="col-md-6 col-lg-3 mb-3">
+                          <label for="ui_kind" class="form-label">Tipo de UI</label>
+                          <select class="form-select" id="ui_kind" name="ui_kind" required hx-get="/eav/ui/options" hx-target="#ui_options_container" hx-trigger="change" hx-swap="innerHTML" hx-include="closest form">
+                              {{range .UIKinds}}
+                              <option value="{{.Value}}" {{if eq $.SelectedUIKind .Value}}selected{{end}}>{{.Label}}</option>
+                              {{end}}
+                          </select>
+                      </div>
+                      <div class="col-md-6 col-lg-3 mb-3">
+                          <label for="z_order" class="form-label">Ordem</label>
+                          <input type="number" class="form-control" id="z_order" name="z_order" value="{{.Field.ZOrder}}">
+                      </div>
+                      <div class="col-md-6 col-lg-3 mb-3">
+                          <label for="column_width" class="form-label">Largura (colunas 1 a 12)</label>
+                          <input type="number" class="form-control" id="column_width" name="column_width" min="1" max="12" value="{{.Field.ColumnWidth}}">
+                          <div class="form-text">Deixe em branco ou use 0 para ocupar 12 colunas.</div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+
+          <div class="card">
+              <div class="card-header">Configurações do <i>Tipo de UI</i> selecionado</div>
+              <div class="card-body">
+                  <div id="ui_options_container" class="mb-0">
+                      {{safeHTML .UIOptionsHTML}}
+                  </div>
+              </div>
+          </div>
+
+          <div class="card">
+              <div class="card-header">Organização estrutural</div>
+              <div class="card-body">
+                  <div class="row g-3">
+                      <div class="col-12 col-lg-6">
+                          <label for="parent_group_machine_name" class="form-label">Pertence ao grupo</label>
+                          <select class="form-select" id="parent_group_machine_name" name="parent_group_machine_name">
+                              <option value="" {{if not .SelectedParent}}selected{{end}}>Nenhum (nível raiz)</option>
+                              {{range .ParentGroups}}
+                              <option value="{{.Value}}" {{if eq $.SelectedParent .Value}}selected{{end}}>{{.Label}}</option>
+                              {{end}}
+                          </select>
+                          <div class="form-text">Disponível somente para campos de grupo ou accordion.</div>
+                      </div>
+                  </div>
+                  <div class="d-flex flex-column flex-wrap gap-3 mt-2">
+                      {{template "eav_field_ui_controls" .UIControls}}
+                  </div>
+              </div>
+          </div>
+
+          <div class="card" id="fts_card" {{if ne .Field.PrimitiveKind "TEXT"}}style="display:none;"{{end}}>
+              <div class="card-header">Indexação e busca</div>
+              <div class="card-body">
+                  <div class="form-check">
+                      <input class="form-check-input" type="checkbox" id="fts_index" name="fts_index" value="on" {{if .Field.FTSIndex}}checked{{end}}>
+                      <label class="form-check-label" for="fts_index">
+                          Indexar este campo na busca de texto (FTS)
+                      </label>
+                  </div>
+                  <div class="form-text">Marque esta opção para incluir o conteúdo deste campo no índice de busca por texto completo. Recomenda-se indexar poucos campos para otimizar o desempenho.</div>
+              </div>
+          </div>
+
+          <div class="card">
+              <div class="card-header">Expressões processadas</div>
+              <div class="card-body">
+                  <div class="mb-3">
+                      <label for="expression" class="form-label">Expressão processada (opcional)</label>
+                      <textarea class="form-control" id="expression" name="expression" rows="3" placeholder="Ex: total = campo_a + campo_b">{{.Field.Expression}}</textarea>
+                      <div class="form-text">Ainda não executamos nenhuma expressão; apenas armazenamos o texto.</div>
+                  </div>
+
+                  <div class="mb-0">
+                      <label for="expression_order" class="form-label">Ordem de processamento</label>
+                      <input type="number" class="form-control" id="expression_order" name="expression_order" value="{{.Field.ExpressionOrder}}" min="0">
+                      <div class="form-text">Quando o processamento estiver ativo, campos com números menores serão calculados primeiro.</div>
+                  </div>
+          </div>
+      </div>
+
+      <div class="card">
+          <div class="card-header">Opções de exibição</div>
+          <div class="card-body">
+              <div class="accordion" id="displayOptionsAccordion">
+                  <!-- List View Options -->
+                  <div class="accordion-item">
+                      <h2 class="accordion-header">
+                          <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#listOptions" aria-expanded="true" aria-controls="listOptions">
+                              Visualização em Lista
+                          </button>
+                      </h2>
+                      <div id="listOptions" class="accordion-collapse collapse" data-bs-parent="#displayOptionsAccordion">
+                          <div class="accordion-body">
+                              <div class="row g-3">
+                                  <div class="col-12">
+                                      <div class="form-check">
+                                          <input class="form-check-input" type="checkbox" id="list_visible" name="list_visible" value="on" {{if .Field.ListVisible}}checked{{end}}>
+                                          <label class="form-check-label" for="list_visible">
+                                              Visível em listas
+                                          </label>
+                                      </div>
+                                  </div>
+                                  <div class="col-md-6">
+                                      <label for="list_z_order" class="form-label">Ordem de exibição</label>
+                                      <input type="number" class="form-control" id="list_z_order" name="list_z_order" value="{{.Field.ListZOrder}}">
+                                      <div class="form-text">Menor número aparece primeiro</div>
+                                  </div>
+                                  <div class="col-md-6">
+                                      <label for="list_cols" class="form-label">Largura (colunas 1-12)</label>
+                                      <input type="number" class="form-control" id="list_cols" name="list_cols" min="1" max="12" value="{{.Field.ListCols}}">
+                                      <div class="form-text">Grid Bootstrap (12 = largura total)</div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- Card View Options -->
+                  <div class="accordion-item">
+                      <h2 class="accordion-header">
+                          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#cardOptions" aria-expanded="false" aria-controls="cardOptions">
+                              Visualização em Card
+                          </button>
+                      </h2>
+                      <div id="cardOptions" class="accordion-collapse collapse" data-bs-parent="#displayOptionsAccordion">
+                          <div class="accordion-body">
+                              <div class="row g-3">
+                                  <div class="col-12">
+                                      <div class="form-check">
+                                          <input class="form-check-input" type="checkbox" id="card_visible" name="card_visible" value="on" {{if .Field.CardVisible}}checked{{end}}>
+                                          <label class="form-check-label" for="card_visible">
+                                              Visível em cards
+                                          </label>
+                                      </div>
+                                  </div>
+                                  <div class="col-md-6">
+                                      <label for="card_z_order" class="form-label">Ordem de exibição</label>
+                                      <input type="number" class="form-control" id="card_z_order" name="card_z_order" value="{{.Field.CardZOrder}}">
+                                      <div class="form-text">Menor número aparece primeiro</div>
+                                  </div>
+                                  <div class="col-md-6">
+                                      <label for="card_cols" class="form-label">Largura (colunas 1-12)</label>
+                                      <input type="number" class="form-control" id="card_cols" name="card_cols" min="1" max="12" value="{{.Field.CardCols}}">
+                                      <div class="form-text">Grid Bootstrap (12 = largura total)</div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+
+                  <!-- Carousel View Options -->
+                  <div class="accordion-item">
+                      <h2 class="accordion-header">
+                          <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#carouselOptions" aria-expanded="false" aria-controls="carouselOptions">
+                              Visualização em Carousel
+                          </button>
+                      </h2>
+                      <div id="carouselOptions" class="accordion-collapse collapse" data-bs-parent="#displayOptionsAccordion">
+                          <div class="accordion-body">
+                              <div class="row g-3">
+                                  <div class="col-12">
+                                      <div class="form-check">
+                                          <input class="form-check-input" type="checkbox" id="carousel_visible" name="carousel_visible" value="on" {{if .Field.CarouselVisible}}checked{{end}}>
+                                          <label class="form-check-label" for="carousel_visible">
+                                              Visível em carousel
+                                          </label>
+                                      </div>
+                                  </div>
+                                  <div class="col-md-6">
+                                      <label for="carousel_z_order" class="form-label">Ordem de exibição</label>
+                                      <input type="number" class="form-control" id="carousel_z_order" name="carousel_z_order" value="{{.Field.CarouselZOrder}}">
+                                      <div class="form-text">Menor número aparece primeiro</div>
+                                  </div>
+                                  <div class="col-md-6">
+                                      <label for="carousel_cols" class="form-label">Largura (colunas 1-12)</label>
+                                      <input type="number" class="form-control" id="carousel_cols" name="carousel_cols" min="1" max="12" value="{{.Field.CarouselCols}}">
+                                      <div class="form-text">Grid Bootstrap (12 = largura total)</div>
+                                  </div>
+                              </div>
+                          </div>
+                      </div>
+                  </div>
+              </div>
+          </div>
+      </div>
+
+      <div class="d-flex flex-column flex-md-row justify-content-end gap-2">
+              <a href="/eav/forms/edit?id={{.Form.ID}}" class="btn btn-outline-light">Cancelar</a>
+              <button type="submit" class="btn btn-primary">Salvar alterações</button>
+          </div>
+      </form>
+
+      <div class="alert alert-danger-subtle border border-danger-subtle rounded mt-4">
+          <div class="d-flex flex-column gap-3">
+              <div>
+                  <h3 class="h6 mb-1 text-danger">Excluir campo</h3>
+                  <p class="mb-0 text-muted">Esta ação remove o campo das telas, mas mantém o histórico no banco.</p>
+              </div>
+              <form method="POST" action="/eav/fields/delete" class="d-flex flex-column flex-lg-row gap-3 align-items-lg-center">
+                  <input type="hidden" name="csrf_token" value="{{.Csrf}}">
+                  <input type="hidden" name="field_id" value="{{.Field.ID}}">
+                  <div class="form-check">
+                      <input class="form-check-input" type="checkbox" value="on" id="confirm_delete_field" name="confirm_delete" required>
+                      <label class="form-check-label" for="confirm_delete_field">Confirmo que desejo excluir este campo.</label>
+                  </div>
+                  <button type="submit" class="btn btn-danger ms-lg-auto">Excluir campo</button>
+              </form>
+          </div>
+      </div>
+    </main>
+    
+    <footer>
+      {{template "footer" .}}
+    </footer>
+    {{template "scripts" .}}
+    <script defer src="/assets/eav-fts-toggle.min.js?v={{.Config.GitTag}}"></script>
+  </body>
+</html>

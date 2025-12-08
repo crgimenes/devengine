@@ -1,0 +1,65 @@
+{{define "eav_records_carousel"}}
+{{if .Records}}
+<div id="recordsCarousel" class="carousel slide h-100" data-bs-interval="false">
+    <div class="carousel-inner h-100">
+        {{range $idx, $recWithVals := $.Records}}
+        <div class="carousel-item h-100 {{if eq $idx 0}}active{{end}}">
+            <div class="card h-100 border-0">
+                <div class="card-header bg-primary text-white py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h3 class="h4 mb-0">Registro #{{$recWithVals.Record.ID}}</h3>
+                        <span class="badge {{if eq $recWithVals.Record.Status "active"}}bg-success{{else}}bg-secondary{{end}} fs-6">
+                            {{if eq $recWithVals.Record.Status "active"}}Ativo{{else}}Inativo{{end}}
+                        </span>
+                    </div>
+                    <p class="text-white-50 mb-0 mt-1">Ref: {{$recWithVals.Record.ReferenceID}}</p>
+                </div>
+                <div class="card-body overflow-auto">
+                    {{if $recWithVals.FieldRows}}
+                    <div class="row g-3">
+                        {{range $row := $recWithVals.FieldRows}}
+                            {{range $item := $row.Children}}
+                                <div class="col-12 col-md-{{$item.ColumnWidth}}">
+                                    {{$item.Content}}
+                                </div>
+                            {{end}}
+                        {{end}}
+                    </div>
+                    {{else}}
+                    <p class="text-muted text-center py-4">Nenhum campo configurado para visualização.</p>
+                    {{end}}
+                </div>
+                <div class="card-footer bg-transparent py-3">
+                    <div class="d-flex justify-content-between align-items-center">
+                        {{if gt (len $.Records) 1}}
+                        <div class="btn-group" role="group">
+                            <button class="btn btn-outline-secondary" type="button" data-bs-target="#recordsCarousel" data-bs-slide="prev">
+                                &laquo; Anterior
+                            </button>
+                            <button class="btn btn-outline-secondary" type="button" data-bs-target="#recordsCarousel" data-bs-slide="next">
+                                Próximo &raquo;
+                            </button>
+                        </div>
+                        {{else}}
+                        <div></div>
+                        {{end}}
+                        <div class="d-flex gap-2">
+                            <a href="{{$.BasePath}}/records/{{$recWithVals.Record.ReferenceID}}" class="btn btn-outline-light">Ver</a>
+                            <a href="{{$.BasePath}}/records/{{$recWithVals.Record.ReferenceID}}/edit" class="btn btn-primary">Editar</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {{end}}
+    </div>
+</div>
+{{else}}
+<div class="card border-0 bg-body-secondary bg-opacity-25 h-100">
+    <div class="card-body text-center d-flex flex-column justify-content-center">
+        <p class="text-muted mb-3">Nenhum registro disponível.</p>
+        <a href="{{$.BasePath}}/records/new" class="btn btn-primary">Criar primeiro registro</a>
+    </div>
+</div>
+{{end}}
+{{end}}

@@ -1,0 +1,18 @@
+{{define "eav_ui_boolean_edit"}}
+{{- $label := .Context.Field.Label -}}
+<div class="mb-3">
+  <div class="form-check d-flex align-items-center gap-2">
+    <input class="form-check-input" type="checkbox" id="{{.InputName}}" name="{{.InputName}}" aria-label="{{if $label}}{{$label}}{{else}}{{.Context.Field.MachineName}}{{end}}" {{if .Value}}checked{{end}} {{if .ReadOnly}}disabled{{end}}>
+    {{if $label}}
+      <label class="form-check-label" for="{{.InputName}}">{{$label}}</label>
+    {{end}}
+    {{if .ReadOnly}}<span class="badge text-bg-secondary">Somente leitura</span>{{end}}
+  </div>
+  {{if .Context.Field.Required}}
+    <div class="form-text text-warning">Marcar é obrigatório.</div>
+  {{end}}
+  {{if .Error}}
+    <div class="text-danger small">{{.Error}}</div>
+  {{end}}
+</div>
+{{end}}

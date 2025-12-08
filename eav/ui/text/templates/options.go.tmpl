@@ -1,0 +1,7 @@
+{{define "eav_ui_text_options"}}
+<div class="mb-3">
+  <label for="text_max_length" class="form-label">Limite de caracteres</label>
+  <input type="number" class="form-control" id="text_max_length" name="text_max_length" min="0" value="{{.Options.MaxLength}}">
+  <div class="form-text">Deixe vazio para sem limite.</div>
+</div>
+{{end}}

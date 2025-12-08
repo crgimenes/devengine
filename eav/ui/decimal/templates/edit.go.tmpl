@@ -1,0 +1,16 @@
+{{define "eav_ui_decimal_edit"}}
+{{- $label := .Context.Field.Label -}}
+<div class="mb-3">
+  {{if $label}}
+    <label for="{{.InputName}}" class="form-label">{{$label}}
+      {{if .Context.Field.Required}}<span class="text-danger">*</span>{{end}}
+      {{if .ReadOnly}}<span class="badge text-bg-secondary ms-2">Somente leitura</span>{{end}}
+    </label>
+  {{end}}
+  <input type="number" step="any" class="form-control{{if .ReadOnly}} form-control-plaintext{{end}}" id="{{.InputName}}" name="{{.InputName}}" aria-label="{{if $label}}{{$label}}{{else}}{{.Context.Field.MachineName}}{{end}}" value="{{.Value}}" {{if .ReadOnly}}readonly{{end}} {{if .Options.Min}}min="{{.Options.Min}}"{{end}} {{if .Options.Max}}max="{{.Options.Max}}"{{end}}>
+  <div class="form-text"><code>{{.Context.Field.MachineName}}</code></div>
+  {{if .Error}}
+    <div class="text-danger small">{{.Error}}</div>
+  {{end}}
+</div>
+{{end}}

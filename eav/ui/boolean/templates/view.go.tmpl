@@ -1,0 +1,9 @@
+{{define "eav_ui_boolean_view"}}
+{{- $label := .Context.Field.Label -}}
+<div class="mb-3">
+  {{if $label}}
+    <div class="fw-semibold">{{$label}}</div>
+  {{end}}
+  <div>{{if .Value}}Sim{{else}}Não{{end}}</div>
+</div>
+{{end}}
