@@ -9,15 +9,48 @@ import (
 )
 
 var (
-	extraFS  []fs.FS
-	loadOnce sync.Once
-	tpl      *template.Template
+	extraFS        []fs.FS
+	appTemplatesFS fs.FS
+	loadOnce       sync.Once
+	tpl            *template.Template
 )
 
 // RegisterFS allows feature packages to contribute template file systems
 // before the first render.
 func RegisterFS(fsys fs.FS) {
 	extraFS = append(extraFS, fsys)
+}
+
+// SetAppTemplatesFS configures an optional filesystem containing
+// application-specific templates. Call this before the first render so
+// templates are parsed together with the engine ones.
+func SetAppTemplatesFS(fsys fs.FS) {
+	appTemplatesFS = fsys
+}
+
+// parseWithPatterns parses all matched files from fsys using the provided
+// patterns. Patterns that match no files are ignored gracefully.
+func parseWithPatterns(t *template.Template, fsys fs.FS, patterns ...string) (*template.Template, error) {
+	if fsys == nil {
+		return t, nil
+	}
+
+	var matches []string
+	for _, pattern := range patterns {
+		files, err := fs.Glob(fsys, pattern)
+		if err != nil {
+			return t, err
+		}
+		if len(files) > 0 {
+			matches = append(matches, files...)
+		}
+	}
+
+	if len(matches) == 0 {
+		return t, nil
+	}
+
+	return t.ParseFS(fsys, matches...)
 }
 
 func loadTemplates() *template.Template {
@@ -38,19 +71,32 @@ func loadTemplates() *template.Template {
 	}
 
 	base := template.New("").Funcs(funcMap)
-	t, err := base.ParseFS(
-		filesystem,
-		"*.go.tmpl",
-		"partials/*.go.tmpl",
-	)
+	t, err := parseWithPatterns(base, filesystem, "*.go.tmpl", "partials/*.go.tmpl")
 	if err != nil {
 		log.Fatalf("parse templates: %v", err)
 	}
 
+	// Parse extra filesystems from feature packages
 	for _, fsys := range extraFS {
-		t, err = t.ParseFS(fsys, "templates/*.go.tmpl")
+		t, err = parseWithPatterns(t, fsys,
+			"templates/*.go.tmpl",
+			"templates/partials/*.go.tmpl",
+			"*.go.tmpl",
+			"partials/*.go.tmpl")
 		if err != nil {
 			log.Fatalf("parse extra templates: %v", err)
+		}
+	}
+
+	// Parse application templates (if configured)
+	if appTemplatesFS != nil {
+		t, err = parseWithPatterns(t, appTemplatesFS,
+			"*.go.tmpl",
+			"partials/*.go.tmpl",
+			"templates/*.go.tmpl",
+			"templates/partials/*.go.tmpl")
+		if err != nil {
+			log.Fatalf("parse app templates: %v", err)
 		}
 	}
 
