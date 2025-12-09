@@ -69,7 +69,7 @@ Scripts must always produce the same results, with no unexpected side effects.
 ### 3. **Simplicity**
 Filo uses a minimalist Lisp-like syntax:
 
-```
+```lisp
 (+ 1 2)
 (if (< idade 18) "minor" "adult")
 (map (fn (x) (* x x)) (list 1 2 3))
@@ -135,14 +135,14 @@ Bytecode may be added in the future, but only when there is a real need.
 
 ### 1. Calculated field
 
-```
+```lisp
 (let ((forca field:for) (bonus field:bonus))
   (+ (* forca 2) bonus))
 ```
 
 ### 2. Dynamic configuration
 
-```
+```lisp
 (let ((env ENV))
   (set Address "http://localhost:3210")
   (if (= env "prod")
@@ -152,7 +152,7 @@ Bytecode may be added in the future, but only when there is a real need.
 
 ### 3. Controlled recursion
 
-```
+```lisp
 (let ()
   (def fact (fn (n)
     (if (<= n 1)
@@ -163,7 +163,7 @@ Bytecode may be added in the future, but only when there is a real need.
 
 ### 4. Auto-level helpers
 
-```
+```lisp
 (let ()
   (def thresholds (list 0 300 900 2700 6500 15000))
 
