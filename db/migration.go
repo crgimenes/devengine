@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"io/fs"
+	"sort"
 	"strings"
 
 	"github.com/crgimenes/devengine/log"
@@ -12,8 +13,101 @@ import (
 
 var (
 	//go:embed *.up.sql
-	filesystem embed.FS
+	engineMigrationsFS embed.FS
+
+	// appMigrationsFS holds the optional application migrations filesystem.
+	// Set via SetAppMigrationsFS before calling RunMigration.
+	appMigrationsFS fs.FS
 )
+
+// SetAppMigrationsFS configures an optional fs.FS containing application
+// migrations. Files must follow the pattern: NNNN_name.up.sql where NNNN
+// is a 4-digit prefix (e.g., 1000_characters.up.sql).
+//
+// Migration ordering:
+//   - Engine migrations (devengine): 0001-0999
+//   - Application migrations: 1000-9999
+//
+// Call this function before RunMigration() in your application's main.go:
+//
+//	db.SetAppMigrationsFS(migrations.FS)
+//	err := db.RunMigration()
+func SetAppMigrationsFS(fsys fs.FS) {
+	appMigrationsFS = fsys
+}
+
+// migrationEntry represents a single migration file to be applied.
+type migrationEntry struct {
+	id       string // e.g., "0001_users_and_files"
+	filename string // e.g., "0001_users_and_files.up.sql"
+	fsys     fs.FS  // the filesystem containing this file
+}
+
+// parseMigrationFilename extracts the migration ID from a filename.
+// Expected format: NNNN_name.up.sql where NNNN is a 4-digit number.
+// Returns the ID (without .up.sql extension) and any error.
+func parseMigrationFilename(filename string) (string, error) {
+	if !strings.HasSuffix(filename, ".up.sql") {
+		return "", fmt.Errorf("invalid migration filename %q: must end with .up.sql", filename)
+	}
+
+	// Remove .up.sql suffix to get the ID
+	id := strings.TrimSuffix(filename, ".up.sql")
+
+	// Validate format: must start with 4 digits followed by underscore
+	if len(id) < 6 { // minimum: "0001_x"
+		return "", fmt.Errorf("invalid migration filename %q: too short", filename)
+	}
+
+	prefix := id[:4]
+	for _, c := range prefix {
+		if c < '0' || c > '9' {
+			return "", fmt.Errorf("invalid migration filename %q: must start with 4-digit prefix", filename)
+		}
+	}
+
+	if id[4] != '_' {
+		return "", fmt.Errorf("invalid migration filename %q: digit prefix must be followed by underscore", filename)
+	}
+
+	return id, nil
+}
+
+// collectMigrations reads all .up.sql files from a filesystem and returns migration entries.
+func collectMigrations(fsys fs.FS) ([]migrationEntry, error) {
+	if fsys == nil {
+		return nil, nil
+	}
+
+	entries, err := fs.ReadDir(fsys, ".")
+	if err != nil {
+		return nil, fmt.Errorf("failed to read migrations directory: %w", err)
+	}
+
+	var migrations []migrationEntry
+	for _, entry := range entries {
+		if entry.IsDir() {
+			continue
+		}
+		name := entry.Name()
+		if !strings.HasSuffix(name, ".up.sql") {
+			continue
+		}
+
+		id, err := parseMigrationFilename(name)
+		if err != nil {
+			return nil, err
+		}
+
+		migrations = append(migrations, migrationEntry{
+			id:       id,
+			filename: name,
+			fsys:     fsys,
+		})
+	}
+
+	return migrations, nil
+}
 
 func chkTableExists(tx *Transaction) (bool, error) {
 	const query = `SELECT count(*)
@@ -30,13 +124,161 @@ func chkTableExists(tx *Transaction) (bool, error) {
 
 func createMigrationsTable(tx *Transaction) error {
 	const createTableSQL = `CREATE TABLE IF NOT EXISTS schema_migrations (
-		version INTEGER PRIMARY KEY)`
+		id TEXT PRIMARY KEY,
+		applied_at TEXT DEFAULT CURRENT_TIMESTAMP)`
 	err := tx.Exec(createTableSQL)
 	if err != nil {
 		return fmt.Errorf("failed to create schema_migrations table: %w", err)
 	}
 	return nil
 }
+
+// getAppliedMigrations returns a set of migration IDs that have already been applied.
+func getAppliedMigrations(tx *Transaction) (map[string]bool, error) {
+	const query = "SELECT id FROM schema_migrations"
+	rows, err := tx.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query applied migrations: %w", err)
+	}
+	defer rows.Close()
+
+	applied := make(map[string]bool)
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, fmt.Errorf("failed to scan migration id: %w", err)
+		}
+		applied[id] = true
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating applied migrations: %w", err)
+	}
+
+	return applied, nil
+}
+
+// recordMigration inserts a migration ID into the schema_migrations table.
+func recordMigration(tx *Transaction, id string) error {
+	const query = "INSERT INTO schema_migrations (id) VALUES (?)"
+	if err := tx.Exec(query, id); err != nil {
+		return fmt.Errorf("failed to record migration %q: %w", id, err)
+	}
+	return nil
+}
+
+// RunMigration applies all pending migrations in order:
+//  1. Engine migrations (0001-0999) from devengine/db
+//  2. Application migrations (1000+) from the configured AppFS
+//
+// Migrations are sorted lexicographically by ID, ensuring engine migrations
+// run before application migrations due to the numbering convention.
+func RunMigration() error {
+	// Collect engine migrations
+	engineMigrations, err := collectMigrations(engineMigrationsFS)
+	if err != nil {
+		return fmt.Errorf("failed to collect engine migrations: %w", err)
+	}
+
+	// Collect application migrations (if configured)
+	appMigrations, err := collectMigrations(appMigrationsFS)
+	if err != nil {
+		return fmt.Errorf("failed to collect application migrations: %w", err)
+	}
+
+	// Merge all migrations
+	allMigrations := append(engineMigrations, appMigrations...)
+
+	// Check for duplicate IDs
+	seen := make(map[string]string) // id -> filename
+	for _, m := range allMigrations {
+		if existing, ok := seen[m.id]; ok {
+			return fmt.Errorf("duplicate migration id %q: found in %q and %q", m.id, existing, m.filename)
+		}
+		seen[m.id] = m.filename
+	}
+
+	// Sort by ID (lexicographic order ensures 0001 < 0002 < ... < 1000 < 1001)
+	sort.Slice(allMigrations, func(i, j int) bool {
+		return allMigrations[i].id < allMigrations[j].id
+	})
+
+	// Begin transaction
+	tx, err := Storage.BeginTransaction()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer func() {
+		if tx != nil {
+			rberr := tx.Rollback()
+			if rberr != nil {
+				log.Printf("failed to rollback transaction: %v", rberr)
+			}
+		}
+	}()
+
+	// Ensure schema_migrations table exists
+	exists, err := chkTableExists(tx)
+	if err != nil {
+		return fmt.Errorf("failed to check if schema_migrations table exists: %w", err)
+	}
+
+	if !exists {
+		err = createMigrationsTable(tx)
+		if err != nil {
+			return fmt.Errorf("failed to ensure schema_migrations table exists: %w", err)
+		}
+	}
+
+	// Get already applied migrations
+	applied, err := getAppliedMigrations(tx)
+	if err != nil {
+		return fmt.Errorf("failed to get applied migrations: %w", err)
+	}
+
+	// Apply pending migrations
+	appliedCount := 0
+	for _, m := range allMigrations {
+		if applied[m.id] {
+			continue
+		}
+
+		// Read migration file
+		content, err := fs.ReadFile(m.fsys, m.filename)
+		if err != nil {
+			return fmt.Errorf("failed to read migration file %q: %w", m.filename, err)
+		}
+
+		// Apply migration
+		log.Printf("applying migration: %s", m.id)
+		if err := tx.Exec(string(content)); err != nil {
+			return fmt.Errorf("failed to apply migration %q: %w", m.id, err)
+		}
+
+		// Record migration
+		if err := recordMigration(tx, m.id); err != nil {
+			return err
+		}
+
+		appliedCount++
+	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	tx = nil
+
+	if appliedCount == 0 {
+		log.Printf("no new migrations to apply")
+	} else {
+		log.Printf("applied %d migration(s)", appliedCount)
+	}
+
+	return nil
+}
+
+// Legacy functions for backward compatibility with old tests
 
 func getMigrationMaxTx(tx *Transaction) (int, error) {
 	const query = "SELECT MAX(version) FROM schema_migrations"
@@ -54,7 +296,7 @@ func getMigrationMaxTx(tx *Transaction) (int, error) {
 }
 
 func findMigrationFile(fsys fs.FS, version int) (string, error) {
-	pattern := fmt.Sprintf("%03d_*.up.sql", version)
+	pattern := fmt.Sprintf("%04d_*.up.sql", version)
 	matches, err := fs.Glob(fsys, pattern)
 	if err != nil {
 		return "", fmt.Errorf(
@@ -65,7 +307,7 @@ func findMigrationFile(fsys fs.FS, version int) (string, error) {
 
 	if len(matches) == 0 {
 		return "", fmt.Errorf(
-			"no migration file matched pattern %q for version %03d",
+			"no migration file matched pattern %q for version %04d",
 			pattern,
 			version)
 	}
@@ -103,106 +345,11 @@ func findMigrationFile(fsys fs.FS, version int) (string, error) {
 			return nonEmpty[0], nil
 		}
 		return "", fmt.Errorf(
-			"multiple migration files matched pattern %q for version %03d: %v",
+			"multiple migration files matched pattern %q for version %04d: %v",
 			pattern,
 			version,
 			matches)
 	}
 
 	return matches[0], nil
-}
-
-func RunMigration() error {
-	files, err := filesystem.ReadDir(".")
-	if err != nil {
-		log.Fatalf("failed to read migration files: %v", err)
-	}
-
-	tx, err := Storage.BeginTransaction()
-	if err != nil {
-		return fmt.Errorf("failed to begin transaction: %w", err)
-	}
-	defer func() {
-		if tx != nil {
-			rberr := tx.Rollback()
-			if rberr != nil {
-				log.Printf("failed to rollback transaction: %v", rberr)
-			}
-		}
-	}()
-
-	exists, err := chkTableExists(tx)
-	if err != nil {
-		return fmt.Errorf(
-			"failed to check if schema_migrations table exists: %w", err)
-	}
-
-	if !exists {
-		err = createMigrationsTable(tx)
-		if err != nil {
-			return fmt.Errorf(
-				"failed to ensure schema_migrations table exists: %w", err)
-		}
-	}
-
-	maxVersion, err := getMigrationMaxTx(tx)
-	if err != nil {
-		return fmt.Errorf("failed to get max migration version: %w", err)
-	}
-
-	// Determine the highest migration version from filenames to avoid duplicate version files
-	highestVersion := 0
-	for _, de := range files {
-		name := de.Name()
-		if !strings.HasSuffix(name, ".up.sql") {
-			continue
-		}
-		if len(name) < 7 { // e.g., 001_x.up.sql
-			continue
-		}
-		numStr := name[:3]
-		var v int
-		_, perr := fmt.Sscanf(numStr, "%03d", &v)
-		if perr == nil && v > highestVersion {
-			highestVersion = v
-		}
-	}
-
-	if maxVersion >= highestVersion {
-		log.Printf("no new migrations to apply (current version: %d)", maxVersion)
-		return tx.Commit()
-	}
-
-	log.Printf("applying migrations from version %d to %d", maxVersion+1, highestVersion)
-
-	for i := maxVersion + 1; i <= highestVersion; i++ {
-		filename, err := findMigrationFile(filesystem, i)
-		if err != nil {
-			return fmt.Errorf("failed to locate migration for version %d: %w", i, err)
-		}
-
-		file, err := filesystem.ReadFile(filename)
-		if err != nil {
-			return fmt.Errorf("failed to read migration file %s: %w", filename, err)
-		}
-
-		err = tx.Exec(string(file))
-		if err != nil {
-			return fmt.Errorf("failed to apply migration %s: %w", filename, err)
-		}
-
-		err = tx.Exec("INSERT INTO schema_migrations (version) VALUES (?)", i)
-		if err != nil {
-			return fmt.Errorf("failed to record migration version %d: %w", i, err)
-		}
-	}
-
-	err = tx.Commit()
-	if err != nil {
-		return fmt.Errorf("failed to commit transaction: %w", err)
-	}
-
-	tx = nil
-
-	return nil
 }
