@@ -1030,10 +1030,18 @@ func runtimeRecordsPartialHandler(w http.ResponseWriter, r *http.Request) {
 			fieldRows = nil
 		}
 
+		// Build display values map for list view
+		// The hydrateFieldStates function already formats values into state.Value
+		displayValues := make(map[int64]string)
+		for _, state := range states {
+			displayValues[state.Field.ID] = state.Value
+		}
+
 		recordsWithValues = append(recordsWithValues, recordWithValues{
-			Record:    rec,
-			Values:    valueMap,
-			FieldRows: fieldRows,
+			Record:        rec,
+			Values:        valueMap,
+			FieldRows:     fieldRows,
+			DisplayValues: displayValues,
 		})
 	}
 
@@ -1086,9 +1094,10 @@ func runtimeRecordsPartialHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 type recordWithValues struct {
-	Record    db.EAVRecord
-	Values    map[int64]db.EAVValue
-	FieldRows []ui.ChildRow
+	Record        db.EAVRecord
+	Values        map[int64]db.EAVValue
+	FieldRows     []ui.ChildRow
+	DisplayValues map[int64]string
 }
 
 func runtimeRecordCreateHandler(w http.ResponseWriter, r *http.Request) {

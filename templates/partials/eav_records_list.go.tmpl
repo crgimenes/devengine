@@ -17,29 +17,16 @@
                 <td><code>{{$recWithVals.Record.ID}}</code></td>
                 {{range $.VisibleFields}}
                 <td>
-                    {{$fieldVal := index $recWithVals.Values .ID}}
                     {{if eq .UIKind "image"}}
+                        {{$fieldVal := index $recWithVals.Values .ID}}
                         {{if $fieldVal.ValueText}}
                             <img src="{{$fieldVal.ValueText}}" alt="{{.Label}}" class="img-fluid rounded">
                         {{else}}
                             <span class="text-muted small">Sem imagem</span>
                         {{end}}
-                    {{else if eq .PrimitiveKind "TEXT"}}
-                        {{if $fieldVal.ValueText}}{{$fieldVal.ValueText}}{{else}}—{{end}}
-                    {{else if eq .PrimitiveKind "INT"}}
-                        {{if $fieldVal.ValueInt}}{{$fieldVal.ValueInt}}{{else}}—{{end}}
-                    {{else if eq .PrimitiveKind "FLOAT"}}
-                        {{if $fieldVal.ValueFloat}}{{printf "%.2f" $fieldVal.ValueFloat}}{{else}}—{{end}}
-                    {{else if eq .PrimitiveKind "DATETIME"}}
-                        {{if $fieldVal.ValueDatetime}}{{$fieldVal.ValueDatetime.Format "02/01/2006 15:04"}}{{else}}—{{end}}
-                    {{else if eq .PrimitiveKind "BOOL"}}
-                        {{if $fieldVal.ValueBool}}
-                            <span class="badge text-bg-success">Sim</span>
-                        {{else}}
-                            <span class="badge text-bg-secondary">Não</span>
-                        {{end}}
                     {{else}}
-                        —
+                        {{$displayValue := index $recWithVals.DisplayValues .ID}}
+                        {{if $displayValue}}{{$displayValue}}{{else}}—{{end}}
                     {{end}}
                 </td>
                 {{end}}
