@@ -6,6 +6,25 @@ This README explains **why** the language exists, **which problems it solves**, 
 
 ---
 
+## Name and pronunciation
+
+The name **Filo** comes from the Italian word *filo* (“thread”).
+
+It is pronounced like Italian **filo**:
+
+- IPA: `/ˈfiː.lo/`
+- Rough English approximation: **“FEE-lo”**
+
+Examples in Italian:
+
+- *Un filo di lana.* – “A thread of wool.”
+- *Tirare un filo dal maglione.* – “To pull a thread from the sweater.”
+- *C’è un filo che pende dalla manica.* – “There is a thread hanging from the sleeve.”
+
+Please note: it is **not** pronounced like “Filó” or “FYE-lo” (`/ˈfaɪ.loʊ/`) or “fee-LOH” (`/fiːˈloʊ/`), but simply **“FEE-lo”**.
+
+---
+
 ## Motivation
 
 When building complex systems such as:
