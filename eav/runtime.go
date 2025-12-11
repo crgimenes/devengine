@@ -1195,7 +1195,7 @@ func runtimeRecordCreateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	record, err := db.Storage.CreateEAVRecord(ctx.Form.ID, ctx.Workspace.ID, u.ID, "active", "{}", nil, nil)
+	record, err := db.Storage.CreateEAVRecord(ctx.Form.ID, ctx.Workspace.ID, u.ID, "active", "{}")
 	if err != nil {
 		log.Printf("create record error: %v", err)
 		http.Error(w, "erro ao criar registro", http.StatusInternalServerError)

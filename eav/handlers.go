@@ -683,8 +683,7 @@ func fieldCreateHandler(w http.ResponseWriter, r *http.Request) {
 		uiRole := r.FormValue("ui_role")
 		parentGroup := strings.TrimSpace(r.FormValue("parent_group_machine_name"))
 		data.SelectedParent = parentGroup
-		isSubform := r.FormValue("is_subform") == "on"
-		draft.IsSubform = isSubform
+
 		uiKind := r.FormValue("ui_kind")
 		if uiKind == "" {
 			uiKind = defaultUIKind
@@ -740,14 +739,6 @@ func fieldCreateHandler(w http.ResponseWriter, r *http.Request) {
 		draft.PrimitiveKind = recommendedPrimitiveKind(uiImpl)
 		draft.UIKind = uiKind
 		draft.UIRole = uiRole
-
-		var subformFormID *int64
-		if sfIDStr := r.FormValue("subform_form_id"); sfIDStr != "" {
-			sfID, convErr := strconv.ParseInt(sfIDStr, 10, 64)
-			if convErr == nil {
-				subformFormID = &sfID
-			}
-		}
 
 		if label == "" {
 			data.Error = "Label é obrigatório."
@@ -807,7 +798,7 @@ func fieldCreateHandler(w http.ResponseWriter, r *http.Request) {
 		// FTS index only applicable for TEXT primitive kind
 		ftsIndex := r.FormValue("fts_index") == "on" && draft.PrimitiveKind == "TEXT"
 
-		_, err = db.Storage.CreateEAVField(formID, machineName, label, zOrder, columnWidth, parentGroup, isGroupingField, isUI, uiRole, isSubform, subformFormID, draft.PrimitiveKind, uiKind, uiMetaJSON, draft.Expression, draft.ExpressionOrder, draft.IsReadonly, draft.Required, listVisible, listZOrder, listCols, cardVisible, cardZOrder, cardCols, carouselVisible, carouselZOrder, carouselCols, ftsIndex)
+		_, err = db.Storage.CreateEAVField(formID, machineName, label, zOrder, columnWidth, parentGroup, isGroupingField, isUI, uiRole, draft.PrimitiveKind, uiKind, uiMetaJSON, draft.Expression, draft.ExpressionOrder, draft.IsReadonly, draft.Required, listVisible, listZOrder, listCols, cardVisible, cardZOrder, cardCols, carouselVisible, carouselZOrder, carouselCols, ftsIndex)
 		if err != nil {
 			log.Printf("create field error: %v", err)
 			http.Error(w, "error creating field", http.StatusInternalServerError)
@@ -1311,7 +1302,7 @@ func recordCreateHandler(w http.ResponseWriter, r *http.Request) {
 		}
 
 		// Create Record
-		rec, err := db.Storage.CreateEAVRecord(formID, f.WorkspaceID, u.ID, "active", "{}", nil, nil)
+		rec, err := db.Storage.CreateEAVRecord(formID, f.WorkspaceID, u.ID, "active", "{}")
 		if err != nil {
 			log.Printf("create record error: %v", err)
 			http.Error(w, "error creating record", http.StatusInternalServerError)

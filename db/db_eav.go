@@ -46,8 +46,6 @@ type EAVField struct {
 	IsGroupingField        bool   `json:"is_grouping_field"`
 	IsUI                   bool   `json:"is_ui"`
 	UIRole                 string `json:"ui_role"`
-	IsSubform              bool   `json:"is_subform"`
-	SubformFormID          *int64 `json:"subform_form_id"`
 	PrimitiveKind          string `json:"primitive_kind"`
 	UIKind                 string `json:"ui_kind"`
 	UIMetaJSON             string `json:"ui_meta_json"`
@@ -68,19 +66,17 @@ type EAVField struct {
 }
 
 type EAVRecord struct {
-	ID             int64      `json:"id"`
-	ReferenceID    string     `json:"reference_id"`
-	FormID         int64      `json:"form_id"`
-	WorkspaceID    int64      `json:"workspace_id"`
-	OwnerUserID    int64      `json:"owner_user_id"`
-	Status         string     `json:"status"`
-	TagsJSON       string     `json:"tags_json"`
-	Rev            int        `json:"rev"`
-	ParentRecordID *int64     `json:"parent_record_id"`
-	ParentFieldID  *int64     `json:"parent_field_id"`
-	CreatedAt      time.Time  `json:"created_at"`
-	UpdatedAt      time.Time  `json:"updated_at"`
-	DeletedAt      *time.Time `json:"deleted_at"`
+	ID          int64      `json:"id"`
+	ReferenceID string     `json:"reference_id"`
+	FormID      int64      `json:"form_id"`
+	WorkspaceID int64      `json:"workspace_id"`
+	OwnerUserID int64      `json:"owner_user_id"`
+	Status      string     `json:"status"`
+	TagsJSON    string     `json:"tags_json"`
+	Rev         int        `json:"rev"`
+	CreatedAt   time.Time  `json:"created_at"`
+	UpdatedAt   time.Time  `json:"updated_at"`
+	DeletedAt   *time.Time `json:"deleted_at"`
 }
 
 type EAVValue struct {
@@ -569,7 +565,6 @@ func (s *SQLite) CreateEAVField(
 	parentGroupMachineName string,
 	isGroupingField bool,
 	isUI bool, uiRole string,
-	isSubform bool, subformFormID *int64,
 	primitiveKind, uiKind, uiMetaJSON string,
 	expression string,
 	expressionOrder int,
@@ -597,29 +592,27 @@ func (s *SQLite) CreateEAVField(
   is_grouping_field,        -- 7
   is_ui,                    -- 8
   ui_role,                  -- 9
-  is_subform,               -- 10
-  subform_form_id,          -- 11
-  primitive_kind,           -- 12
-  ui_kind,                  -- 13
-  ui_meta_json,             -- 14
-  expression,               -- 15
-  expression_order,         -- 16
-  is_readonly,              -- 17
-  required,                 -- 18
-  list_visible,             -- 19
-  list_z_order,             -- 20
-  list_cols,                -- 21
-  card_visible,             -- 22
-  card_z_order,             -- 23
-  card_cols,                -- 24
-  carousel_visible,         -- 25
-  carousel_z_order,         -- 26
-  carousel_cols,            -- 27
-  fts_index,                -- 28
+  primitive_kind,           -- 10
+  ui_kind,                  -- 11
+  ui_meta_json,             -- 12
+  expression,               -- 13
+  expression_order,         -- 14
+  is_readonly,              -- 15
+  required,                 -- 16
+  list_visible,             -- 17
+  list_z_order,             -- 18
+  list_cols,                -- 19
+  card_visible,             -- 20
+  card_z_order,             -- 21
+  card_cols,                -- 22
+  carousel_visible,         -- 23
+  carousel_z_order,         -- 24
+  carousel_cols,            -- 25
+  fts_index,                -- 26
   created_at,
   updated_at
 ) VALUES (
-  ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+  ?, ?, ?, 1, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
   CURRENT_TIMESTAMP,
   CURRENT_TIMESTAMP
 ) RETURNING
@@ -634,24 +627,22 @@ func (s *SQLite) CreateEAVField(
   is_grouping_field,         -- 9
   is_ui,                     -- 10
   ui_role,                   -- 11
-  is_subform,                -- 12
-  subform_form_id,           -- 13
-  primitive_kind,            -- 14
-  ui_kind,                   -- 15
-  ui_meta_json,              -- 16
-  expression,                -- 17
-  COALESCE(expression_order, 0) AS expression_order, -- 18
-  is_readonly,               -- 19
-  required,                  -- 20
-  list_visible,              -- 21
-  list_z_order,              -- 22
-  list_cols,                 -- 23
-  card_visible,              -- 24
-  card_z_order,              -- 25
-  card_cols,                 -- 26
-  carousel_visible,          -- 27
-  carousel_z_order,          -- 28
-  carousel_cols              -- 29
+  primitive_kind,            -- 12
+  ui_kind,                   -- 13
+  ui_meta_json,              -- 14
+  expression,                -- 15
+  COALESCE(expression_order, 0) AS expression_order, -- 16
+  is_readonly,               -- 17
+  required,                  -- 18
+  list_visible,              -- 19
+  list_z_order,              -- 20
+  list_cols,                 -- 21
+  card_visible,              -- 22
+  card_z_order,              -- 23
+  card_cols,                 -- 24
+  carousel_visible,          -- 25
+  carousel_z_order,          -- 26
+  carousel_cols              -- 27
 ;`
 
 	var f EAVField
@@ -681,25 +672,23 @@ func (s *SQLite) CreateEAVField(
 		isGroupingField, // 7
 		isUI,            // 8
 		uiRoleNull,      // 9
-		isSubform,       // 10
-		subformFormID,   // 11
-		primitiveKind,   // 12
-		uiKind,          // 13
-		uiMetaJSON,      // 14
-		expression,      // 15
-		exprOrder,       // 16
-		isReadonly,      // 17
-		required,        // 18
-		listVisible,     // 19
-		listZOrder,      // 20
-		listCols,        // 21
-		cardVisible,     // 22
-		cardZOrder,      // 23
-		cardCols,        // 24
-		carouselVisible, // 25
-		carouselZOrder,  // 26
-		carouselCols,    // 27
-		ftsIndex,        // 28
+		primitiveKind,   // 10
+		uiKind,          // 11
+		uiMetaJSON,      // 12
+		expression,      // 13
+		exprOrder,       // 14
+		isReadonly,      // 15
+		required,        // 16
+		listVisible,     // 17
+		listZOrder,      // 18
+		listCols,        // 19
+		cardVisible,     // 20
+		cardZOrder,      // 21
+		cardCols,        // 22
+		carouselVisible, // 23
+		carouselZOrder,  // 24
+		carouselCols,    // 25
+		ftsIndex,        // 26
 	).Scan(
 		&f.ID,                     // 1
 		&f.FormID,                 // 2
@@ -712,24 +701,22 @@ func (s *SQLite) CreateEAVField(
 		&f.IsGroupingField,        // 9
 		&f.IsUI,                   // 10
 		&uiRoleNull,               // 11
-		&f.IsSubform,              // 12
-		&f.SubformFormID,          // 13
-		&f.PrimitiveKind,          // 14
-		&f.UIKind,                 // 15
-		&f.UIMetaJSON,             // 16
-		&f.Expression,             // 17
-		&f.ExpressionOrder,        // 18
-		&f.IsReadonly,             // 19
-		&f.Required,               // 20
-		&f.ListVisible,            // 21
-		&f.ListZOrder,             // 22
-		&f.ListCols,               // 23
-		&f.CardVisible,            // 24
-		&f.CardZOrder,             // 25
-		&f.CardCols,               // 26
-		&f.CarouselVisible,        // 27
-		&f.CarouselZOrder,         // 28
-		&f.CarouselCols,           // 29
+		&f.PrimitiveKind,          // 12
+		&f.UIKind,                 // 13
+		&f.UIMetaJSON,             // 14
+		&f.Expression,             // 15
+		&f.ExpressionOrder,        // 16
+		&f.IsReadonly,             // 17
+		&f.Required,               // 18
+		&f.ListVisible,            // 19
+		&f.ListZOrder,             // 20
+		&f.ListCols,               // 21
+		&f.CardVisible,            // 22
+		&f.CardZOrder,             // 23
+		&f.CardCols,               // 24
+		&f.CarouselVisible,        // 25
+		&f.CarouselZOrder,         // 26
+		&f.CarouselCols,           // 27
 	)
 	if err != nil {
 		return nil, err
@@ -753,25 +740,23 @@ func (s *SQLite) GetEAVField(id int64) (*EAVField, error) {
   is_grouping_field,               -- 9
   is_ui,                           -- 10
   ui_role,                         -- 11
-  is_subform,                      -- 12
-  subform_form_id,                 -- 13
-  primitive_kind,                  -- 14
-  ui_kind,                         -- 15
-  ui_meta_json,                    -- 16
-  COALESCE(expression, '') AS expression,            -- 17
-  COALESCE(expression_order, 0) AS expression_order, -- 18
-  is_readonly,                     -- 19
-  required,                        -- 20
-  list_visible,                    -- 21
-  list_z_order,                    -- 22
-  list_cols,                       -- 23
-  card_visible,                    -- 24
-  card_z_order,                    -- 25
-  card_cols,                       -- 26
-  carousel_visible,                -- 27
-  carousel_z_order,                -- 28
-  carousel_cols,                   -- 29
-  fts_index                        -- 30
+  primitive_kind,                  -- 12
+  ui_kind,                         -- 13
+  ui_meta_json,                    -- 14
+  COALESCE(expression, '') AS expression,            -- 15
+  COALESCE(expression_order, 0) AS expression_order, -- 16
+  is_readonly,                     -- 17
+  required,                        -- 18
+  list_visible,                    -- 19
+  list_z_order,                    -- 20
+  list_cols,                       -- 21
+  card_visible,                    -- 22
+  card_z_order,                    -- 23
+  card_cols,                       -- 24
+  carousel_visible,                -- 25
+  carousel_z_order,                -- 26
+  carousel_cols,                   -- 27
+  fts_index                        -- 28
 FROM eav_fields
 WHERE id = ? AND visible = 1;`
 
@@ -791,25 +776,23 @@ WHERE id = ? AND visible = 1;`
 		&f.IsGroupingField,        // 9
 		&f.IsUI,                   // 10
 		&uiRoleNull,               // 11
-		&f.IsSubform,              // 12
-		&f.SubformFormID,          // 13
-		&f.PrimitiveKind,          // 14
-		&f.UIKind,                 // 15
-		&f.UIMetaJSON,             // 16
-		&f.Expression,             // 17
-		&f.ExpressionOrder,        // 18
-		&f.IsReadonly,             // 19
-		&f.Required,               // 20
-		&f.ListVisible,            // 21
-		&f.ListZOrder,             // 22
-		&f.ListCols,               // 23
-		&f.CardVisible,            // 24
-		&f.CardZOrder,             // 25
-		&f.CardCols,               // 26
-		&f.CarouselVisible,        // 27
-		&f.CarouselZOrder,         // 28
-		&f.CarouselCols,           // 29
-		&f.FTSIndex,               // 30
+		&f.PrimitiveKind,          // 12
+		&f.UIKind,                 // 13
+		&f.UIMetaJSON,             // 14
+		&f.Expression,             // 15
+		&f.ExpressionOrder,        // 16
+		&f.IsReadonly,             // 17
+		&f.Required,               // 18
+		&f.ListVisible,            // 19
+		&f.ListZOrder,             // 20
+		&f.ListCols,               // 21
+		&f.CardVisible,            // 22
+		&f.CardZOrder,             // 23
+		&f.CardCols,               // 24
+		&f.CarouselVisible,        // 25
+		&f.CarouselZOrder,         // 26
+		&f.CarouselCols,           // 27
+		&f.FTSIndex,               // 28
 	)
 	if err != nil {
 		return nil, err
@@ -853,25 +836,23 @@ func (s *SQLite) GetEAVFieldsByFormID(formID int64) ([]EAVField, error) {
   is_grouping_field,               -- 9
   is_ui,                           -- 10
   ui_role,                         -- 11
-  is_subform,                      -- 12
-  subform_form_id,                 -- 13
-  primitive_kind,                  -- 14
-  ui_kind,                         -- 15
-  ui_meta_json,                    -- 16
-  COALESCE(expression, '') AS expression,            -- 17
-  COALESCE(expression_order, 0) AS expression_order, -- 18
-  is_readonly,                     -- 19
-  required,                        -- 20
-  list_visible,                    -- 21
-  list_z_order,                    -- 22
-  list_cols,                       -- 23
-  card_visible,                    -- 24
-  card_z_order,                    -- 25
-  card_cols,                       -- 26
-  carousel_visible,                -- 27
-  carousel_z_order,                -- 28
-  carousel_cols,                   -- 29
-  fts_index                        -- 30
+  primitive_kind,                  -- 12
+  ui_kind,                         -- 13
+  ui_meta_json,                    -- 14
+  COALESCE(expression, '') AS expression,            -- 15
+  COALESCE(expression_order, 0) AS expression_order, -- 16
+  is_readonly,                     -- 17
+  required,                        -- 18
+  list_visible,                    -- 19
+  list_z_order,                    -- 20
+  list_cols,                       -- 21
+  card_visible,                    -- 22
+  card_z_order,                    -- 23
+  card_cols,                       -- 24
+  carousel_visible,                -- 25
+  carousel_z_order,                -- 26
+  carousel_cols,                   -- 27
+  fts_index                        -- 28
 FROM eav_fields
 WHERE form_id = ? AND visible = 1
 ORDER BY z_order ASC, label ASC;`
@@ -900,25 +881,23 @@ ORDER BY z_order ASC, label ASC;`
 			&f.IsGroupingField,        // 9
 			&f.IsUI,                   // 10
 			&uiRoleNull,               // 11
-			&f.IsSubform,              // 12
-			&f.SubformFormID,          // 13
-			&f.PrimitiveKind,          // 14
-			&f.UIKind,                 // 15
-			&f.UIMetaJSON,             // 16
-			&f.Expression,             // 17
-			&f.ExpressionOrder,        // 18
-			&f.IsReadonly,             // 19
-			&f.Required,               // 20
-			&f.ListVisible,            // 21
-			&f.ListZOrder,             // 22
-			&f.ListCols,               // 23
-			&f.CardVisible,            // 24
-			&f.CardZOrder,             // 25
-			&f.CardCols,               // 26
-			&f.CarouselVisible,        // 27
-			&f.CarouselZOrder,         // 28
-			&f.CarouselCols,           // 29
-			&f.FTSIndex,               // 30
+			&f.PrimitiveKind,          // 12
+			&f.UIKind,                 // 13
+			&f.UIMetaJSON,             // 14
+			&f.Expression,             // 15
+			&f.ExpressionOrder,        // 16
+			&f.IsReadonly,             // 17
+			&f.Required,               // 18
+			&f.ListVisible,            // 19
+			&f.ListZOrder,             // 20
+			&f.ListCols,               // 21
+			&f.CardVisible,            // 22
+			&f.CardZOrder,             // 23
+			&f.CardCols,               // 24
+			&f.CarouselVisible,        // 25
+			&f.CarouselZOrder,         // 26
+			&f.CarouselCols,           // 27
+			&f.FTSIndex,               // 28
 		); err != nil {
 			return nil, err
 		}
@@ -946,10 +925,8 @@ func (s *SQLite) GetEAVFieldsByProcessingOrder(formID int64) ([]EAVField, error)
   is_grouping_field,               -- 9
   is_ui,                           -- 10
   ui_role,                         -- 11
-  is_subform,                      -- 12
-  subform_form_id,                 -- 13
-  primitive_kind,                  -- 14
-  ui_kind,                         -- 15
+  primitive_kind,                  -- 12
+  ui_kind,                         -- 13
   ui_meta_json,                    -- 16
   COALESCE(expression, '') AS expression,            -- 17
   COALESCE(expression_order, 0) AS expression_order, -- 18
@@ -998,10 +975,8 @@ ORDER BY
 			&f.IsGroupingField,        // 9
 			&f.IsUI,                   // 10
 			&uiRoleNull,               // 11
-			&f.IsSubform,              // 12
-			&f.SubformFormID,          // 13
-			&f.PrimitiveKind,          // 14
-			&f.UIKind,                 // 15
+			&f.PrimitiveKind,          // 12
+			&f.UIKind,                 // 13
 			&f.UIMetaJSON,             // 16
 			&f.Expression,             // 17
 			&f.ExpressionOrder,        // 18
@@ -1092,10 +1067,8 @@ RETURNING
   is_grouping_field,         -- 9
   is_ui,                     -- 10
   ui_role,                   -- 11
-  is_subform,                -- 12
-  subform_form_id,           -- 13
-  primitive_kind,            -- 14
-  ui_kind,                   -- 15
+  primitive_kind,            -- 12
+  ui_kind,                   -- 13
   ui_meta_json,              -- 16
   expression,                -- 17
   COALESCE(expression_order, 0) AS expression_order, -- 18
@@ -1162,10 +1135,8 @@ RETURNING
 		&f.IsGroupingField,        // 9
 		&f.IsUI,                   // 10
 		&uiRoleNull,               // 11
-		&f.IsSubform,              // 12
-		&f.SubformFormID,          // 13
-		&f.PrimitiveKind,          // 14
-		&f.UIKind,                 // 15
+		&f.PrimitiveKind,          // 12
+		&f.UIKind,                 // 13
 		&f.UIMetaJSON,             // 16
 		&f.Expression,             // 17
 		&f.ExpressionOrder,        // 18
@@ -1207,7 +1178,6 @@ func (s *SQLite) SoftDeleteEAVField(id int64) error {
 func (s *SQLite) CreateEAVRecord(
 	formID, workspaceID, ownerUserID int64,
 	status, tagsJSON string,
-	parentRecordID, parentFieldID *int64,
 ) (*EAVRecord, error) {
 	refID := utils.NewOpaqueID()
 	const sqlInsert = `INSERT INTO eav_records (
@@ -1218,12 +1188,10 @@ func (s *SQLite) CreateEAVRecord(
             status,          -- 5
             tags_json,       -- 6
             rev,
-            parent_record_id, -- 7
-            parent_field_id, -- 8
             created_at,
             updated_at
         ) VALUES (
-            ?, ?, ?, ?, ?, ?, 1, ?, ?,
+            ?, ?, ?, ?, ?, ?, 1,
             CURRENT_TIMESTAMP,
             CURRENT_TIMESTAMP
         ) RETURNING
@@ -1235,37 +1203,31 @@ func (s *SQLite) CreateEAVRecord(
             status,         -- 6
             tags_json,      -- 7
             rev,            -- 8
-            parent_record_id, -- 9
-            parent_field_id, -- 10
-            created_at,     -- 11
-            updated_at,     -- 12
-            deleted_at      -- 13
+            created_at,     -- 9
+            updated_at,     -- 10
+            deleted_at      -- 11
         ;`
 
 	var r EAVRecord
 	err := s.QueryRowRW(sqlInsert,
-		refID,          // 1
-		formID,         // 2
-		workspaceID,    // 3
-		ownerUserID,    // 4
-		status,         // 5
-		tagsJSON,       // 6
-		parentRecordID, // 7
-		parentFieldID,  // 8
+		refID,       // 1
+		formID,      // 2
+		workspaceID, // 3
+		ownerUserID, // 4
+		status,      // 5
+		tagsJSON,    // 6
 	).Scan(
-		&r.ID,             // 1
-		&r.ReferenceID,    // 2
-		&r.FormID,         // 3
-		&r.WorkspaceID,    // 4
-		&r.OwnerUserID,    // 5
-		&r.Status,         // 6
-		&r.TagsJSON,       // 7
-		&r.Rev,            // 8
-		&r.ParentRecordID, // 9
-		&r.ParentFieldID,  // 10
-		&r.CreatedAt,      // 11
-		&r.UpdatedAt,      // 12
-		&r.DeletedAt,      // 13
+		&r.ID,          // 1
+		&r.ReferenceID, // 2
+		&r.FormID,      // 3
+		&r.WorkspaceID, // 4
+		&r.OwnerUserID, // 5
+		&r.Status,      // 6
+		&r.TagsJSON,    // 7
+		&r.Rev,         // 8
+		&r.CreatedAt,   // 9
+		&r.UpdatedAt,   // 10
+		&r.DeletedAt,   // 11
 	)
 	if err != nil {
 		return nil, err
@@ -1283,11 +1245,9 @@ func (s *SQLite) GetEAVRecord(id int64) (*EAVRecord, error) {
             status,          -- 6
             tags_json,       -- 7
             rev,             -- 8
-            parent_record_id,-- 9
-            parent_field_id, -- 10
-            created_at,      -- 11
-            updated_at,      -- 12
-            deleted_at       -- 13
+            created_at,      -- 9
+            updated_at,      -- 10
+            deleted_at       -- 11
         FROM eav_records
         WHERE id = ?;`
 
@@ -1295,19 +1255,17 @@ func (s *SQLite) GetEAVRecord(id int64) (*EAVRecord, error) {
 	err := s.QueryRow(sqlSelect,
 		id, // 1
 	).Scan(
-		&r.ID,             // 1
-		&r.ReferenceID,    // 2
-		&r.FormID,         // 3
-		&r.WorkspaceID,    // 4
-		&r.OwnerUserID,    // 5
-		&r.Status,         // 6
-		&r.TagsJSON,       // 7
-		&r.Rev,            // 8
-		&r.ParentRecordID, // 9
-		&r.ParentFieldID,  // 10
-		&r.CreatedAt,      // 11
-		&r.UpdatedAt,      // 12
-		&r.DeletedAt,      // 13
+		&r.ID,          // 1
+		&r.ReferenceID, // 2
+		&r.FormID,      // 3
+		&r.WorkspaceID, // 4
+		&r.OwnerUserID, // 5
+		&r.Status,      // 6
+		&r.TagsJSON,    // 7
+		&r.Rev,         // 8
+		&r.CreatedAt,   // 9
+		&r.UpdatedAt,   // 10
+		&r.DeletedAt,   // 11
 	)
 	if err != nil {
 		return nil, err
@@ -1325,11 +1283,9 @@ func (s *SQLite) GetEAVRecordByReference(referenceID string) (*EAVRecord, error)
             status,          -- 6
             tags_json,       -- 7
             rev,             -- 8
-            parent_record_id,-- 9
-            parent_field_id, -- 10
-            created_at,      -- 11
-            updated_at,      -- 12
-            deleted_at       -- 13
+            created_at,      -- 9
+            updated_at,      -- 10
+            deleted_at       -- 11
         FROM eav_records
         WHERE reference_id = ? AND deleted_at IS NULL;`
 
@@ -1337,19 +1293,17 @@ func (s *SQLite) GetEAVRecordByReference(referenceID string) (*EAVRecord, error)
 	err := s.QueryRow(sqlSelect,
 		referenceID, // 1
 	).Scan(
-		&r.ID,             // 1
-		&r.ReferenceID,    // 2
-		&r.FormID,         // 3
-		&r.WorkspaceID,    // 4
-		&r.OwnerUserID,    // 5
-		&r.Status,         // 6
-		&r.TagsJSON,       // 7
-		&r.Rev,            // 8
-		&r.ParentRecordID, // 9
-		&r.ParentFieldID,  // 10
-		&r.CreatedAt,      // 11
-		&r.UpdatedAt,      // 12
-		&r.DeletedAt,      // 13
+		&r.ID,          // 1
+		&r.ReferenceID, // 2
+		&r.FormID,      // 3
+		&r.WorkspaceID, // 4
+		&r.OwnerUserID, // 5
+		&r.Status,      // 6
+		&r.TagsJSON,    // 7
+		&r.Rev,         // 8
+		&r.CreatedAt,   // 9
+		&r.UpdatedAt,   // 10
+		&r.DeletedAt,   // 11
 	)
 	if err != nil {
 		return nil, err
@@ -1379,11 +1333,9 @@ func (s *SQLite) UpdateEAVRecord(
             status,         -- 6
             tags_json,      -- 7
             rev,            -- 8
-            parent_record_id, -- 9
-            parent_field_id, -- 10
-            created_at,     -- 11
-            updated_at,     -- 12
-            deleted_at      -- 13
+            created_at,     -- 9
+            updated_at,     -- 10
+            deleted_at      -- 11
         ;`
 
 	var r EAVRecord
@@ -1393,19 +1345,17 @@ func (s *SQLite) UpdateEAVRecord(
 		id,       // 3
 		rev,      // 4
 	).Scan(
-		&r.ID,             // 1
-		&r.ReferenceID,    // 2
-		&r.FormID,         // 3
-		&r.WorkspaceID,    // 4
-		&r.OwnerUserID,    // 5
-		&r.Status,         // 6
-		&r.TagsJSON,       // 7
-		&r.Rev,            // 8
-		&r.ParentRecordID, // 9
-		&r.ParentFieldID,  // 10
-		&r.CreatedAt,      // 11
-		&r.UpdatedAt,      // 12
-		&r.DeletedAt,      // 13
+		&r.ID,          // 1
+		&r.ReferenceID, // 2
+		&r.FormID,      // 3
+		&r.WorkspaceID, // 4
+		&r.OwnerUserID, // 5
+		&r.Status,      // 6
+		&r.TagsJSON,    // 7
+		&r.Rev,         // 8
+		&r.CreatedAt,   // 9
+		&r.UpdatedAt,   // 10
+		&r.DeletedAt,   // 11
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -1455,10 +1405,8 @@ func (s *SQLite) ListEAVRecords(formID int64, sort string, limit, offset int) ([
     r.status,           -- 6
     r.tags_json,        -- 7
     r.rev,              -- 8
-    r.parent_record_id, -- 9
-    r.parent_field_id,  -- 10
-    r.created_at,       -- 11
-    r.updated_at        -- 12
+    r.created_at,       -- 9
+    r.updated_at        -- 10
   FROM eav_records AS r
   WHERE r.form_id = ?
     AND r.deleted_at IS NULL
@@ -1478,29 +1426,20 @@ func (s *SQLite) ListEAVRecords(formID int64, sort string, limit, offset int) ([
 	var records []EAVRecord
 	for rows.Next() {
 		var r EAVRecord
-		var parentRecordID, parentFieldID sql.NullInt64
 		err := rows.Scan(
-			&r.ID,           // 1
-			&r.ReferenceID,  // 2
-			&r.FormID,       // 3
-			&r.WorkspaceID,  // 4
-			&r.OwnerUserID,  // 5
-			&r.Status,       // 6
-			&r.TagsJSON,     // 7
-			&r.Rev,          // 8
-			&parentRecordID, // 9
-			&parentFieldID,  // 10
-			&r.CreatedAt,    // 11
-			&r.UpdatedAt,    // 12
+			&r.ID,          // 1
+			&r.ReferenceID, // 2
+			&r.FormID,      // 3
+			&r.WorkspaceID, // 4
+			&r.OwnerUserID, // 5
+			&r.Status,      // 6
+			&r.TagsJSON,    // 7
+			&r.Rev,         // 8
+			&r.CreatedAt,   // 9
+			&r.UpdatedAt,   // 10
 		)
 		if err != nil {
 			return nil, err
-		}
-		if parentRecordID.Valid {
-			r.ParentRecordID = &parentRecordID.Int64
-		}
-		if parentFieldID.Valid {
-			r.ParentFieldID = &parentFieldID.Int64
 		}
 		records = append(records, r)
 	}
@@ -1571,10 +1510,8 @@ func (s *SQLite) SearchEAVRecords(formID int64, query string, sort string, limit
     r.status,           -- 6
     r.tags_json,        -- 7
     r.rev,              -- 8
-    r.parent_record_id, -- 9
-    r.parent_field_id,  -- 10
-    r.created_at,       -- 11
-    r.updated_at        -- 12
+    r.created_at,       -- 9
+    r.updated_at        -- 10
   FROM eav_records AS r
   JOIN eav_fts AS fts ON fts.record_id = r.id
   WHERE fts.form_id = ?
@@ -1597,29 +1534,20 @@ func (s *SQLite) SearchEAVRecords(formID int64, query string, sort string, limit
 	var records []EAVRecord
 	for rows.Next() {
 		var r EAVRecord
-		var parentRecordID, parentFieldID sql.NullInt64
 		err := rows.Scan(
-			&r.ID,           // 1
-			&r.ReferenceID,  // 2
-			&r.FormID,       // 3
-			&r.WorkspaceID,  // 4
-			&r.OwnerUserID,  // 5
-			&r.Status,       // 6
-			&r.TagsJSON,     // 7
-			&r.Rev,          // 8
-			&parentRecordID, // 9
-			&parentFieldID,  // 10
-			&r.CreatedAt,    // 11
-			&r.UpdatedAt,    // 12
+			&r.ID,          // 1
+			&r.ReferenceID, // 2
+			&r.FormID,      // 3
+			&r.WorkspaceID, // 4
+			&r.OwnerUserID, // 5
+			&r.Status,      // 6
+			&r.TagsJSON,    // 7
+			&r.Rev,         // 8
+			&r.CreatedAt,   // 9
+			&r.UpdatedAt,   // 10
 		)
 		if err != nil {
 			return nil, err
-		}
-		if parentRecordID.Valid {
-			r.ParentRecordID = &parentRecordID.Int64
-		}
-		if parentFieldID.Valid {
-			r.ParentFieldID = &parentFieldID.Int64
 		}
 		records = append(records, r)
 	}

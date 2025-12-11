@@ -87,13 +87,13 @@ func TestEAVFullFlow(t *testing.T) {
 
 	// 3. Fields
 	// Text field
-	fldText, err := s.CreateEAVField(f.ID, "name", "Name", 1, 6, "", false, true, "", false, nil, "TEXT", "text_input", "{}", "UPPER(name)", 2, true, true, true, 0, 12, true, 0, 12, true, 0, 12, false)
+	fldText, err := s.CreateEAVField(f.ID, "name", "Name", 1, 6, "", false, true, "", "TEXT", "text_input", "{}", "UPPER(name)", 2, true, true, true, 0, 12, true, 0, 12, true, 0, 12, false)
 	if err != nil {
 		t.Fatalf("CreateEAVField text error: %v", err)
 	}
 
 	// Int field
-	fldAge, err := s.CreateEAVField(f.ID, "age", "Age", 2, 12, "", false, true, "", false, nil, "INT", "number_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
+	fldAge, err := s.CreateEAVField(f.ID, "age", "Age", 2, 12, "", false, true, "", "INT", "number_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
 	if err != nil {
 		t.Fatalf("CreateEAVField int error: %v", err)
 	}
@@ -123,7 +123,7 @@ func TestEAVFullFlow(t *testing.T) {
 	}
 
 	// 4. Record
-	r, err := s.CreateEAVRecord(f.ID, w.ID, 1, "active", "{}", nil, nil)
+	r, err := s.CreateEAVRecord(f.ID, w.ID, 1, "active", "{}")
 	if err != nil {
 		t.Fatalf("CreateEAVRecord error: %v", err)
 	}
@@ -193,13 +193,13 @@ func TestGetEAVFieldsByFormIDOrdering(t *testing.T) {
 		t.Fatalf("CreateEAVForm error: %v", err)
 	}
 
-	if _, err := s.CreateEAVField(form.ID, "gamma", "Bravo", 2, 12, "", false, false, "", false, nil, "TEXT", "text_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false); err != nil {
+	if _, err := s.CreateEAVField(form.ID, "gamma", "Bravo", 2, 12, "", false, false, "", "TEXT", "text_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false); err != nil {
 		t.Fatalf("CreateEAVField Bravo: %v", err)
 	}
-	if _, err := s.CreateEAVField(form.ID, "beta", "Charlie", 1, 12, "", false, false, "", false, nil, "TEXT", "text_input", "{}", "calc_b", 5, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false); err != nil {
+	if _, err := s.CreateEAVField(form.ID, "beta", "Charlie", 1, 12, "", false, false, "", "TEXT", "text_input", "{}", "calc_b", 5, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false); err != nil {
 		t.Fatalf("CreateEAVField Charlie: %v", err)
 	}
-	if _, err := s.CreateEAVField(form.ID, "alpha", "Alpha", 1, 12, "", false, false, "", false, nil, "TEXT", "text_input", "{}", "calc_a", 3, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false); err != nil {
+	if _, err := s.CreateEAVField(form.ID, "alpha", "Alpha", 1, 12, "", false, false, "", "TEXT", "text_input", "{}", "calc_a", 3, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false); err != nil {
 		t.Fatalf("CreateEAVField Alpha: %v", err)
 	}
 
@@ -241,17 +241,17 @@ func TestGetEAVFieldsByProcessingOrder(t *testing.T) {
 	}
 
 	// Expressions with explicit order should come first in ascending expression_order).
-	if _, err := s.CreateEAVField(form.ID, "expr_low", "Expr Low", 2, 12, "", false, false, "", false, nil, "TEXT", "text_input", "{}", "low", 2, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false); err != nil {
+	if _, err := s.CreateEAVField(form.ID, "expr_low", "Expr Low", 2, 12, "", false, false, "", "TEXT", "text_input", "{}", "low", 2, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false); err != nil {
 		t.Fatalf("CreateEAVField expr_low: %v", err)
 	}
-	if _, err := s.CreateEAVField(form.ID, "expr_high", "Expr High", 1, 12, "", false, false, "", false, nil, "TEXT", "text_input", "{}", "high", 5, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false); err != nil {
+	if _, err := s.CreateEAVField(form.ID, "expr_high", "Expr High", 1, 12, "", false, false, "", "TEXT", "text_input", "{}", "high", 5, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false); err != nil {
 		t.Fatalf("CreateEAVField expr_high: %v", err)
 	}
 	// Expression without order should appear after ordered expressions but before non-expression fields?
-	if _, err := s.CreateEAVField(form.ID, "expr_no_order", "Expr Default", 1, 12, "", false, false, "", false, nil, "TEXT", "text_input", "{}", "calc", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false); err != nil {
+	if _, err := s.CreateEAVField(form.ID, "expr_no_order", "Expr Default", 1, 12, "", false, false, "", "TEXT", "text_input", "{}", "calc", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false); err != nil {
 		t.Fatalf("CreateEAVField expr_no_order: %v", err)
 	}
-	if _, err := s.CreateEAVField(form.ID, "plain", "Plain", 1, 12, "", false, false, "", false, nil, "TEXT", "text_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false); err != nil {
+	if _, err := s.CreateEAVField(form.ID, "plain", "Plain", 1, 12, "", false, false, "", "TEXT", "text_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false); err != nil {
 		t.Fatalf("CreateEAVField plain: %v", err)
 	}
 
@@ -295,7 +295,7 @@ func TestEAVFieldGroupingFlagPersistence(t *testing.T) {
 		t.Fatalf("CreateEAVForm error: %v", err)
 	}
 
-	field, err := s.CreateEAVField(form.ID, "container", "Container", 1, 12, "", true, true, "", false, nil, "TEXT", "group", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
+	field, err := s.CreateEAVField(form.ID, "container", "Container", 1, 12, "", true, true, "", "TEXT", "group", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
 	if err != nil {
 		t.Fatalf("CreateEAVField grouping: %v", err)
 	}
@@ -335,7 +335,7 @@ func TestSoftDeleteEAVField(t *testing.T) {
 		t.Fatalf("CreateEAVForm error: %v", err)
 	}
 
-	field, err := s.CreateEAVField(form.ID, "temp", "Temp", 1, 12, "", false, false, "", false, nil, "TEXT", "text_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
+	field, err := s.CreateEAVField(form.ID, "temp", "Temp", 1, 12, "", false, false, "", "TEXT", "text_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
 	if err != nil {
 		t.Fatalf("CreateEAVField error: %v", err)
 	}
@@ -408,12 +408,12 @@ func TestSoftDeleteRecordAndValueRemoval(t *testing.T) {
 		t.Fatalf("CreateEAVForm error: %v", err)
 	}
 
-	field, err := s.CreateEAVField(form.ID, "title", "Title", 1, 12, "", false, true, "", false, nil, "TEXT", "text_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
+	field, err := s.CreateEAVField(form.ID, "title", "Title", 1, 12, "", false, true, "", "TEXT", "text_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
 	if err != nil {
 		t.Fatalf("CreateEAVField error: %v", err)
 	}
 
-	record, err := s.CreateEAVRecord(form.ID, ws.ID, 1, "active", "{}", nil, nil)
+	record, err := s.CreateEAVRecord(form.ID, ws.ID, 1, "active", "{}")
 	if err != nil {
 		t.Fatalf("CreateEAVRecord error: %v", err)
 	}

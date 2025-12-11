@@ -42,10 +42,6 @@ CREATE TABLE eav_records (
     status           TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','archived')),
     tags_json        TEXT,                    -- optional JSON tags
 
-    -- Subform linkage (child record points to its parent)
-    parent_record_id INTEGER REFERENCES eav_records(id) ON DELETE CASCADE,
-    parent_field_id  INTEGER REFERENCES eav_fields(id)  ON DELETE CASCADE,
-
     rev              INTEGER NOT NULL DEFAULT 1, -- optimistic locking
     created_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at       DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -58,10 +54,6 @@ CREATE INDEX idx_eav_records_workspace_form
     ON eav_records(workspace_id, form_id, updated_at);
 CREATE INDEX idx_eav_records_owner
     ON eav_records(owner_user_id);
-CREATE INDEX idx_eav_records_parent
-    ON eav_records(parent_record_id);
-CREATE INDEX idx_eav_records_parent_field
-    ON eav_records(parent_field_id);
 
 CREATE TABLE eav_fields (
     id               INTEGER PRIMARY KEY,
@@ -75,9 +67,6 @@ CREATE TABLE eav_fields (
 
     is_ui            INTEGER NOT NULL DEFAULT 0 CHECK (is_ui IN (0,1)),
     ui_role          TEXT,
-
-    is_subform       INTEGER NOT NULL DEFAULT 0 CHECK (is_subform IN (0,1)),
-    subform_form_id  INTEGER REFERENCES eav_forms(id) ON DELETE CASCADE,
 
     primitive_kind   TEXT NOT NULL CHECK (primitive_kind IN (
         '-',

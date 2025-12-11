@@ -44,21 +44,19 @@ func TestFiloEAVGetValue(t *testing.T) {
 	}
 
 	// Create TEXT field
-	_, err = s.CreateEAVField(form.ID, "name", "Product Name", 1, 12, "", false, false, "", false, nil,
-		"TEXT", "text_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
+	_, err = s.CreateEAVField(form.ID, "name", "Product Name", 1, 12, "", false, false, "", "TEXT", "text_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
 	if err != nil {
 		t.Fatalf("CreateEAVField name: %v", err)
 	}
 
 	// Create INT field
-	_, err = s.CreateEAVField(form.ID, "price", "Price", 2, 12, "", false, false, "", false, nil,
-		"INT", "number_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
+	_, err = s.CreateEAVField(form.ID, "price", "Price", 2, 12, "", false, false, "", "INT", "number_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
 	if err != nil {
 		t.Fatalf("CreateEAVField price: %v", err)
 	}
 
 	// Create a record
-	rec, err := s.CreateEAVRecord(form.ID, ws.ID, 1, "active", "", nil, nil)
+	rec, err := s.CreateEAVRecord(form.ID, ws.ID, 1, "active", "")
 	if err != nil {
 		t.Fatalf("CreateEAVRecord: %v", err)
 	}
@@ -136,15 +134,14 @@ func TestFiloEAVFindOne(t *testing.T) {
 		t.Fatalf("CreateEAVForm: %v", err)
 	}
 
-	_, err = s.CreateEAVField(form.ID, "email", "Email", 1, 12, "", false, false, "", false, nil,
-		"TEXT", "text_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
+	_, err = s.CreateEAVField(form.ID, "email", "Email", 1, 12, "", false, false, "", "TEXT", "text_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
 	if err != nil {
 		t.Fatalf("CreateEAVField: %v", err)
 	}
 
 	// Create records
-	rec1, _ := s.CreateEAVRecord(form.ID, ws.ID, 1, "active", "", nil, nil)
-	rec2, _ := s.CreateEAVRecord(form.ID, ws.ID, 1, "active", "", nil, nil)
+	rec1, _ := s.CreateEAVRecord(form.ID, ws.ID, 1, "active", "")
+	rec2, _ := s.CreateEAVRecord(form.ID, ws.ID, 1, "active", "")
 
 	email1 := "alice@example.com"
 	email2 := "bob@example.com"
@@ -199,13 +196,12 @@ func TestFiloEAVSum(t *testing.T) {
 
 	// Create form with numeric field
 	form, _ := s.CreateEAVForm(ws.ID, 1, "orders", "Orders", "list")
-	_, _ = s.CreateEAVField(form.ID, "amount", "Amount", 1, 12, "", false, false, "", false, nil,
-		"FLOAT", "decimal_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
+	_, _ = s.CreateEAVField(form.ID, "amount", "Amount", 1, 12, "", false, false, "", "FLOAT", "decimal_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
 
 	// Create records with values
 	amounts := []float64{100.50, 200.25, 50.75}
 	for _, amt := range amounts {
-		rec, _ := s.CreateEAVRecord(form.ID, ws.ID, 1, "active", "", nil, nil)
+		rec, _ := s.CreateEAVRecord(form.ID, ws.ID, 1, "active", "")
 		s.SetEAVValue(rec.ID, 1, form.ID, nil, nil, &amt, nil, nil)
 	}
 
@@ -240,12 +236,11 @@ func TestFiloEAVCount(t *testing.T) {
 	filoeav.RegisterEAVBuiltins(eng, s, filoeav.Config{WorkspaceID: ws.ID, UserID: 1})
 
 	form, _ := s.CreateEAVForm(ws.ID, 1, "items", "Items", "list")
-	_, _ = s.CreateEAVField(form.ID, "name", "Name", 1, 12, "", false, false, "", false, nil,
-		"TEXT", "text_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
+	_, _ = s.CreateEAVField(form.ID, "name", "Name", 1, 12, "", false, false, "", "TEXT", "text_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
 
 	// Create 5 records
 	for i := 0; i < 5; i++ {
-		s.CreateEAVRecord(form.ID, ws.ID, 1, "active", "", nil, nil)
+		s.CreateEAVRecord(form.ID, ws.ID, 1, "active", "")
 	}
 
 	cfg := filo.EvalConfig{StepLimit: 1000, RecursionLimit: 32, Timeout: 5 * time.Second}
@@ -278,10 +273,8 @@ func TestFiloEAVAggregateWithFilters(t *testing.T) {
 	filoeav.RegisterEAVBuiltins(eng, s, filoeav.Config{WorkspaceID: ws.ID, UserID: 1})
 
 	form, _ := s.CreateEAVForm(ws.ID, 1, "sales", "Sales", "list")
-	_, _ = s.CreateEAVField(form.ID, "category", "Category", 1, 12, "", false, false, "", false, nil,
-		"TEXT", "text_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
-	_, _ = s.CreateEAVField(form.ID, "amount", "Amount", 2, 12, "", false, false, "", false, nil,
-		"INT", "number_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
+	_, _ = s.CreateEAVField(form.ID, "category", "Category", 1, 12, "", false, false, "", "TEXT", "text_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
+	_, _ = s.CreateEAVField(form.ID, "amount", "Amount", 2, 12, "", false, false, "", "INT", "number_input", "{}", "", 0, false, false, true, 0, 12, true, 0, 12, true, 0, 12, false)
 
 	// Create sales records
 	data := []struct {
@@ -295,7 +288,7 @@ func TestFiloEAVAggregateWithFilters(t *testing.T) {
 	}
 
 	for _, d := range data {
-		rec, _ := s.CreateEAVRecord(form.ID, ws.ID, 1, "active", "", nil, nil)
+		rec, _ := s.CreateEAVRecord(form.ID, ws.ID, 1, "active", "")
 		s.SetEAVValue(rec.ID, 1, form.ID, nil, nil, nil, nil, &d.category)
 		s.SetEAVValue(rec.ID, 2, form.ID, nil, nil, nil, &d.amount, nil)
 	}
