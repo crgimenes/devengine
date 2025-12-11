@@ -1410,6 +1410,7 @@ func (s *SQLite) ListEAVRecords(formID int64, sort string, limit, offset int) ([
   FROM eav_records AS r
   WHERE r.form_id = ?
     AND r.deleted_at IS NULL
+    AND r.status = 'active'
   ` + orderByClause + `
   LIMIT ? OFFSET ?;`
 
@@ -1517,6 +1518,7 @@ func (s *SQLite) SearchEAVRecords(formID int64, query string, sort string, limit
   WHERE fts.form_id = ?
     AND eav_fts MATCH ?
     AND r.deleted_at IS NULL
+    AND r.status = 'active'
   ` + orderByClause + `
   LIMIT ? OFFSET ?;`
 
