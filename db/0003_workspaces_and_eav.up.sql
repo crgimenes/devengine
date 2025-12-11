@@ -39,7 +39,7 @@ CREATE TABLE eav_records (
     workspace_id     INTEGER NOT NULL REFERENCES workspaces(id) ON DELETE CASCADE,
 
     owner_user_id    INTEGER NOT NULL REFERENCES users(id) ON DELETE RESTRICT,
-    status           TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','archived')),
+    status           TEXT NOT NULL DEFAULT 'active' CHECK (status IN ('active','archived', 'draft')),
     tags_json        TEXT,                    -- optional JSON tags
 
     rev              INTEGER NOT NULL DEFAULT 1, -- optimistic locking

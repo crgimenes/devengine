@@ -447,3 +447,48 @@ func TestSoftDeleteRecordAndValueRemoval(t *testing.T) {
 		t.Fatalf("expected error when fetching soft-deleted record")
 	}
 }
+
+// TestCreateEAVRecordDraftStatus verifies that a record can be created with 'draft' status.
+func TestCreateEAVRecordDraftStatus(t *testing.T) {
+	s := initTestDB(t)
+	defer s.Close()
+
+	if err := s.Exec(`INSERT INTO users (username, email, enabled) VALUES (?, ?, ?)`,
+		"testuser", "test@example.com", 1); err != nil {
+		t.Fatalf("insert user: %v", err)
+	}
+
+	w, err := s.CreateEAVWorkspace("Test Workspace", "Desc")
+	if err != nil {
+		t.Fatalf("create workspace: %v", err)
+	}
+
+	f, err := s.CreateEAVForm(w.ID, 1, "clients", "Clients", "list")
+	if err != nil {
+		t.Fatalf("create form: %v", err)
+	}
+
+	// Create record with 'draft' status
+	r, err := s.CreateEAVRecord(f.ID, w.ID, 1, "draft", "{}")
+	if err != nil {
+		t.Fatalf("CreateEAVRecord(draft): %v", err)
+	}
+	if r.Status != "draft" {
+		t.Errorf("expected status 'draft', got %q", r.Status)
+	}
+
+	// Verify persistence
+	r2, err := s.GetEAVRecord(r.ID)
+	if err != nil {
+		t.Fatalf("GetEAVRecord: %v", err)
+	}
+	if r2.Status != "draft" {
+		t.Errorf("expected persisted status 'draft', got %q", r2.Status)
+	}
+
+	// Test invalid status should fail
+	_, err = s.CreateEAVRecord(f.ID, w.ID, 1, "invalid_status", "{}")
+	if err == nil {
+		t.Error("expected error for invalid status, got nil")
+	}
+}
