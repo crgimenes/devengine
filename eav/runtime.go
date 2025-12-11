@@ -1121,97 +1121,19 @@ func runtimeRecordCreateHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	renderForm := func(states []runtimeFieldState, statusCode int, formErrors []string) {
-		rows, renderErr := renderEditTree(states, nil, true)
-		if renderErr != nil {
-			log.Printf("render field error: %v", renderErr)
-			http.Error(w, "erro ao renderizar", http.StatusInternalServerError)
-			return
-		}
-
-		if statusCode != 0 {
-			w.WriteHeader(statusCode)
-		}
-		data := struct {
-			Authed    bool
-			User      db.User
-			Config    config.Config
-			Workspace db.EAVWorkspace
-			Form      db.EAVForm
-			Fields    []runtimeFieldState
-			FieldRows []ui.ChildRow
-			Csrf      string
-			ActionURL string
-			BackURL   string
-			Mode      string
-			Errors    []string
-			Record    *db.EAVRecord
-			DeleteURL string
-		}{
-			Authed:    true,
-			User:      *u,
-			Config:    *config.Cfg,
-			Workspace: *ctx.Workspace,
-			Form:      *ctx.Form,
-			Fields:    states,
-			FieldRows: rows,
-			Csrf:      session.GenerateCSRFToken(w, r),
-			ActionURL: r.URL.Path,
-			BackURL:   fmt.Sprintf("/eav/workspaces/%s/forms/%s/records", ctx.Workspace.ReferenceID, ctx.Form.MachineName),
-			Mode:      "create",
-			Errors:    formErrors,
-			DeleteURL: "",
-		}
-		if err := templates.ExecuteTemplate(w, "eav_runtime_record_form.go.tmpl", data); err != nil {
-			log.Printf("template error: %v", err)
-			http.Error(w, "erro ao renderizar", http.StatusInternalServerError)
-		}
-	}
-
-	fields := ctx.renderableFields()
-	if r.Method != http.MethodPost {
-		renderForm(hydrateFieldStates(fields, nil), 0, nil)
-		return
-	}
-
-	if err := r.ParseForm(); err != nil {
-		log.Printf("parse form error: %v", err)
-		http.Error(w, "dados inválidos", http.StatusBadRequest)
-		return
-	}
-
-	if !session.ValidateCSRF(r) {
-		http.Error(w, "CSRF inválido", http.StatusForbidden)
-		return
-	}
-
-	states, hasErr := processFieldSubmission(r, fields, nil, false)
-	states, valErr := validateAndTransformStates(states, nil, false)
-	if valErr {
-		hasErr = true
-	}
-	if hasErr {
-		renderForm(states, http.StatusBadRequest, []string{"Verifique os campos destacados."})
-		return
-	}
-
-	record, err := db.Storage.CreateEAVRecord(ctx.Form.ID, ctx.Workspace.ID, u.ID, "active", "{}")
+	// Create draft record immediately
+	record, err := db.Storage.CreateEAVRecord(ctx.Form.ID, ctx.Workspace.ID, u.ID, "draft", "{}")
 	if err != nil {
-		log.Printf("create record error: %v", err)
+		log.Printf("create draft record error: %v", err)
 		http.Error(w, "erro ao criar registro", http.StatusInternalServerError)
 		return
 	}
 
-	if err := persistFieldStates(record.ID, ctx.Form.ID, states); err != nil {
-		log.Printf("persist values error: %v", err)
-		http.Error(w, "erro ao salvar valores", http.StatusInternalServerError)
-		return
-	}
-
-	redirectURL := fmt.Sprintf("/eav/workspaces/%s/forms/%s/records?message=%s",
+	// Redirect to edit handler with the new draft record
+	redirectURL := fmt.Sprintf("/eav/workspaces/%s/forms/%s/records/%s/edit",
 		ctx.Workspace.ReferenceID,
 		ctx.Form.MachineName,
-		url.QueryEscape("Registro criado com sucesso."),
+		record.ReferenceID,
 	)
 	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
@@ -1422,7 +1344,14 @@ func runtimeRecordEditHandler(w http.ResponseWriter, r *http.Request) {
 		renderForm(states, http.StatusBadRequest, []string{"Versão do registro inválida."})
 		return
 	}
-	updated, err := db.Storage.UpdateEAVRecord(record.ID, rev, record.Status, record.TagsJSON)
+
+	// If record is draft, update status to active
+	status := record.Status
+	if status == "draft" {
+		status = "active"
+	}
+
+	updated, err := db.Storage.UpdateEAVRecord(record.ID, rev, status, record.TagsJSON)
 	if err != nil {
 		if strings.Contains(err.Error(), "optimistic") {
 			renderForm(states, http.StatusConflict, []string{"O registro foi alterado por outra pessoa. Atualize a página."})

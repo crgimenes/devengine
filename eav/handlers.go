@@ -46,7 +46,6 @@ func Routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /eav/workspaces/{workspaceRef}/forms/{formMachineName}/records", runtimeRecordListHandler)
 	mux.HandleFunc("GET /eav/workspaces/{workspaceRef}/forms/{formMachineName}/records/partial", runtimeRecordsPartialHandler)
 	mux.HandleFunc("GET /eav/workspaces/{workspaceRef}/forms/{formMachineName}/records/new", runtimeRecordCreateHandler)
-	mux.HandleFunc("POST /eav/workspaces/{workspaceRef}/forms/{formMachineName}/records/new", runtimeRecordCreateHandler)
 	mux.HandleFunc("GET /eav/workspaces/{workspaceRef}/forms/{formMachineName}/records/{recordRef}", runtimeRecordViewHandler)
 	mux.HandleFunc("GET /eav/workspaces/{workspaceRef}/forms/{formMachineName}/records/{recordRef}/edit", runtimeRecordEditHandler)
 	mux.HandleFunc("POST /eav/workspaces/{workspaceRef}/forms/{formMachineName}/records/{recordRef}/edit", runtimeRecordEditHandler)
