@@ -10,8 +10,6 @@ Filo Engine <- filoeav <- EAVStore Interface <- db.SQLite
 
 The `filoeav` package:
 - Defines the `EAVStore` interface for data access abstraction
-- Implements Filo builtins that call `EAVStore` methods
-- Keeps Filo core completely database-agnostic
 
 ## Installation
 
@@ -111,13 +109,7 @@ Aggregate functions with optional filters.
 (eav-count "items" "" (list))
 ```
 
-### eav-sum-children, eav-count-children, etc.
 
-Aggregate over child records in a subform relationship.
-
-```lisp
-(eav-sum-children "invoices" invoice-record-id "line_items" "total")
-```
 
 ## EAVStore Interface
 
@@ -128,7 +120,6 @@ type EAVStore interface {
     GetFieldValue(ctx context.Context, workspaceID int64, formSlug, fieldMachineName string, recordID int64) (any, error)
     FindRecordByField(ctx context.Context, workspaceID int64, formSlug, fieldMachineName, operator string, value any) (int64, error)
     AggregateField(ctx context.Context, workspaceID int64, formSlug, fieldMachineName, aggFunc string, filters []FieldFilter) (float64, error)
-    AggregateChildField(ctx context.Context, workspaceID int64, parentFormSlug string, parentRecordID int64, subformFieldMachineName, childFieldMachineName, aggFunc string) (float64, error)
 }
 ```
 

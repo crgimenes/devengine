@@ -28,10 +28,6 @@ type EAVStore interface {
 	// aggFunc must be one of: "SUM", "COUNT", "MIN", "MAX", "AVG".
 	// Filters is a slice of FieldFilter conditions to apply before aggregation.
 	AggregateField(ctx context.Context, workspaceID int64, formSlug, fieldMachineName, aggFunc string, filters []FieldFilter) (float64, error)
-
-	// AggregateChildField performs aggregation on child records of a subform field.
-	// Useful for computing totals across related records.
-	AggregateChildField(ctx context.Context, workspaceID int64, parentFormSlug string, parentRecordID int64, subformFieldMachineName, childFieldMachineName, aggFunc string) (float64, error)
 }
 
 // FieldFilter represents a filter condition for queries.

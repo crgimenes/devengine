@@ -3,10 +3,11 @@ package db
 import (
 	"context"
 	"database/sql"
-	"github.com/crgimenes/devengine/filoeav"
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/crgimenes/devengine/filoeav"
 )
 
 // FieldFilter represents a filter condition for EAV queries.
@@ -302,107 +303,6 @@ WHERE form_id = ?
 
 	var result float64
 	err = s.QueryRow(query.String(), args...).Scan(&result)
-	if errors.Is(err, sql.ErrNoRows) {
-		return 0, nil
-	}
-	if err != nil {
-		return 0, err
-	}
-
-	return result, nil
-}
-
-// AggregateChildField performs aggregation on child records of a subform field.
-func (s *SQLite) AggregateChildField(ctx context.Context, workspaceID int64, parentFormSlug string, parentRecordID int64, subformFieldMachineName, childFieldMachineName, aggFunc string) (float64, error) {
-	// Validate aggregation function
-	if !isValidAggFunc(aggFunc) {
-		return 0, fmt.Errorf("invalid aggregation function: %s", aggFunc)
-	}
-
-	// Resolve parent form
-	const sqlGetParentForm = `
-SELECT id
-FROM eav_forms
-WHERE workspace_id = ?
-  AND machine_name = ?`
-
-	var parentFormID int64
-	err := s.QueryRow(sqlGetParentForm,
-		workspaceID,    // 1
-		parentFormSlug, // 2
-	).Scan(&parentFormID)
-	if errors.Is(err, sql.ErrNoRows) {
-		return 0, fmt.Errorf("parent form %q not found", parentFormSlug)
-	}
-	if err != nil {
-		return 0, err
-	}
-
-	// Get the subform field and child form ID
-	const sqlGetSubformField = `
-SELECT id, subform_form_id
-FROM eav_fields
-WHERE form_id = ?
-  AND machine_name = ?
-  AND is_subform = 1
-  AND visible = 1`
-
-	var subformFieldID int64
-	var childFormID sql.NullInt64
-	err = s.QueryRow(sqlGetSubformField,
-		parentFormID,            // 1
-		subformFieldMachineName, // 2
-	).Scan(&subformFieldID, &childFormID)
-	if errors.Is(err, sql.ErrNoRows) {
-		return 0, fmt.Errorf("subform field %q not found", subformFieldMachineName)
-	}
-	if err != nil {
-		return 0, err
-	}
-
-	if !childFormID.Valid {
-		return 0, fmt.Errorf("subform field %q has no child form configured", subformFieldMachineName)
-	}
-
-	// Get the child field to aggregate
-	const sqlGetChildField = `
-SELECT id, primitive_kind
-FROM eav_fields
-WHERE form_id = ?
-  AND machine_name = ?
-  AND visible = 1`
-
-	var childFieldID int64
-	var primitiveKind string
-	err = s.QueryRow(sqlGetChildField,
-		childFormID.Int64,     // 1
-		childFieldMachineName, // 2
-	).Scan(&childFieldID, &primitiveKind)
-	if errors.Is(err, sql.ErrNoRows) {
-		return 0, fmt.Errorf("child field %q not found in child form", childFieldMachineName)
-	}
-	if err != nil {
-		return 0, err
-	}
-
-	valueColumn := primitiveKindToColumn(primitiveKind)
-
-	// Aggregate over child records
-	sqlAgg := fmt.Sprintf(`
-SELECT COALESCE(%s(v.%s), 0)
-FROM eav_records AS r
-JOIN eav_values AS v ON v.record_id = r.id
-WHERE r.parent_record_id = ?
-  AND r.parent_field_id = ?
-  AND r.deleted_at IS NULL
-  AND v.field_id = ?`, aggFunc, valueColumn)
-
-	var result float64
-	err = s.QueryRow(sqlAgg,
-		parentRecordID, // 1
-		subformFieldID, // 2
-		childFieldID,   // 3
-	).Scan(&result)
 	if errors.Is(err, sql.ErrNoRows) {
 		return 0, nil
 	}

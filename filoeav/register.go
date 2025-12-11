@@ -25,9 +25,5 @@ func RegisterEAVBuiltins(eng *filo.Engine, store EAVStore, cfg Config) {
 	eng.RegisterBuiltin("eav-avg", makeAggregateBuiltin(store, cfg, "AVG"))
 
 	// Child/subform aggregations
-	eng.RegisterBuiltin("eav-sum-children", makeChildAggregateBuiltin(store, cfg, "SUM"))
-	eng.RegisterBuiltin("eav-count-children", makeChildAggregateBuiltin(store, cfg, "COUNT"))
-	eng.RegisterBuiltin("eav-min-children", makeChildAggregateBuiltin(store, cfg, "MIN"))
-	eng.RegisterBuiltin("eav-max-children", makeChildAggregateBuiltin(store, cfg, "MAX"))
-	eng.RegisterBuiltin("eav-avg-children", makeChildAggregateBuiltin(store, cfg, "AVG"))
+
 }

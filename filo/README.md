@@ -84,7 +84,7 @@ Small, easy to teach, easy to understand, and extremely predictable.
 - Ideal for EAV, validations, RPG rules, and configuration scripts.
 
 ### 5. **Extensible**
-Go functions can be registered as Filo commands — from simple sums to database queries and subform aggregations.
+- Go functions can be registered as Filo commands — from simple sums to database queries.
 
 ---
 

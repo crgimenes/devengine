@@ -122,44 +122,6 @@ func makeAggregateBuiltin(store EAVStore, cfg Config, aggFunc string) filo.Built
 	}
 }
 
-// makeChildAggregateBuiltin creates the eav-sum-children builtin.
-// Usage: (eav-sum-children "parent-form-slug" parent-record-id "subform-field" "child-field")
-func makeChildAggregateBuiltin(store EAVStore, cfg Config, aggFunc string) filo.Builtin {
-	return func(ctx context.Context, args []filo.Value) (filo.Value, error) {
-		if len(args) != 4 {
-			return filo.Value{}, fmt.Errorf("eav-%s-children expects 4 arguments: parent-form-slug, parent-record-id, subform-field, child-field", aggFunc)
-		}
-
-		formSlug, err := args[0].AsString()
-		if err != nil {
-			return filo.Value{}, fmt.Errorf("eav-%s-children: parent-form-slug must be string: %w", aggFunc, err)
-		}
-
-		recordIDFloat, err := args[1].AsNumber()
-		if err != nil {
-			return filo.Value{}, fmt.Errorf("eav-%s-children: parent-record-id must be number: %w", aggFunc, err)
-		}
-		recordID := int64(recordIDFloat)
-
-		subformField, err := args[2].AsString()
-		if err != nil {
-			return filo.Value{}, fmt.Errorf("eav-%s-children: subform-field must be string: %w", aggFunc, err)
-		}
-
-		childField, err := args[3].AsString()
-		if err != nil {
-			return filo.Value{}, fmt.Errorf("eav-%s-children: child-field must be string: %w", aggFunc, err)
-		}
-
-		result, err := store.AggregateChildField(ctx, cfg.WorkspaceID, formSlug, recordID, subformField, childField, aggFunc)
-		if err != nil {
-			return filo.Value{}, fmt.Errorf("eav-%s-children: %w", aggFunc, err)
-		}
-
-		return filo.VNum(result), nil
-	}
-}
-
 // parseFilters converts a Filo list of filter tuples to Go FieldFilter slice.
 // Each filter should be (values field-name operator value).
 func parseFilters(arg filo.Value) ([]FieldFilter, error) {
