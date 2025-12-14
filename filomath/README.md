@@ -60,8 +60,6 @@ result, _, _ := engine.RunScript(ctx, "(sqrt 16)", nil, cfg)
 | `math-min` | Minimum of N values | `(math-min 3 1 4)` -> 1 |
 | `math-max` | Maximum of N values | `(math-max 3 1 4)` -> 4 |
 
-Note: `math-min` and `math-max` are prefixed to avoid conflicts with EAV aggregation functions.
-
 ## Using Multiple Packages
 
 Multiple Filo extension packages can be loaded on the same engine:
@@ -69,13 +67,12 @@ Multiple Filo extension packages can be loaded on the same engine:
 ```go
 engine := filo.NewEngine()
 
-// Load multiple extension packages
+// Load extension packages
 filomath.RegisterMathBuiltins(engine)
-filoeav.RegisterEAVBuiltins(engine, store, eavCfg)
 
-// All builtins are now available together
+// All builtins are now available
 result, _, _ := engine.RunScript(ctx, `
-    (let ((value (eav-get-value "products" id "price"))
+    (let ((value 16)
           (rounded (round value)))
       (sqrt rounded))
 `, globals, cfg)

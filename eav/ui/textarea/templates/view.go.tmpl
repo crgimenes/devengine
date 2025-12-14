@@ -1,9 +1,0 @@
-{{define "eav_ui_textarea_view"}}
-{{- $label := .Context.Field.Label -}}
-<div class="mb-3">
-  {{if $label}}
-    <div class="fw-semibold">{{$label}}</div>
-  {{end}}
-  <div style="white-space: pre-wrap;">{{.Display}}</div>
-</div>
-{{end}}

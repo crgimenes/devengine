@@ -44,7 +44,7 @@ main figure img {
     margin: 0 auto;
 }
 
-/* Card text media responsiveness (for forum posts) */
+/* Card text media responsiveness */
 .card-text img {
     max-width: 100%;
     height: auto;
@@ -117,27 +117,6 @@ video {
 
 audio {
     max-width: 100%;
-    margin: 0.5rem auto;
-}
-
-/* Media responsiveness in markdown preview boxes */
-.md-mini-preview img {
-    max-width: 100%;
-    height: auto;
-    display: block;
-    margin: 0.5rem auto;
-}
-
-.md-mini-preview video {
-    max-width: 100%;
-    height: auto;
-    display: block;
-    margin: 0.5rem auto;
-}
-
-.md-mini-preview audio {
-    max-width: 100%;
-    display: block;
     margin: 0.5rem auto;
 }
 
@@ -226,110 +205,4 @@ table td[data-align="right"] {
 
 .card-text table {
     margin: 0.5rem 0;
-}
-
-/* EAV Display Options Accordion - prevent color change when expanded */
-#displayOptionsAccordion .accordion-button:not(.collapsed) {
-    color: inherit;
-    background-color: inherit;
-}
-
-#displayOptionsAccordion .accordion-button:focus {
-    box-shadow: none;
-}
-
-/* View Mode Button Group */
-.view-mode-btn.active {
-    background-color: var(--bs-secondary);
-    border-color: var(--bs-secondary);
-    color: var(--bs-light);
-}
-
-.view-mode-btn:not(.active):hover {
-    background-color: rgba(var(--bs-secondary-rgb), 0.1);
-}
-
-/* List View - Table enhancements */
-.records-list-view .table thead {
-    position: sticky;
-    top: 0;
-    background-color: var(--bs-dark);
-    z-index: 1;
-}
-
-.records-list-view .table-hover tbody tr:hover {
-    background-color: rgba(var(--bs-light-rgb), 0.05);
-    cursor: pointer;
-}
-
-.records-list-view .table th,
-.records-list-view .table td {
-    vertical-align: middle;
-}
-
-/* Card View - Hover effects */
-.records-card-view .card {
-    transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.records-card-view .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
-}
-
-/* Carousel View - Allow vertical expansion */
-#recordsCarousel {
-    min-height: 400px;
-}
-
-#recordsCarousel .carousel-item {
-    transition: transform 0.6s ease-in-out;
-}
-
-#recordsCarousel .card-body {
-    overflow: visible;
-}
-
-/* Ensure images fill width and maintain aspect ratio */
-.records-carousel-view img,
-.records-card-view img,
-.records-list-view img {
-    width: 100%;
-    height: auto;
-    object-fit: contain;
-}
-
-.records-carousel-view .carousel-control-prev,
-.records-carousel-view .carousel-control-next {
-    filter: invert(1);
-    width: 5%;
-}
-
-.records-carousel-view .carousel-indicators {
-    margin-bottom: -2rem;
-}
-
-.records-carousel-view .carousel-indicators button {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    background-color: var(--bs-secondary);
-}
-
-.records-carousel-view .carousel-indicators button.active {
-    background-color: var(--bs-primary);
-}
-
-/* Clickable Records */
-.clickable-record {
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-}
-
-.clickable-record:hover {
-    background-color: rgba(var(--bs-light-rgb), 0.03);
-}
-
-.records-list-view .clickable-record:hover {
-    background-color: rgba(var(--bs-light-rgb), 0.05);
 }

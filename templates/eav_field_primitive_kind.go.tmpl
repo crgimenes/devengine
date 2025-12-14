@@ -1,8 +1,0 @@
-{{define "eav_field_primitive_kind"}}
-<div id="primitive_kind_container" class="col-md-6 col-lg-3 mb-3" {{if .OOB}}hx-swap-oob="outerHTML"{{end}}>
-  <label class="form-label">Tipo do dado (automático)</label>
-  <div class="form-control-plaintext fw-semibold">{{.Kind}}</div>
-  <input type="hidden" name="primitive_kind" value="{{.Kind}}">
-  <div class="form-text">Definido automaticamente pelo tipo de UI selecionado.</div>
-</div>
-{{end}}

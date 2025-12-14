@@ -238,7 +238,7 @@ func TestCalculatedFieldExample(t *testing.T) {
 	}
 }
 
-func TestEAVReadmeExample(t *testing.T) {
+func TestGlobalsReadmeExample(t *testing.T) {
 	cfg := defaultCfg()
 	eng := NewEngine()
 	registerMathBuiltins(eng)

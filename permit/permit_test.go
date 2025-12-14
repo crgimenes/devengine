@@ -89,22 +89,22 @@ func TestGrantAndRevokeUser(t *testing.T) {
 		t.Fatalf("select user id: %v", err)
 	}
 
-	if err := GrantUser(tenantID, userID, "forum.postar", "forum:f1"); err != nil {
+	if err := GrantUser(tenantID, userID, "item.create", "item:i1"); err != nil {
 		t.Fatalf("GrantUser: %v", err)
 	}
 
 	var allowed int
-	if err := db.Storage.QueryRow(`SELECT allowed FROM permits WHERE tenant_id=? AND user_id=? AND resource='forum.postar' AND scope='forum:f1'`, tenantID, userID).Scan(&allowed); err != nil {
+	if err := db.Storage.QueryRow(`SELECT allowed FROM permits WHERE tenant_id=? AND user_id=? AND resource='item.create' AND scope='item:i1'`, tenantID, userID).Scan(&allowed); err != nil {
 		t.Fatalf("select permit: %v", err)
 	}
 	if allowed != 1 {
 		t.Fatalf("expected allowed=1, got %d", allowed)
 	}
 
-	if err := RevokeUser(tenantID, userID, "forum.postar", "forum:f1"); err != nil {
+	if err := RevokeUser(tenantID, userID, "item.create", "item:i1"); err != nil {
 		t.Fatalf("RevokeUser: %v", err)
 	}
-	if err := db.Storage.QueryRow(`SELECT allowed FROM permits WHERE tenant_id=? AND user_id=? AND resource='forum.postar' AND scope='forum:f1'`, tenantID, userID).Scan(&allowed); err != nil {
+	if err := db.Storage.QueryRow(`SELECT allowed FROM permits WHERE tenant_id=? AND user_id=? AND resource='item.create' AND scope='item:i1'`, tenantID, userID).Scan(&allowed); err != nil {
 		t.Fatalf("select permit after revoke: %v", err)
 	}
 	if allowed != 0 {
@@ -238,7 +238,7 @@ func TestListUserPermits(t *testing.T) {
 	if err := GrantUser(tenantID, userID, "mesa.participar", "mesa:t1"); err != nil {
 		t.Fatalf("GrantUser: %v", err)
 	}
-	if err := GrantGroup(tenantID, groupID, "forum.postar", "forum:f1"); err != nil {
+	if err := GrantGroup(tenantID, groupID, "item.create", "item:i1"); err != nil {
 		t.Fatalf("GrantGroup: %v", err)
 	}
 
@@ -257,7 +257,7 @@ func TestListUserPermits(t *testing.T) {
 			t.Fatalf("expected allowed=true for resource %s", up.Resource)
 		}
 	}
-	if !seen["mesa.participar"] || !seen["forum.postar"] {
+	if !seen["mesa.participar"] || !seen["item.create"] {
 		t.Fatalf("unexpected resources in permits: %+v", list)
 	}
 }

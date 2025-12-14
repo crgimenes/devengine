@@ -12,7 +12,7 @@ import (
 )
 
 // RegisterMathBuiltins adds advanced math builtins to a Filo engine.
-// This can be called alongside other extension packages like filoeav.
+// This can be called alongside other extension packages.
 //
 // Registered builtins:
 //   - abs: Absolute value
@@ -34,8 +34,8 @@ func RegisterMathBuiltins(eng *filo.Engine) {
 	eng.RegisterBuiltin("log", builtinLog)
 	eng.RegisterBuiltin("log10", builtinLog10)
 	eng.RegisterBuiltin("exp", builtinExp)
-	eng.RegisterBuiltin("math-min", builtinMin) // prefixed to avoid conflict with eav-min
-	eng.RegisterBuiltin("math-max", builtinMax) // prefixed to avoid conflict with eav-max
+	eng.RegisterBuiltin("math-min", builtinMin) // prefixed to avoid conflicts with other packages
+	eng.RegisterBuiltin("math-max", builtinMax) // prefixed to avoid conflicts with other packages
 	eng.RegisterBuiltin("pi", builtinPi)
 	eng.RegisterBuiltin("e", builtinE)
 }

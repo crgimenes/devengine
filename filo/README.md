@@ -30,7 +30,6 @@ Please note: it is **not** pronounced like “Filó” or “FYE-lo” (`/ˈfaɪ
 When building complex systems such as:
 
 - a RAD-style generic application builder,
-- a highly flexible EAV system,
 - an RPG platform with customizable rules,
 - applications configurable by users or administrators,
 
@@ -81,7 +80,7 @@ Small, easy to teach, easy to understand, and extremely predictable.
 - Builtins written directly in Go.
 - Global environment passed as `map[string]Value`.
 - Safe calls made in the backend.
-- Ideal for EAV, validations, RPG rules, and configuration scripts.
+- Ideal for validations, RPG rules, and configuration scripts.
 
 ### 5. **Extensible**
 - Go functions can be registered as Filo commands — from simple sums to database queries.
@@ -322,7 +321,7 @@ if err != nil {
 // res = (list 1 9)
 ```
 
-### Example with EAV
+### Example with globals
 
 ```go
 globals := map[string]filo.Value{
@@ -355,7 +354,7 @@ This combination makes Filo **secure by construction**.
 
 ## How it will be used in projects
 
-### RAD / EAV system
+### RAD system
 - calculated fields,
 - validations,
 - transformations,
@@ -384,7 +383,6 @@ This combination makes Filo **secure by construction**.
 ### Next steps
 - full package implementation,
 - robust test suite,
-- integration with the EAV system,
 - creation of official language documentation,
 - syntax highlighting for Neovim.
 

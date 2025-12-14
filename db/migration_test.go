@@ -28,8 +28,8 @@ func TestParseMigrationFilename(t *testing.T) {
 		},
 		{
 			name:     "valid with underscores in name",
-			filename: "0003_workspaces_and_eav.up.sql",
-			wantID:   "0003_workspaces_and_eav",
+			filename: "0003_session_data.up.sql",
+			wantID:   "0003_session_data",
 		},
 		{
 			name:     "missing .up.sql suffix",

@@ -21,7 +21,7 @@ func TestMultiplePackagesIntegration(t *testing.T) {
 	// Each package adds its builtins to the same builtins map
 	RegisterMathBuiltins(eng)
 	// In a real scenario, you would also call:
-	// filoeav.RegisterEAVBuiltins(eng, store, cfg)
+	// Load multiple extension packages on the same engine
 	// filostrings.RegisterStringBuiltins(eng)
 	// etc.
 
@@ -53,7 +53,7 @@ func TestMultiplePackagesIntegration(t *testing.T) {
 }
 
 // TestBuiltinNamespacing shows how to avoid naming conflicts between packages
-// by using prefixed builtin names (e.g., math-min vs eav-min).
+// by using prefixed builtin names.
 func TestBuiltinNamespacing(t *testing.T) {
 	t.Parallel()
 
@@ -63,7 +63,7 @@ func TestBuiltinNamespacing(t *testing.T) {
 	ctx := context.Background()
 	cfg := filo.EvalConfig{StepLimit: 1000, RecursionLimit: 32, Timeout: 5 * time.Second}
 
-	// math-min and math-max are prefixed to avoid conflicts with eav-min/eav-max
+	// math-min and math-max are prefixed to avoid potential conflicts with other packages
 	script := `(math-min (math-max 1 2 3) 5 6)`
 	// math-max(1,2,3) = 3, math-min(3, 5, 6) = 3
 

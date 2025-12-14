@@ -85,25 +85,6 @@ func TestRunSimpleScriptNoDatabase(t *testing.T) {
 	}
 }
 
-func TestRunRequiresDatabaseForEAV(t *testing.T) {
-	// Test that eav package requires database flags
-	stdin := strings.NewReader(`(eav-get-value "test" 1 "field")`)
-	stdout := &bytes.Buffer{}
-	stderr := &bytes.Buffer{}
-
-	// Using eav package without db flags should fail
-	args := []string{"--filo-package", "eav"}
-	code := run(args, stdin, stdout, stderr)
-
-	if code != 1 {
-		t.Errorf("expected exit code 1, got %d", code)
-	}
-
-	if !strings.Contains(stderr.String(), "--db is required") {
-		t.Errorf("expected error about --db, got: %s", stderr.String())
-	}
-}
-
 func TestRunEmptyScript(t *testing.T) {
 	stdin := strings.NewReader("")
 	stdout := &bytes.Buffer{}

@@ -1,9 +1,0 @@
-{{define "eav_ui_text_view"}}
-{{- $label := .Context.Field.Label -}}
-<div class="mb-3">
-  {{if $label}}
-    <div class="fw-semibold">{{$label}}</div>
-  {{end}}
-  <div>{{.Display}}</div>
-</div>
-{{end}}
