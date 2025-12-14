@@ -16,12 +16,4 @@ func Routes(mux *http.ServeMux) {
 		mux.HandleFunc("/login/github", GitHubProvider{}.LoginHandler)
 		mux.HandleFunc("/github/oauth/callback", GitHubProvider{}.CallbackHandler)
 	}
-	if config.Cfg.XOAuthEnabled {
-		mux.HandleFunc("/login/x", XProvider{}.LoginHandler)
-		mux.HandleFunc("/x/oauth/callback", XProvider{}.CallbackHandler)
-	}
-	if config.Cfg.FakeOAuthEnabled {
-		mux.HandleFunc("/login/fake", FakeProvider{}.LoginHandler)
-		mux.HandleFunc(config.Cfg.FakeOAuthRedirect, FakeProvider{}.CallbackHandler)
-	}
 }

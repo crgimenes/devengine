@@ -11,10 +11,6 @@ type Config struct {
 	DiscordClientSecret string
 	DiscordOAuthEnabled bool
 	EmailDomain         string
-	FakeOAuthBaseURL    string
-	FakeOAuthClientID   string
-	FakeOAuthEnabled    bool
-	FakeOAuthRedirect   string
 	GitHubClientID      string
 	GitHubClientSecret  string
 	GitTag              string
@@ -24,9 +20,6 @@ type Config struct {
 	SiteDescription     string
 	SiteTitle           string
 	UploadPath          string // file upload storage path (temporary before processing)
-	XClientID           string
-	XClientSecret       string
-	XOAuthEnabled       bool
 }
 
 var Cfg = &Config{
@@ -39,9 +32,4 @@ var Cfg = &Config{
 	SessionDuration: 10 * 24 * time.Hour, // 10 days
 	UploadPath:      "./uploads",
 	DataPath:        "./data",
-
-	FakeOAuthEnabled:  false,
-	FakeOAuthRedirect: "/fake/oauth/callback",
-	FakeOAuthBaseURL:  "http://127.0.0.1:9100",
-	FakeOAuthClientID: "fake-client-id",
 }

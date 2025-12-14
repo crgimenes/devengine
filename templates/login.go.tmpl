@@ -16,9 +16,7 @@
 
                         <!-- OAuth Providers -->
                         {{if or .Config.DiscordOAuthEnabled 
-                            .Config.GithubOAuthEnabled 
-                            .Config.XOAuthEnabled 
-                            .Config.FakeOAuthEnabled}}
+                        .Config.GithubOAuthEnabled }}
                         <div class="mb-4">
                             <h6 class="card-subtitle mb-3">Conectar com:</h6>
                             {{if .Config.DiscordOAuthEnabled}}
@@ -33,20 +31,6 @@
                                     class="btn btn-primary w-100 mb-2" 
                                     rel="nofollow">
                                     <i class="bi bi-github"></i> GitHub
-                                </a>
-                            {{end}}
-                            {{if .Config.XOAuthEnabled}}
-                                <a href="/login/x" 
-                                   class="btn btn-info w-100 mb-2" 
-                                   rel="nofollow">
-                                    <i class="bi bi-twitter-x"></i> X (Twitter)
-                                </a>
-                            {{end}}
-                            {{if .Config.FakeOAuthEnabled}}
-                                <a href="/login/fake" 
-                                    class="btn btn-secondary w-100 mb-2" 
-                                    rel="nofollow">
-                                    <i class="bi bi-person-fill"></i> Teste OAuth
                                 </a>
                             {{end}}
                         </div>
