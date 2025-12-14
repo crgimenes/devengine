@@ -404,3 +404,11 @@ func SearchFilesByUserIDFTS(userID int64, query, sort string, offset, limit int)
 func ListFilesByUserIDSorted(userID int64, sort string, offset, limit int) ([]*db.File, error) {
 	return db.Storage.ListFilesByUserIDSorted(userID, sort, offset, limit)
 }
+
+func ListFilesByMediaType(userID int64, mediaType string, offset, limit int) ([]*db.File, error) {
+	return db.Storage.ListFilesByMediaType(userID, mediaType, offset, limit)
+}
+
+func CountFilesByMediaType(userID int64, mediaType string) (int, error) {
+	return db.Storage.CountFilesByMediaType(userID, mediaType)
+}

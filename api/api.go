@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strconv"
 
 	"github.com/gomarkdown/markdown"
 	"github.com/gomarkdown/markdown/html"
@@ -12,9 +13,47 @@ import (
 	"github.com/microcosm-cc/bluemonday"
 
 	"github.com/crgimenes/devengine/auth"
-	"github.com/crgimenes/devengine/filemanager"
+	"github.com/crgimenes/devengine/db"
 	"github.com/crgimenes/devengine/log"
 )
+
+// Default pagination values
+const (
+	defaultLimit = 20
+	maxLimit     = 100
+)
+
+// parsePagination extracts offset and limit from query parameters
+func parsePagination(r *http.Request) (offset, limit int) {
+	offset = 0
+	limit = defaultLimit
+
+	if offsetStr := r.URL.Query().Get("offset"); offsetStr != "" {
+		if v, err := strconv.Atoi(offsetStr); err == nil && v >= 0 {
+			offset = v
+		}
+	}
+
+	if limitStr := r.URL.Query().Get("limit"); limitStr != "" {
+		if v, err := strconv.Atoi(limitStr); err == nil && v > 0 {
+			limit = v
+		}
+	}
+
+	if limit > maxLimit {
+		limit = maxLimit
+	}
+
+	return offset, limit
+}
+
+// paginatedResponse wraps paginated data
+type paginatedResponse struct {
+	Data   any `json:"data"`
+	Offset int `json:"offset"`
+	Limit  int `json:"limit"`
+	Total  int `json:"total"`
+}
 
 // MdToHTML converts user-provided Markdown to safe HTML.
 func MdToHTML(md []byte) []byte {
@@ -82,8 +121,9 @@ func MarkdownToHTMLHandler(w http.ResponseWriter, r *http.Request) {
 	_, _ = w.Write(html)
 }
 
-// GetUserImagesHandler returns a JSON list of user's images for the insert image modal
-func GetUserImagesHandler(w http.ResponseWriter, r *http.Request) {
+// GetUserFilesHandler returns a JSON list of user's files with pagination
+// Query params: offset (default 0), limit (default 20, max 100)
+func GetUserFilesHandler(w http.ResponseWriter, r *http.Request) {
 	u, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
 		true,  // check auth
@@ -101,117 +141,44 @@ func GetUserImagesHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get all images (not paginated, since modal list should be scrollable)
-	// TODO: Consider pagination if users have many images
-	const limit = 1000
-	files, err := filemanager.ListFilesByUserIDSorted(u.ID, "-created", 0, limit)
+	offset, limit := parsePagination(r)
+
+	// Use efficient database query with pagination
+	files, err := db.Storage.ListFilesByUserID(u.ID, offset, limit)
 	if err != nil {
-		log.Printf("error listing images: %v", err)
+		log.Printf("error listing files: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	// Filter only images and build response
-	type imageInfo struct {
-		Filename     string `json:"filename"`
-		DisplayName  string `json:"display_name"`
-		Description  string `json:"description"`
-		Filetype     string `json:"filetype"`
-		FileURL      string `json:"file_url"`
-		ThumbnailURL string `json:"thumbnail_url"`
-		CreatedAt    string `json:"created_at"`
-	}
-
-	images := make([]imageInfo, 0)
-	for _, f := range files {
-		if filemanager.ClassifyMediaKind(f.Filetype, f.Filename) != "image" {
-			continue
-		}
-
-		// Build URLs
-		fileURL := "/file/" + u.ReferenceID + "/" + f.Filename
-		// For now, thumbnail is the same as file (can be optimized later)
-		thumbnailURL := fileURL
-
-		images = append(images, imageInfo{
-			Filename:     f.Filename,
-			DisplayName:  f.OriginalFilename,
-			Description:  f.Filedescription,
-			Filetype:     f.Filetype,
-			FileURL:      fileURL,
-			ThumbnailURL: thumbnailURL,
-			CreatedAt:    f.CreatedAt,
-		})
-	}
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate")
-	w.Header().Set("Pragma", "no-cache")
-	w.Header().Set("Expires", "0")
-
-	// Reverse to show newest first (since ListFilesByUserIDSorted returns oldest first by default)
-	for i, j := 0, len(images)-1; i < j; i, j = i+1, j-1 {
-		images[i], images[j] = images[j], images[i]
-	}
-
-	err = json.NewEncoder(w).Encode(images)
+	total, err := db.Storage.CountFilesByUserID(u.ID)
 	if err != nil {
-		log.Printf("error encoding JSON response: %v", err)
-	}
-}
-
-// GetUserVideosHandler returns a JSON list of user's videos for the insert video modal
-func GetUserVideosHandler(w http.ResponseWriter, r *http.Request) {
-	u, _, authed, err := auth.Prelude(w, r,
-		[]string{http.MethodGet},
-		true,  // check auth
-		false, // check ratelimit
-		true,  // prevent cache
-	)
-	if err != nil {
-		log.Printf("auth.Prelude error: %v", err)
+		log.Printf("error counting files: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
 
-	if !authed {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	// Get all videos (not paginated, since modal list should be scrollable)
-	const limit = 1000
-	files, err := filemanager.ListFilesByUserIDSorted(u.ID, "-created", 0, limit)
-	if err != nil {
-		log.Printf("error listing videos: %v", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	// Filter only videos and build response
-	type videoInfo struct {
+	// Build response
+	type fileInfo struct {
 		Filename    string `json:"filename"`
 		DisplayName string `json:"display_name"`
 		Description string `json:"description"`
 		Filetype    string `json:"filetype"`
+		Filesize    int64  `json:"filesize"`
 		FileURL     string `json:"file_url"`
 		CreatedAt   string `json:"created_at"`
 	}
 
-	videos := make([]videoInfo, 0)
+	result := make([]fileInfo, 0, len(files))
 	for _, f := range files {
-		if filemanager.ClassifyMediaKind(f.Filetype, f.Filename) != "video" {
-			continue
-		}
-
-		// Build URLs
 		fileURL := "/file/" + u.ReferenceID + "/" + f.Filename
 
-		videos = append(videos, videoInfo{
+		result = append(result, fileInfo{
 			Filename:    f.Filename,
 			DisplayName: f.OriginalFilename,
 			Description: f.Filedescription,
 			Filetype:    f.Filetype,
+			Filesize:    f.Filesize,
 			FileURL:     fileURL,
 			CreatedAt:   f.CreatedAt,
 		})
@@ -222,93 +189,20 @@ func GetUserVideosHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Pragma", "no-cache")
 	w.Header().Set("Expires", "0")
 
-	// Reverse to show newest first
-	for i, j := 0, len(videos)-1; i < j; i, j = i+1, j-1 {
-		videos[i], videos[j] = videos[j], videos[i]
+	response := paginatedResponse{
+		Data:   result,
+		Offset: offset,
+		Limit:  limit,
+		Total:  total,
 	}
 
-	err = json.NewEncoder(w).Encode(videos)
-	if err != nil {
-		log.Printf("error encoding JSON response: %v", err)
-	}
-}
-
-// GetUserAudiosHandler returns a JSON list of user's audio files for the insert audio modal
-func GetUserAudiosHandler(w http.ResponseWriter, r *http.Request) {
-	u, _, authed, err := auth.Prelude(w, r,
-		[]string{http.MethodGet},
-		true,  // check auth
-		false, // check ratelimit
-		true,  // prevent cache
-	)
-	if err != nil {
-		log.Printf("auth.Prelude error: %v", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	if !authed {
-		http.Error(w, "unauthorized", http.StatusUnauthorized)
-		return
-	}
-
-	// Get all audio files (not paginated, since modal list should be scrollable)
-	const limit = 1000
-	files, err := filemanager.ListFilesByUserIDSorted(u.ID, "-created", 0, limit)
-	if err != nil {
-		log.Printf("error listing audios: %v", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	// Filter only audio and build response
-	type audioInfo struct {
-		Filename    string `json:"filename"`
-		DisplayName string `json:"display_name"`
-		Description string `json:"description"`
-		Filetype    string `json:"filetype"`
-		FileURL     string `json:"file_url"`
-		CreatedAt   string `json:"created_at"`
-	}
-
-	audios := make([]audioInfo, 0)
-	for _, f := range files {
-		if filemanager.ClassifyMediaKind(f.Filetype, f.Filename) != "audio" {
-			continue
-		}
-
-		// Build URLs
-		fileURL := "/file/" + u.ReferenceID + "/" + f.Filename
-
-		audios = append(audios, audioInfo{
-			Filename:    f.Filename,
-			DisplayName: f.OriginalFilename,
-			Description: f.Filedescription,
-			Filetype:    f.Filetype,
-			FileURL:     fileURL,
-			CreatedAt:   f.CreatedAt,
-		})
-	}
-
-	w.Header().Set("Content-Type", "application/json; charset=utf-8")
-	w.Header().Set("Cache-Control", "no-store, no-cache, max-age=0, must-revalidate")
-	w.Header().Set("Pragma", "no-cache")
-	w.Header().Set("Expires", "0")
-
-	// Reverse to show newest first
-	for i, j := 0, len(audios)-1; i < j; i, j = i+1, j-1 {
-		audios[i], audios[j] = audios[j], audios[i]
-	}
-
-	err = json.NewEncoder(w).Encode(audios)
+	err = json.NewEncoder(w).Encode(response)
 	if err != nil {
 		log.Printf("error encoding JSON response: %v", err)
 	}
 }
 
 func Routes(mux *http.ServeMux) {
-	mux.HandleFunc("/api/markdown/preview", MarkdownToHTMLHandler)
-	mux.HandleFunc("/api/images", GetUserImagesHandler)
-	mux.HandleFunc("/api/videos", GetUserVideosHandler)
-	mux.HandleFunc("/api/audios", GetUserAudiosHandler)
+	mux.HandleFunc("/api/markdown", MarkdownToHTMLHandler)
+	mux.HandleFunc("/api/files", GetUserFilesHandler)
 }
