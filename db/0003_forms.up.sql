@@ -40,58 +40,6 @@ CREATE INDEX IF NOT EXISTS idx_form_data_sources_deleted_at
     ON form_data_sources(deleted_at);
 
 -- ----------------------------------------------------------------------
--- relmeta_tables / relmeta_columns
--- Optional relational metadata catalog.
--- The app may populate this so Forms can bind to relational columns without
--- introspecting sqlite_master at runtime.
--- ----------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS relmeta_tables (
-    id            INTEGER PRIMARY KEY,
-    reference_id  TEXT    NOT NULL UNIQUE, -- opaque external identifier
-
-    sql_table     TEXT    NOT NULL UNIQUE, -- physical table name in SQLite
-    label         TEXT    NOT NULL,
-    description   TEXT,
-
-    created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at    DATETIME
-);
-
-CREATE INDEX IF NOT EXISTS idx_relmeta_tables_deleted_at
-    ON relmeta_tables(deleted_at);
-
-CREATE TABLE IF NOT EXISTS relmeta_columns (
-    id            INTEGER PRIMARY KEY,
-    reference_id  TEXT    NOT NULL UNIQUE, -- opaque external identifier
-
-    rel_table_id  INTEGER NOT NULL
-        REFERENCES relmeta_tables(id) ON DELETE CASCADE,
-
-    sql_column    TEXT    NOT NULL, -- physical column name
-    label         TEXT    NOT NULL,
-    help_text     TEXT,
-
-    primitive_kind TEXT   NOT NULL CHECK (primitive_kind IN (
-        'BOOL', 'INT', 'REAL', 'TEXT', 'DATETIME'
-    )),
-
-    is_readonly   INTEGER NOT NULL DEFAULT 0 CHECK (is_readonly IN (0,1)),
-
-    created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at    DATETIME,
-
-    UNIQUE(rel_table_id, sql_column)
-);
-
-CREATE INDEX IF NOT EXISTS idx_relmeta_columns_table_column
-    ON relmeta_columns(rel_table_id, sql_column);
-
-CREATE INDEX IF NOT EXISTS idx_relmeta_columns_deleted_at
-    ON relmeta_columns(deleted_at);
-
--- ----------------------------------------------------------------------
 -- forms
 -- A form is a UI projection of a primary data source.
 -- It does not own data. It references one data source as the "root".
@@ -208,11 +156,11 @@ CREATE TABLE IF NOT EXISTS form_fields (
     bind_eav_attribute_id INTEGER
         REFERENCES eav_attributes(id) ON DELETE RESTRICT,
 
-    bind_rel_column_id INTEGER
-        REFERENCES relmeta_columns(id) ON DELETE RESTRICT,
+    -- For bind_kind='rel', the field name is stored directly (no FK)
+    bind_rel_table_name TEXT,
+    bind_rel_column_name TEXT,
 
     -- Optional expression hooks (Filo), stored as text.
-    default_expr   TEXT,
     validate_expr  TEXT,
     computed_expr  TEXT,
     expression_order INTEGER NOT NULL DEFAULT 0,
@@ -225,11 +173,11 @@ CREATE TABLE IF NOT EXISTS form_fields (
 
     -- Enforce binding consistency.
     CHECK (
-        (is_ui_only = 1 AND bind_kind = 'none' AND bind_eav_attribute_id IS NULL AND bind_rel_column_id IS NULL)
+        (is_ui_only = 1 AND bind_kind = 'none' AND bind_eav_attribute_id IS NULL AND bind_rel_table_name IS NULL AND bind_rel_column_name IS NULL)
         OR
-        (is_ui_only = 0 AND bind_kind = 'eav'  AND bind_eav_attribute_id IS NOT NULL AND bind_rel_column_id IS NULL)
+        (is_ui_only = 0 AND bind_kind = 'eav'  AND bind_eav_attribute_id IS NOT NULL AND bind_rel_table_name IS NULL AND bind_rel_column_name IS NULL)
         OR
-        (is_ui_only = 0 AND bind_kind = 'rel'  AND bind_eav_attribute_id IS NULL AND bind_rel_column_id IS NOT NULL)
+        (is_ui_only = 0 AND bind_kind = 'rel'  AND bind_eav_attribute_id IS NULL AND bind_rel_table_name IS NOT NULL AND bind_rel_column_name IS NOT NULL)
     )
 );
 

@@ -46,7 +46,6 @@ type EAVAttribute struct {
 	IsUnique      bool      `json:"is_unique"`
 	IsIndexed     bool      `json:"is_indexed"`
 	IsComputed    bool      `json:"is_computed"`
-	DefaultExpr   string    `json:"default_expr"`  // Filo expression
 	ComputedExpr  string    `json:"computed_expr"` // Filo expression
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
@@ -58,7 +57,8 @@ type EAVRecord struct {
 	ID           int64     `json:"id"`
 	ReferenceID  string    `json:"reference_id"`
 	EntityTypeID int64     `json:"entity_type_id"`
-	Rev          int       `json:"rev"` // optimistic lock counter, starts at 1
+	Status       string    `json:"status"` // 'draft' or 'active'
+	Rev          int       `json:"rev"`    // optimistic lock counter, starts at 1
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
 	DeletedAt    time.Time `json:"deleted_at,omitempty"` // zero value means not deleted
@@ -291,7 +291,7 @@ func (s *SQLite) CreateEAVAttribute(
 	entityTypeID int64,
 	machineName, label, helpText, primitiveKind string,
 	isRequired, isUnique, isIndexed, isComputed bool,
-	defaultExpr, computedExpr string,
+	computedExpr string,
 ) (*EAVAttribute, error) {
 	// Validate primitive_kind
 	validKinds := map[string]bool{
@@ -317,12 +317,11 @@ func (s *SQLite) CreateEAVAttribute(
 		is_unique,        -- 8
 		is_indexed,       -- 9
 		is_computed,      -- 10
-		default_expr,     -- 11
-		computed_expr,    -- 12
+		computed_expr,    -- 11
 		created_at,
 		updated_at
 	) VALUES (
-		?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+		?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
 		CURRENT_TIMESTAMP,
 		CURRENT_TIMESTAMP
 	) RETURNING
@@ -337,10 +336,9 @@ func (s *SQLite) CreateEAVAttribute(
 		is_unique,        -- 9
 		is_indexed,       -- 10
 		is_computed,      -- 11
-		default_expr,     -- 12
-		computed_expr,    -- 13
-		created_at,       -- 14
-		updated_at        -- 15
+		computed_expr,    -- 12
+		created_at,       -- 13
+		updated_at        -- 14
 	;`
 
 	var attr EAVAttribute
@@ -355,8 +353,7 @@ func (s *SQLite) CreateEAVAttribute(
 		isUnique,      // 8
 		isIndexed,     // 9
 		isComputed,    // 10
-		defaultExpr,   // 11
-		computedExpr,  // 12
+		computedExpr,  // 11
 	).Scan(
 		&attr.ID,            // 1
 		&attr.ReferenceID,   // 2
@@ -369,10 +366,9 @@ func (s *SQLite) CreateEAVAttribute(
 		&attr.IsUnique,      // 9
 		&attr.IsIndexed,     // 10
 		&attr.IsComputed,    // 11
-		&attr.DefaultExpr,   // 12
-		&attr.ComputedExpr,  // 13
-		&attr.CreatedAt,     // 14
-		&attr.UpdatedAt,     // 15
+		&attr.ComputedExpr,  // 12
+		&attr.CreatedAt,     // 13
+		&attr.UpdatedAt,     // 14
 	)
 	if err != nil {
 		return nil, err
@@ -394,10 +390,9 @@ func (s *SQLite) GetEAVAttributeByID(id int64) (*EAVAttribute, error) {
 		is_unique,                   -- 9
 		is_indexed,                  -- 10
 		is_computed,                 -- 11
-		COALESCE(default_expr, ''),  -- 12
-		COALESCE(computed_expr, ''), -- 13
-		created_at,                  -- 14
-		updated_at                   -- 15
+		COALESCE(computed_expr, ''), -- 12
+		created_at,                  -- 13
+		updated_at                   -- 14
 	FROM eav_attributes
 	WHERE id = ? AND deleted_at IS NULL;` // 1
 
@@ -416,10 +411,9 @@ func (s *SQLite) GetEAVAttributeByID(id int64) (*EAVAttribute, error) {
 		&attr.IsUnique,      // 9
 		&attr.IsIndexed,     // 10
 		&attr.IsComputed,    // 11
-		&attr.DefaultExpr,   // 12
-		&attr.ComputedExpr,  // 13
-		&attr.CreatedAt,     // 14
-		&attr.UpdatedAt,     // 15
+		&attr.ComputedExpr,  // 12
+		&attr.CreatedAt,     // 13
+		&attr.UpdatedAt,     // 14
 	)
 	if err != nil {
 		if errors.Is(err, ErrNoRows) {
@@ -444,10 +438,9 @@ func (s *SQLite) GetEAVAttributeByRefID(refID string) (*EAVAttribute, error) {
 		is_unique,                   -- 9
 		is_indexed,                  -- 10
 		is_computed,                 -- 11
-		COALESCE(default_expr, ''),  -- 12
-		COALESCE(computed_expr, ''), -- 13
-		created_at,                  -- 14
-		updated_at                   -- 15
+		COALESCE(computed_expr, ''), -- 12
+		created_at,                  -- 13
+		updated_at                   -- 14
 	FROM eav_attributes
 	WHERE reference_id = ? AND deleted_at IS NULL;` // 1
 
@@ -466,10 +459,9 @@ func (s *SQLite) GetEAVAttributeByRefID(refID string) (*EAVAttribute, error) {
 		&attr.IsUnique,      // 9
 		&attr.IsIndexed,     // 10
 		&attr.IsComputed,    // 11
-		&attr.DefaultExpr,   // 12
-		&attr.ComputedExpr,  // 13
-		&attr.CreatedAt,     // 14
-		&attr.UpdatedAt,     // 15
+		&attr.ComputedExpr,  // 12
+		&attr.CreatedAt,     // 13
+		&attr.UpdatedAt,     // 14
 	)
 	if err != nil {
 		if errors.Is(err, ErrNoRows) {
@@ -495,10 +487,9 @@ func (s *SQLite) ListEAVAttributesByEntityTypeID(entityTypeID int64) ([]EAVAttri
 		is_unique,                   -- 9
 		is_indexed,                  -- 10
 		is_computed,                 -- 11
-		COALESCE(default_expr, ''),  -- 12
-		COALESCE(computed_expr, ''), -- 13
-		created_at,                  -- 14
-		updated_at                   -- 15
+		COALESCE(computed_expr, ''), -- 12
+		created_at,                  -- 13
+		updated_at                   -- 14
 	FROM eav_attributes
 	WHERE entity_type_id = ? AND deleted_at IS NULL
 	ORDER BY machine_name ASC;` // 1
@@ -526,10 +517,9 @@ func (s *SQLite) ListEAVAttributesByEntityTypeID(entityTypeID int64) ([]EAVAttri
 			&attr.IsUnique,      // 9
 			&attr.IsIndexed,     // 10
 			&attr.IsComputed,    // 11
-			&attr.DefaultExpr,   // 12
-			&attr.ComputedExpr,  // 13
-			&attr.CreatedAt,     // 14
-			&attr.UpdatedAt,     // 15
+			&attr.ComputedExpr,  // 12
+			&attr.CreatedAt,     // 13
+			&attr.UpdatedAt,     // 14
 		); err != nil {
 			return nil, err
 		}

@@ -10,14 +10,21 @@ PRAGMA foreign_keys = ON;
 -- ----------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS eav_entity_types (
     id            INTEGER PRIMARY KEY,
-    reference_id  TEXT    NOT NULL UNIQUE, -- opaque external identifier
-    machine_name  TEXT    NOT NULL UNIQUE COLLATE NOCASE, -- stable identifier for code/routes
-    name          TEXT    NOT NULL, -- human label
+    reference_id  TEXT    NOT NULL,
+    machine_name  TEXT    NOT NULL COLLATE NOCASE,
+    name          TEXT    NOT NULL,
     description   TEXT,
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at    DATETIME
 );
+
+-- Partial unique indexes (exclude soft-deleted rows)
+CREATE UNIQUE INDEX IF NOT EXISTS idx_eav_entity_types_reference_id_active
+    ON eav_entity_types(reference_id) WHERE deleted_at IS NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_eav_entity_types_machine_name_active
+    ON eav_entity_types(machine_name COLLATE NOCASE) WHERE deleted_at IS NULL;
 
 CREATE INDEX IF NOT EXISTS idx_eav_entity_types_machine_name_nocase
     ON eav_entity_types(LOWER(machine_name));
@@ -32,12 +39,12 @@ CREATE INDEX IF NOT EXISTS idx_eav_entity_types_deleted_at
 -- ----------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS eav_attributes (
     id             INTEGER PRIMARY KEY,
-    reference_id   TEXT    NOT NULL UNIQUE, -- opaque external identifier
+    reference_id   TEXT    NOT NULL,
 
     entity_type_id INTEGER NOT NULL
         REFERENCES eav_entity_types(id) ON DELETE CASCADE,
 
-    machine_name   TEXT    NOT NULL COLLATE NOCASE, -- stable identifier within an entity type
+    machine_name   TEXT    NOT NULL COLLATE NOCASE,
     label          TEXT    NOT NULL,
     help_text      TEXT,
 
@@ -53,18 +60,20 @@ CREATE TABLE IF NOT EXISTS eav_attributes (
     is_unique      INTEGER NOT NULL DEFAULT 0 CHECK (is_unique IN (0,1)),
     is_indexed     INTEGER NOT NULL DEFAULT 0 CHECK (is_indexed IN (0,1)),
 
-    -- Expression support is stored, not necessarily executed in MVP.
-    -- These are Filo snippets evaluated by integration code (not by SQL).
     is_computed    INTEGER NOT NULL DEFAULT 0 CHECK (is_computed IN (0,1)),
-    default_expr   TEXT, -- optional Filo snippet
-    computed_expr  TEXT, -- optional Filo snippet
+    computed_expr  TEXT,
 
     created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    deleted_at     DATETIME,
-
-    UNIQUE(entity_type_id, machine_name)
+    deleted_at     DATETIME
 );
+
+-- Partial unique indexes
+CREATE UNIQUE INDEX IF NOT EXISTS idx_eav_attributes_reference_id_active
+    ON eav_attributes(reference_id) WHERE deleted_at IS NULL;
+
+CREATE UNIQUE INDEX IF NOT EXISTS idx_eav_attributes_entity_type_machine_name_active
+    ON eav_attributes(entity_type_id, machine_name COLLATE NOCASE) WHERE deleted_at IS NULL;
 
 CREATE INDEX IF NOT EXISTS idx_eav_attributes_entity_type_id
     ON eav_attributes(entity_type_id);
@@ -81,18 +90,22 @@ CREATE INDEX IF NOT EXISTS idx_eav_attributes_deleted_at
 -- ----------------------------------------------------------------------
 CREATE TABLE IF NOT EXISTS eav_records (
     id             INTEGER PRIMARY KEY,
-    reference_id   TEXT     NOT NULL UNIQUE, -- opaque external identifier
+    reference_id   TEXT     NOT NULL,
 
     entity_type_id INTEGER  NOT NULL
         REFERENCES eav_entity_types(id) ON DELETE CASCADE,
 
-    -- Optimistic concurrency control.
+    status         TEXT     NOT NULL DEFAULT 'draft' CHECK (status IN ('draft', 'active')),
     rev            INTEGER  NOT NULL DEFAULT 1 CHECK (rev >= 1),
 
     created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at     DATETIME
 );
+
+-- Partial unique index
+CREATE UNIQUE INDEX IF NOT EXISTS idx_eav_records_reference_id_active
+    ON eav_records(reference_id) WHERE deleted_at IS NULL;
 
 CREATE INDEX IF NOT EXISTS idx_eav_records_entity_type_id
     ON eav_records(entity_type_id);
@@ -102,6 +115,9 @@ CREATE INDEX IF NOT EXISTS idx_eav_records_entity_type_updated_at
 
 CREATE INDEX IF NOT EXISTS idx_eav_records_deleted_at
     ON eav_records(deleted_at);
+
+CREATE INDEX IF NOT EXISTS idx_eav_records_status
+    ON eav_records(status) WHERE deleted_at IS NULL;
 
 -- ----------------------------------------------------------------------
 -- eav_values
@@ -143,7 +159,6 @@ CREATE INDEX IF NOT EXISTS idx_eav_values_attribute_id
     ON eav_values(attribute_id);
 
 -- Per-type indexes (created now for predictable performance on filters/sorts).
--- If you later decide to delay these until metrics justify, remove them.
 CREATE INDEX IF NOT EXISTS idx_eav_values_attr_v_int
     ON eav_values(attribute_id, v_int);
 
