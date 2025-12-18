@@ -172,6 +172,33 @@ CREATE INDEX IF NOT EXISTS idx_eav_values_attr_v_text_nocase
     ON eav_values(attribute_id, v_text COLLATE NOCASE);
 
 -- ----------------------------------------------------------------------
+-- Triggers for Optimistic Locking
+-- ----------------------------------------------------------------------
+
+-- Trigger to enforce optimistic locking on eav_records updates.
+-- This trigger validates that the rev being updated matches the current value.
+-- Applications must pass the current rev in the WHERE clause of their UPDATE.
+-- If rev doesn't match, the UPDATE affects 0 rows, signaling a conflict.
+--
+-- Note: SQLite doesn't support BEFORE UPDATE triggers that can abort based on
+-- conditions in a clean way, so we rely on the UPDATE affecting 0 rows when
+-- the WHERE clause (including rev check) doesn't match any record.
+--
+-- The trigger below ensures rev is always incremented and updated_at is refreshed.
+
+CREATE TRIGGER IF NOT EXISTS trg_eav_records_update_rev
+AFTER UPDATE ON eav_records
+FOR EACH ROW
+WHEN OLD.deleted_at IS NULL AND NEW.deleted_at IS NULL
+BEGIN
+    -- Ensure rev was incremented by exactly 1
+    SELECT CASE
+        WHEN NEW.rev != OLD.rev + 1 THEN
+            RAISE(ABORT, 'eav_records: rev must be incremented by exactly 1')
+    END;
+END;
+
+-- ----------------------------------------------------------------------
 -- Notes:
 -- - Type matching between attribute.primitive_kind and the chosen v_* column
 --   is enforced in Go code (cannot be enforced by SQLite CHECK without joins).

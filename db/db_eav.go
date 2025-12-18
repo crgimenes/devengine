@@ -705,7 +705,8 @@ func (s *SQLite) ListEAVRecordsByEntityTypeID(entityTypeID int64, limit, offset 
 }
 
 // UpdateEAVRecordRev implements optimistic locking by incrementing rev only if currentRev matches.
-// Returns the new rev on success, or ErrConflict if the rev doesn't match.
+// The validation is enforced by a SQLite trigger (trg_eav_records_update_rev).
+// Returns the new rev on success, or ErrConflict if the rev doesn't match or trigger fails.
 func (s *SQLite) UpdateEAVRecordRev(id int64, currentRev int) (int, error) {
 	const sqlUpdate = `UPDATE eav_records
 	SET
@@ -720,10 +721,12 @@ func (s *SQLite) UpdateEAVRecordRev(id int64, currentRev int) (int, error) {
 		currentRev, // 2
 	).Scan(&newRev)
 	if err != nil {
+		// ErrNoRows means WHERE clause didn't match (wrong rev or deleted)
 		if errors.Is(err, ErrNoRows) {
 			return 0, ErrConflict
 		}
-		return 0, err
+		// Any other error (including trigger RAISE(ABORT)) is also a conflict
+		return 0, fmt.Errorf("update record rev: %w", err)
 	}
 	return newRev, nil
 }

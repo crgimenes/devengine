@@ -5,7 +5,9 @@ import (
 	"fmt"
 )
 
+// UpsertEAVValueWithRev inserts or updates a value for a (record, attribute) pair
 // and increments the record's rev for optimistic locking.
+// The rev increment validation is enforced by a SQLite trigger (trg_eav_records_update_rev).
 // Returns the new rev on success, or ErrConflict if currentRev doesn't match.
 func (s *SQLite) UpsertEAVValueWithRev(
 	recordID, attributeID int64,
