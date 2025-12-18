@@ -2,7 +2,7 @@
 
 CREATE TABLE users (
     id INTEGER PRIMARY KEY,
-    reference_id TEXT NOT NULL UNIQUE DEFAULT "", -- a trigger will set this to a UUID
+    reference_id TEXT NOT NULL DEFAULT '' UNIQUE, -- a trigger will set this to a UUID
     username TEXT UNIQUE COLLATE NOCASE,
     email TEXT UNIQUE COLLATE NOCASE,
     enabled INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0,1)),
@@ -32,15 +32,23 @@ CREATE TABLE identities (
 CREATE INDEX idx_identities_user_id ON identities(user_id);
 
 CREATE TRIGGER users_set_updated_at
-AFTER UPDATE OF username, email, enabled, avatar_url ON users
+AFTER UPDATE ON users
+FOR EACH ROW
+WHEN NEW.updated_at = OLD.updated_at
 BEGIN
-    UPDATE users SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+        UPDATE users
+        SET updated_at = CURRENT_TIMESTAMP
+        WHERE id = NEW.id;
 END;
 
 CREATE TRIGGER identities_set_updated_at
-AFTER UPDATE OF user_id, provider, provider_uid, avatar_url ON identities
+AFTER UPDATE ON identities
+FOR EACH ROW
+WHEN NEW.updated_at = OLD.updated_at
 BEGIN
-    UPDATE identities SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
+        UPDATE identities
+        SET updated_at = CURRENT_TIMESTAMP
+        WHERE id = NEW.id;
 END;
 
 CREATE TRIGGER users_reference_uuid
@@ -88,6 +96,7 @@ CREATE TABLE filemanager_files (
 CREATE INDEX idx_filemanager_files_user_id ON filemanager_files(user_id);
 CREATE INDEX idx_filemanager_files_user_id_deleted
     ON filemanager_files(user_id, deleted);
+CREATE INDEX idx_filemanager_files_hash ON filemanager_files(filehash);
 
 CREATE TRIGGER filemanager_files_set_updated_at
 AFTER UPDATE OF original_filename, filename, filesize, filetype, filehash, filetag, filedescription, processed ON filemanager_files
@@ -96,11 +105,11 @@ BEGIN
 END;
 
 CREATE TRIGGER filemanager_files_set_updated_at_on_deleted
-AFTER UPDATE OF deleted ON filemanager_files
+AFTER UPDATE ON filemanager_files
+FOR EACH ROW
+WHEN NEW.deleted != OLD.deleted
 BEGIN
-    UPDATE filemanager_files
-    SET updated_at = CURRENT_TIMESTAMP
-    WHERE id = OLD.id;
+    UPDATE filemanager_files SET updated_at = CURRENT_TIMESTAMP WHERE id = OLD.id;
 END;
 
 CREATE VIRTUAL TABLE filemanager_files_fts
