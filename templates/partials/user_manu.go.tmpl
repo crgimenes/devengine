@@ -23,7 +23,7 @@
       <li><hr class="dropdown-divider"></li>
       <li><a class="dropdown-item" href="/me">Meu Perfil</a></li>
       {{if .User.Sysop}}
-      <li><a class="dropdown-item" href="/tools">{{template "icon-tools"}} Ferramentas</a></li>
+      {{template "tools_menu" .}}
       {{end}}
       <li><hr class="dropdown-divider"></li>
       <li><a class="dropdown-item" href="/logout">Sair</a></li>

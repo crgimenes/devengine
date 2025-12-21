@@ -10,4 +10,7 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /link/{token}", h.MagicLink)
 	mux.HandleFunc("/me", h.Profile)
 	mux.HandleFunc("/tools", h.Tools)
+	mux.HandleFunc("/tools/database-schema", h.ToolsDatabaseSchema)
+	mux.HandleFunc("/tools/forms", h.ToolsForms)
+	mux.HandleFunc("/tools/users", h.ToolsUsers)
 }

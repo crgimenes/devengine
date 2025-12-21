@@ -1,0 +1,21 @@
+{{define "tools_sidebar"}}
+<div class="card mb-4">
+  <div class="card-header">
+    <h5 class="mb-0">{{template "icon-tools"}} Ferramentas</h5>
+  </div>
+  <div class="list-group list-group-flush">
+    <a href="/tools" class="list-group-item list-group-item-action{{if eq .CurrentPage "tools"}} active{{end}}">
+      Visão Geral
+    </a>
+    <a href="/tools/database-schema" class="list-group-item list-group-item-action{{if eq .CurrentPage "database-schema"}} active{{end}}">
+      Database Schema
+    </a>
+    <a href="/tools/forms" class="list-group-item list-group-item-action{{if eq .CurrentPage "forms"}} active{{end}}">
+      Forms
+    </a>
+    <a href="/tools/users" class="list-group-item list-group-item-action{{if eq .CurrentPage "users"}} active{{end}}">
+      Users
+    </a>
+  </div>
+</div>
+{{end}}
