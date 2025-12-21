@@ -9,4 +9,5 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /login/magic_link", h.LoginMagic)
 	mux.HandleFunc("GET /link/{token}", h.MagicLink)
 	mux.HandleFunc("/me", h.Profile)
+	mux.HandleFunc("/tools", h.Tools)
 }

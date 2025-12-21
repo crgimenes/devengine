@@ -23,6 +23,7 @@ type User struct {
 	Username    string    `json:"username"`
 	Email       string    `json:"email"`
 	Enabled     bool      `json:"enabled"`
+	Sysop       bool      `json:"sysop"`
 	AvatarURL   string    `json:"avatar_url,omitempty"`
 	CreatedAt   time.Time `json:"created_at,omitzero"`
 	UpdatedAt   time.Time `json:"updated_at,omitzero"`

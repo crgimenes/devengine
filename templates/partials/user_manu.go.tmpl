@@ -22,6 +22,9 @@
       <li><span class="dropdown-item-text">{{.User.Email}}</span></li>
       <li><hr class="dropdown-divider"></li>
       <li><a class="dropdown-item" href="/me">Meu Perfil</a></li>
+      {{if .User.Sysop}}
+      <li><a class="dropdown-item" href="/tools">{{template "icon-tools"}} Ferramentas</a></li>
+      {{end}}
       <li><hr class="dropdown-divider"></li>
       <li><a class="dropdown-item" href="/logout">Sair</a></li>
     </ul>

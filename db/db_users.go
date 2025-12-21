@@ -17,7 +17,8 @@ func (s *SQLite) GetUserByID(userID int64) (*User, error) {
             COALESCE(username, ''),     -- 3
             email,                      -- 4
             COALESCE(avatar_url, ''),   -- 5
-            enabled                     -- 6
+            enabled,                    -- 6
+            sysop                       -- 7
         FROM users
         WHERE id = ?  -- 1
         LIMIT 1;`
@@ -34,6 +35,7 @@ func (s *SQLite) GetUserByID(userID int64) (*User, error) {
 		&u.Email,       // 4
 		&u.AvatarURL,   // 5
 		&u.Enabled,     // 6
+		&u.Sysop,       // 7
 	)
 	if err != nil {
 		return nil, err
@@ -51,7 +53,8 @@ func (s *SQLite) GetUserByEmail(email string) (*User, error) {
             COALESCE(username, ''),     -- 3
             email,                      -- 4
             COALESCE(avatar_url, ''),   -- 5
-            enabled                     -- 6
+            enabled,                    -- 6
+            sysop                       -- 7
         FROM users
         WHERE email = ?  -- 1
         LIMIT 1;`
@@ -72,6 +75,7 @@ func (s *SQLite) GetUserByEmail(email string) (*User, error) {
 		&u.Email,       // 4
 		&u.AvatarURL,   // 5
 		&u.Enabled,     // 6
+		&u.Sysop,       // 7
 	)
 	if err != nil {
 		return nil, err
@@ -88,7 +92,8 @@ func (s *SQLite) GetUserOrCreateByEmail(email string) (*User, error) {
             COALESCE(username, ''),     -- 3
             email,                      -- 4
             COALESCE(avatar_url, ''),   -- 5
-            enabled                     -- 6
+            enabled,                    -- 6
+            sysop                       -- 7
         FROM users
         WHERE email = ?  -- 1
         LIMIT 1;`
@@ -110,6 +115,7 @@ func (s *SQLite) GetUserOrCreateByEmail(email string) (*User, error) {
 		&u.Email,       // 4
 		&u.AvatarURL,   // 5
 		&u.Enabled,     // 6
+		&u.Sysop,       // 7
 	)
 	if err != nil {
 		if !errors.Is(err, sql.ErrNoRows) {
@@ -126,12 +132,28 @@ func (s *SQLite) GetUserOrCreateByEmail(email string) (*User, error) {
 		return &u, nil
 	}
 
+	// Check if this is the first user
+	const sqlCountUsers = `SELECT COUNT(*) FROM users`
+	var userCount int
+	countErr := s.QueryRow(sqlCountUsers).Scan(&userCount)
+	if countErr != nil {
+		return nil, countErr
+	}
+
+	// First user gets sysop = 1, subsequent users get sysop = 0
+	sysopValue := 0
+	if userCount == 0 {
+		sysopValue = 1
+	}
+
 	const sqlInsert = `INSERT INTO users (
             email,             -- 1
+            sysop,             -- 2
             created_at,
             updated_at
         ) VALUES (
             ?,                 -- 1
+            ?,                 -- 2
             CURRENT_TIMESTAMP, -- created_at
             CURRENT_TIMESTAMP  -- updated_at
         )
@@ -141,11 +163,13 @@ func (s *SQLite) GetUserOrCreateByEmail(email string) (*User, error) {
             COALESCE(username, ''),    -- 3
             email,                     -- 4
             COALESCE(avatar_url, ''),  -- 5
-            enabled;` // 6
+            enabled,                   -- 6
+            sysop;` // 7
 
 	err = s.QueryRowRW(
 		sqlInsert,
-		email, // 1
+		email,      // 1
+		sysopValue, // 2
 	).Scan(
 		&u.ID,          // 1
 		&u.ReferenceID, // 2
@@ -153,6 +177,7 @@ func (s *SQLite) GetUserOrCreateByEmail(email string) (*User, error) {
 		&u.Email,       // 4
 		&u.AvatarURL,   // 5
 		&u.Enabled,     // 6
+		&u.Sysop,       // 7
 	)
 	if err != nil {
 		return nil, err
@@ -306,7 +331,8 @@ func (s *SQLite) UpdateUserProfile(
             COALESCE(username, ''),    -- 3
             email,                     -- 4
             COALESCE(avatar_url, ''),  -- 5
-            enabled;` // 6
+            enabled,                   -- 6
+            sysop;` // 7
 
 	var u User
 	err = s.QueryRowRW(
@@ -321,6 +347,7 @@ func (s *SQLite) UpdateUserProfile(
 		&u.Email,       // 4
 		&u.AvatarURL,   // 5
 		&u.Enabled,     // 6
+		&u.Sysop,       // 7
 	)
 	if err != nil {
 		return nil, err
@@ -402,7 +429,8 @@ func (s *SQLite) MergeOAuthProfileData(
             COALESCE(username, ''),   -- 3
             email,                    -- 4
             COALESCE(avatar_url, ''), -- 5
-            enabled;` // 6
+            enabled,                  -- 6
+            sysop;` // 7
 
 	var u User
 	enabled := 0
@@ -423,6 +451,7 @@ func (s *SQLite) MergeOAuthProfileData(
 		&u.Email,       // 4
 		&u.AvatarURL,   // 5
 		&u.Enabled,     // 6
+		&u.Sysop,       // 7
 	)
 	if err != nil {
 		return nil, err
