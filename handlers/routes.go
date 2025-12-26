@@ -13,4 +13,5 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("/tools/database-schema", h.ToolsDatabaseSchema)
 	mux.HandleFunc("/tools/forms", h.ToolsForms)
 	mux.HandleFunc("/tools/users", h.ToolsUsers)
+	mux.HandleFunc("/tools/menu-editor", h.ToolsMenuEditor)
 }
