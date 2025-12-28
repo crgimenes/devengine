@@ -19,7 +19,6 @@ func TestEAVUpsertValueWithRevOptimisticLocking(t *testing.T) {
 		"REAL",
 		false, false, false, false,
 		"",
-		nil, nil, nil, nil, nil,
 	)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)
@@ -105,7 +104,6 @@ func TestEAVUpsertValueWithRevTypeMismatch(t *testing.T) {
 		"INT",
 		false, false, false, false,
 		"",
-		nil, nil, nil, nil, nil,
 	)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)

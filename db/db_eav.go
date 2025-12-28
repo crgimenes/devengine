@@ -1,6 +1,7 @@
 package db
 
 import (
+	"database/sql"
 	"errors"
 	"fmt"
 	"time"
@@ -35,21 +36,27 @@ type EAVEntityType struct {
 
 // EAVAttribute represents a typed field (column) belonging to an entity type.
 type EAVAttribute struct {
-	ID            int64     `json:"id"`
-	ReferenceID   string    `json:"reference_id"`
-	EntityTypeID  int64     `json:"entity_type_id"`
-	MachineName   string    `json:"machine_name"`
-	Label         string    `json:"label"`
-	HelpText      string    `json:"help_text"`
-	PrimitiveKind string    `json:"primitive_kind"` // BOOL, INT, REAL, TEXT, DATETIME
-	IsRequired    bool      `json:"is_required"`
-	IsUnique      bool      `json:"is_unique"`
-	IsIndexed     bool      `json:"is_indexed"`
-	IsComputed    bool      `json:"is_computed"`
-	ComputedExpr  string    `json:"computed_expr"` // Filo expression
-	CreatedAt     time.Time `json:"created_at"`
-	UpdatedAt     time.Time `json:"updated_at"`
-	DeletedAt     time.Time `json:"deleted_at,omitempty"` // zero value means not deleted
+	ID            int64  `json:"id"`
+	ReferenceID   string `json:"reference_id"`
+	EntityTypeID  int64  `json:"entity_type_id"`
+	MachineName   string `json:"machine_name"`
+	Label         string `json:"label"`
+	HelpText      string `json:"help_text"`
+	PrimitiveKind string `json:"primitive_kind"` // BOOL, INT, REAL, TEXT, DATETIME
+	IsRequired    bool   `json:"is_required"`
+	IsUnique      bool   `json:"is_unique"`
+	IsIndexed     bool   `json:"is_indexed"`
+	IsComputed    bool   `json:"is_computed"`
+	ComputedExpr  string `json:"computed_expr"` // Filo expression
+	// Default values for new records (user-defined)
+	DefaultVBool     *bool     `json:"default_v_bool,omitempty"`
+	DefaultVInt      *int64    `json:"default_v_int,omitempty"`
+	DefaultVReal     *float64  `json:"default_v_real,omitempty"`
+	DefaultVText     *string   `json:"default_v_text,omitempty"`
+	DefaultVDatetime *string   `json:"default_v_datetime,omitempty"`
+	CreatedAt        time.Time `json:"created_at"`
+	UpdatedAt        time.Time `json:"updated_at"`
+	DeletedAt        time.Time `json:"deleted_at,omitempty"` // zero value means not deleted
 }
 
 // EAVRecord represents an instance (row) of an entity type.
@@ -286,12 +293,16 @@ func (s *SQLite) SoftDeleteEAVEntityType(id int64) error {
 // Attribute Operations
 // ====================================================================
 
-// CreateEAVAttribute creates a new attribute with validation.
+// CreateEAVAttribute creates a new attribute with validation and default values.
 func (s *SQLite) CreateEAVAttribute(
 	entityTypeID int64,
 	machineName, label, helpText, primitiveKind string,
 	isRequired, isUnique, isIndexed, isComputed bool,
 	computedExpr string,
+	defaultVBool *bool,
+	defaultVInt *int64,
+	defaultVReal *float64,
+	defaultVText, defaultVDatetime *string,
 ) (*EAVAttribute, error) {
 	// Validate primitive_kind
 	validKinds := map[string]bool{
@@ -307,70 +318,199 @@ func (s *SQLite) CreateEAVAttribute(
 
 	refID := utils.NewOpaqueID()
 	const sqlInsert = `INSERT INTO eav_attributes (
-		reference_id,     -- 1
-		entity_type_id,   -- 2
-		machine_name,     -- 3
-		label,            -- 4
-		help_text,        -- 5
-		primitive_kind,   -- 6
-		is_required,      -- 7
-		is_unique,        -- 8
-		is_indexed,       -- 9
-		is_computed,      -- 10
-		computed_expr,    -- 11
+		reference_id,        -- 1
+		entity_type_id,      -- 2
+		machine_name,        -- 3
+		label,               -- 4
+		help_text,           -- 5
+		primitive_kind,      -- 6
+		is_required,         -- 7
+		is_unique,           -- 8
+		is_indexed,          -- 9
+		is_computed,         -- 10
+		computed_expr,       -- 11
+		default_v_bool,      -- 12
+		default_v_int,       -- 13
+		default_v_real,      -- 14
+		default_v_text,      -- 15
+		default_v_datetime,  -- 16
 		created_at,
 		updated_at
 	) VALUES (
-		?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+		?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
 		CURRENT_TIMESTAMP,
 		CURRENT_TIMESTAMP
 	) RETURNING
-		id,               -- 1
-		reference_id,     -- 2
-		entity_type_id,   -- 3
-		machine_name,     -- 4
-		label,            -- 5
-		help_text,        -- 6
-		primitive_kind,   -- 7
-		is_required,      -- 8
-		is_unique,        -- 9
-		is_indexed,       -- 10
-		is_computed,      -- 11
-		computed_expr,    -- 12
-		created_at,       -- 13
-		updated_at        -- 14
+		id,                  -- 1
+		reference_id,        -- 2
+		entity_type_id,      -- 3
+		machine_name,        -- 4
+		label,               -- 5
+		help_text,           -- 6
+		primitive_kind,      -- 7
+		is_required,         -- 8
+		is_unique,           -- 9
+		is_indexed,          -- 10
+		is_computed,         -- 11
+		computed_expr,       -- 12
+		default_v_bool,      -- 13
+		default_v_int,       -- 14
+		default_v_real,      -- 15
+		default_v_text,      -- 16
+		default_v_datetime,  -- 17
+		created_at,          -- 18
+		updated_at           -- 19
 	;`
 
 	var attr EAVAttribute
 	err := s.QueryRowRW(sqlInsert,
-		refID,         // 1
-		entityTypeID,  // 2
-		machineName,   // 3
-		label,         // 4
-		helpText,      // 5
-		primitiveKind, // 6
-		isRequired,    // 7
-		isUnique,      // 8
-		isIndexed,     // 9
-		isComputed,    // 10
-		computedExpr,  // 11
+		refID,            // 1
+		entityTypeID,     // 2
+		machineName,      // 3
+		label,            // 4
+		helpText,         // 5
+		primitiveKind,    // 6
+		isRequired,       // 7
+		isUnique,         // 8
+		isIndexed,        // 9
+		isComputed,       // 10
+		computedExpr,     // 11
+		defaultVBool,     // 12
+		defaultVInt,      // 13
+		defaultVReal,     // 14
+		defaultVText,     // 15
+		defaultVDatetime, // 16
 	).Scan(
-		&attr.ID,            // 1
-		&attr.ReferenceID,   // 2
-		&attr.EntityTypeID,  // 3
-		&attr.MachineName,   // 4
-		&attr.Label,         // 5
-		&attr.HelpText,      // 6
-		&attr.PrimitiveKind, // 7
-		&attr.IsRequired,    // 8
-		&attr.IsUnique,      // 9
-		&attr.IsIndexed,     // 10
-		&attr.IsComputed,    // 11
-		&attr.ComputedExpr,  // 12
-		&attr.CreatedAt,     // 13
-		&attr.UpdatedAt,     // 14
+		&attr.ID,               // 1
+		&attr.ReferenceID,      // 2
+		&attr.EntityTypeID,     // 3
+		&attr.MachineName,      // 4
+		&attr.Label,            // 5
+		&attr.HelpText,         // 6
+		&attr.PrimitiveKind,    // 7
+		&attr.IsRequired,       // 8
+		&attr.IsUnique,         // 9
+		&attr.IsIndexed,        // 10
+		&attr.IsComputed,       // 11
+		&attr.ComputedExpr,     // 12
+		&attr.DefaultVBool,     // 13
+		&attr.DefaultVInt,      // 14
+		&attr.DefaultVReal,     // 15
+		&attr.DefaultVText,     // 16
+		&attr.DefaultVDatetime, // 17
+		&attr.CreatedAt,        // 18
+		&attr.UpdatedAt,        // 19
 	)
 	if err != nil {
+		return nil, err
+	}
+	return &attr, nil
+}
+
+// UpdateEAVAttribute updates an existing attribute including default values.
+func (s *SQLite) UpdateEAVAttribute(
+	id int64,
+	machineName, label, helpText, primitiveKind string,
+	isRequired, isUnique, isIndexed, isComputed bool,
+	computedExpr string,
+	defaultVBool *bool,
+	defaultVInt *int64,
+	defaultVReal *float64,
+	defaultVText, defaultVDatetime *string,
+) (*EAVAttribute, error) {
+	// Validate primitive_kind
+	validKinds := map[string]bool{
+		"BOOL":     true,
+		"INT":      true,
+		"REAL":     true,
+		"TEXT":     true,
+		"DATETIME": true,
+	}
+	if !validKinds[primitiveKind] {
+		return nil, fmt.Errorf("%w: primitive_kind must be one of BOOL, INT, REAL, TEXT, DATETIME", ErrInvalidValue)
+	}
+
+	const sqlUpdate = `UPDATE eav_attributes SET
+		machine_name = ?,        -- 1
+		label = ?,               -- 2
+		help_text = ?,           -- 3
+		primitive_kind = ?,      -- 4
+		is_required = ?,         -- 5
+		is_unique = ?,           -- 6
+		is_indexed = ?,          -- 7
+		is_computed = ?,         -- 8
+		computed_expr = ?,       -- 9
+		default_v_bool = ?,      -- 10
+		default_v_int = ?,       -- 11
+		default_v_real = ?,      -- 12
+		default_v_text = ?,      -- 13
+		default_v_datetime = ?,  -- 14
+		updated_at = CURRENT_TIMESTAMP
+	WHERE id = ? AND deleted_at IS NULL
+	RETURNING
+		id,                  -- 1
+		reference_id,        -- 2
+		entity_type_id,      -- 3
+		machine_name,        -- 4
+		label,               -- 5
+		help_text,           -- 6
+		primitive_kind,      -- 7
+		is_required,         -- 8
+		is_unique,           -- 9
+		is_indexed,          -- 10
+		is_computed,         -- 11
+		computed_expr,       -- 12
+		default_v_bool,      -- 13
+		default_v_int,       -- 14
+		default_v_real,      -- 15
+		default_v_text,      -- 16
+		default_v_datetime,  -- 17
+		created_at,          -- 18
+		updated_at           -- 19
+	`
+
+	var attr EAVAttribute
+	err := s.QueryRowRW(sqlUpdate,
+		machineName,      // 1
+		label,            // 2
+		helpText,         // 3
+		primitiveKind,    // 4
+		isRequired,       // 5
+		isUnique,         // 6
+		isIndexed,        // 7
+		isComputed,       // 8
+		computedExpr,     // 9
+		defaultVBool,     // 10
+		defaultVInt,      // 11
+		defaultVReal,     // 12
+		defaultVText,     // 13
+		defaultVDatetime, // 14
+		id,               // 15 (WHERE clause)
+	).Scan(
+		&attr.ID,               // 1
+		&attr.ReferenceID,      // 2
+		&attr.EntityTypeID,     // 3
+		&attr.MachineName,      // 4
+		&attr.Label,            // 5
+		&attr.HelpText,         // 6
+		&attr.PrimitiveKind,    // 7
+		&attr.IsRequired,       // 8
+		&attr.IsUnique,         // 9
+		&attr.IsIndexed,        // 10
+		&attr.IsComputed,       // 11
+		&attr.ComputedExpr,     // 12
+		&attr.DefaultVBool,     // 13
+		&attr.DefaultVInt,      // 14
+		&attr.DefaultVReal,     // 15
+		&attr.DefaultVText,     // 16
+		&attr.DefaultVDatetime, // 17
+		&attr.CreatedAt,        // 18
+		&attr.UpdatedAt,        // 19
+	)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, ErrNotFound
+		}
 		return nil, err
 	}
 	return &attr, nil

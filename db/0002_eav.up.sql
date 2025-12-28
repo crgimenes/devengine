@@ -63,6 +63,14 @@ CREATE TABLE IF NOT EXISTS eav_attributes (
     is_computed    INTEGER NOT NULL DEFAULT 0 CHECK (is_computed IN (0,1)),
     computed_expr  TEXT,
 
+    -- Default values for new records (user-defined)
+    -- Exactly one should be set based on primitive_kind
+    default_v_bool     INTEGER CHECK (default_v_bool IN (0,1)),
+    default_v_int      INTEGER,
+    default_v_real     REAL,
+    default_v_text     TEXT,
+    default_v_datetime DATETIME,
+
     created_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at     DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at     DATETIME

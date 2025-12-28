@@ -21,9 +21,52 @@
             </div>
             <div class="col-md-9">
                 <div class="card p-4">
-                    <h2 class="mb-3">Database Schema</h2>
-                    <p>Visualização do schema do banco de dados.</p>
-                    <p class="text-muted">Esta funcionalidade será implementada em breve.</p>
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <h2 class="mb-0">Database Schema</h2>
+                        <a href="/tools/database-schema/eav/new" class="btn btn-primary">
+                            New EAV Table
+                        </a>
+                    </div>
+                    
+                    <p class="text-muted mb-4">
+                        Tabelas relacionais (criadas por migrations) e tabelas EAV (entidades dinâmicas).
+                    </p>
+
+                    {{if .Tables}}
+                        <div class="list-group">
+                            {{range .Tables}}
+                                <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center" 
+                                     style="transition: all 0.2s;">
+                                    <div>
+                                        <div class="d-flex align-items-center gap-2">
+                                            <h5 class="mb-1">{{.DisplayName}}</h5>
+                                            {{if .IsEAV}}
+                                                <span class="badge bg-primary" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;">EAV</span>
+                                            {{else}}
+                                                <span class="badge bg-info" style="background: linear-gradient(135deg, #00c9ff 0%, #92fe9d 100%) !important;">Relational</span>
+                                            {{end}}
+                                        </div>
+                                        <p class="mb-0 text-muted small">{{.Name}}</p>
+                                    </div>
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Em breve">
+                                            View Data
+                                        </button>
+                                        {{if .IsEAV}}
+                                            <a href="/tools/database-schema/eav/{{.ReferenceID}}/edit" 
+                                               class="btn btn-sm btn-outline-primary">
+                                                Edit
+                                            </a>
+                                        {{end}}
+                                    </div>
+                                </div>
+                            {{end}}
+                        </div>
+                    {{else}}
+                        <div class="alert alert-secondary" role="alert">
+                            <p class="mb-0">Nenhuma tabela encontrada no banco de dados.</p>
+                        </div>
+                    {{end}}
                 </div>
             </div>
         </div>
