@@ -14,8 +14,18 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("/tools/database-schema/eav/new", h.ToolsDatabaseSchemaEAVNew)
 	mux.HandleFunc("/tools/database-schema/eav/{id}/edit", h.ToolsDatabaseSchemaEAVEdit)
 	mux.HandleFunc("POST /tools/database-schema/eav/{id}/attributes/new", h.ToolsDatabaseSchemaEAVAttributeCreate)
-	mux.HandleFunc("POST /tools/database-schema/eav/{id}/attributes/{attr_id}/update", h.ToolsDatabaseSchemaEAVAttributeUpdate)
+	mux.HandleFunc("/tools/database-schema/eav/{id}/attributes/{attr_id}/update", h.ToolsDatabaseSchemaEAVAttributeUpdate)
 	mux.HandleFunc("POST /tools/database-schema/eav/{id}/attributes/{attr_id}/delete", h.ToolsDatabaseSchemaEAVAttributeDelete)
+
+	// Record management
+	mux.HandleFunc("/tools/database-schema/eav/{id}/records", h.ToolsDatabaseSchemaEAVRecords)
+	mux.HandleFunc("/tools/database-schema/eav/{id}/records/api", h.ToolsDatabaseSchemaEAVRecordsAPI)
+	mux.HandleFunc("/tools/database-schema/eav/{id}/records/new", h.ToolsDatabaseSchemaEAVRecordNew)
+	mux.HandleFunc("POST /tools/database-schema/eav/{id}/records/new", h.ToolsDatabaseSchemaEAVRecordCreate)
+	mux.HandleFunc("/tools/database-schema/eav/{id}/records/{record_id}/edit", h.ToolsDatabaseSchemaEAVRecordEdit)
+	mux.HandleFunc("POST /tools/database-schema/eav/{id}/records/{record_id}/update", h.ToolsDatabaseSchemaEAVRecordUpdate)
+	mux.HandleFunc("POST /tools/database-schema/eav/{id}/records/{record_id}/delete", h.ToolsDatabaseSchemaEAVRecordDelete)
+
 	mux.HandleFunc("/tools/forms", h.ToolsForms)
 	mux.HandleFunc("/tools/users", h.ToolsUsers)
 	mux.HandleFunc("/tools/menu-editor", h.ToolsMenuEditor)

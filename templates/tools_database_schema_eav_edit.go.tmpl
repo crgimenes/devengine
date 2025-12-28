@@ -40,9 +40,14 @@
                             <h2 class="mb-1">{{.EntityType.Name}}</h2>
                             <p class="text-muted mb-0 small font-monospace">{{.EntityType.MachineName}}</p>
                         </div>
-                        <a href="/tools/database-schema" class="btn btn-secondary">
-                            Voltar
-                        </a>
+                        <div class="d-flex gap-2">
+                            <a href="/tools/database-schema/eav/{{.EntityID}}/records" class="btn btn-primary">
+                                <i class="bi bi-list"></i> Registros
+                            </a>
+                            <a href="/tools/database-schema" class="btn btn-secondary">
+                                Voltar
+                            </a>
+                        </div>
                     </div>
                     {{if .EntityType.Description}}
                         <p class="mb-0">{{.EntityType.Description}}</p>

@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="dark">
+  <head>
+    {{template "head" .}}
+  </head>
+
+  <body>
+    {{template "navbar" .}}
+
+    <main class="container py-4 py-md-5">
+        {{if .Message}}
+            <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+                {{.Message}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {{end}}
+        
+        <div class="row">
+            <div class="col-md-3">
+                {{template "tools_sidebar" .}}
+            </div>
+            <div class="col-md-9">
+                <!-- Header -->
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <div>
+                        <h2 class="mb-1">{{.EntityType.Name}} - Registros</h2>
+                        <nav aria-label="breadcrumb">
+                            <ol class="breadcrumb mb-0">
+                                <li class="breadcrumb-item"><a href="/tools">Tools</a></li>
+                                <li class="breadcrumb-item"><a href="/tools/database-schema">Database Schema</a></li>
+                                <li class="breadcrumb-item"><a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/edit">{{.EntityType.Name}}</a></li>
+                                <li class="breadcrumb-item active">Registros</li>
+                            </ol>
+                        </nav>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/edit" class="btn btn-outline-secondary">
+                            <i class="bi bi-pencil"></i> Editar Tabela
+                        </a>
+                        <a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/records/new" class="btn btn-primary">
+                            <i class="bi bi-plus-circle"></i> Novo Registro
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Total count -->
+                <div class="mb-3">
+                    <p class="text-muted mb-0">Total: <strong>{{.Total}}</strong> registro(s)</p>
+                </div>
+
+                <!-- Card Grid -->
+                <div id="records-container" 
+                     class="row g-3" 
+                     data-entity-id="{{.EntityType.ReferenceID}}"
+                     data-offset="{{.Offset}}"
+                     data-has-more="{{.HasMore}}">
+                    
+                    {{range .Records}}
+                    <div class="col-12 col-md-6 col-lg-4">
+                        <div class="card h-100">
+                            <div class="card-body">
+                                <!-- Status badge -->
+                                <div class="mb-2">
+                                    {{if eq .Record.Status "active"}}
+                                        <span class="badge bg-success">Ativo</span>
+                                    {{else}}
+                                        <span class="badge bg-warning">Rascunho</span>
+                                    {{end}}
+                                    <span class="badge bg-secondary font-monospace">{{slice .Record.ReferenceID 0 8}}</span>
+                                </div>
+
+                                <!-- Values -->
+                                <div class="mb-3">
+                                    {{range $key, $value := .Values}}
+                                        <div class="mb-1">
+                                            <small class="text-muted">{{$key}}:</small><br>
+                                            <strong>
+                                                {{if eq (printf "%T" $value) "bool"}}
+                                                    {{if $value}}Sim{{else}}Não{{end}}
+                                                {{else}}
+                                                    {{$value}}
+                                                {{end}}
+                                            </strong>
+                                        </div>
+                                    {{end}}
+                                </div>
+
+                                <!-- Metadata -->
+                                <div class="mb-3">
+                                    <small class="text-muted d-block">Criado: {{.Record.CreatedAt}}</small>
+                                    <small class="text-muted d-block">Rev: {{.Record.Rev}}</small>
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="btn-group w-100" role="group">
+                                    <a href="/tools/database-schema/eav/{{$.EntityType.ReferenceID}}/records/{{.Record.ReferenceID}}/edit" 
+                                       class="btn btn-sm btn-outline-primary">
+                                        Editar
+                                    </a>
+                                    <form method="POST" 
+                                          action="/tools/database-schema/eav/{{$.EntityType.ReferenceID}}/records/{{.Record.ReferenceID}}/delete" 
+                                          style="display: inline;"
+                                          class="delete-record-form">
+                                        <button type="submit" class="btn btn-sm btn-outline-danger">
+                                            Excluir
+                                        </button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {{end}}
+                </div>
+
+                <!-- Sentinel for infinite scroll -->
+                {{if .HasMore}}
+                <div id="sentinel" class="text-center my-4">
+                    <div class="spinner-border text-primary" role="status">
+                        <span class="visually-hidden">Carregando...</span>
+                    </div>
+                </div>
+                {{end}}
+
+                <!-- Empty state -->
+                {{if eq (len .Records) 0}}
+                <div class="text-center py-5">
+                    <i class="bi bi-inbox fs-1 text-muted"></i>
+                    <p class="text-muted mt-3">Nenhum registro encontrado</p>
+                    <a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/records/new" class="btn btn-primary">
+                        Criar Primeiro Registro
+                    </a>
+                </div>
+                {{end}}
+            </div>
+        </div>
+    </main>
+
+    {{template "footer" .}}
+    <script src="/assets/eav-records-list.js"></script>
+  </body>
+</html>

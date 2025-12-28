@@ -726,15 +726,42 @@ func (s *SQLite) CreateEAVRecord(entityTypeID int64) (*EAVRecord, error) {
 	return &rec, nil
 }
 
+// UpdateEAVRecordStatus updates the status of a record (e.g., from 'draft' to 'active')
+// and increments rev for optimistic locking
+func (s *SQLite) UpdateEAVRecordStatus(id int64, currentRev int, status string) error {
+	query := `
+		UPDATE eav_records
+		SET status = ?, 
+		    rev = ?,
+		    updated_at = CURRENT_TIMESTAMP
+		WHERE id = ? AND rev = ? AND deleted_at IS NULL
+	`
+	result, err := s.rw.Exec(query, status, currentRev+1, id, currentRev)
+	if err != nil {
+		return err
+	}
+
+	rows, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rows == 0 {
+		return ErrConflict // Rev mismatch or record not found
+	}
+
+	return nil
+}
+
 // GetEAVRecordByID retrieves a record by internal ID.
 func (s *SQLite) GetEAVRecordByID(id int64) (*EAVRecord, error) {
 	const sqlSelect = `SELECT
 		id,             -- 1
 		reference_id,   -- 2
 		entity_type_id, -- 3
-		rev,            -- 4
-		created_at,     -- 5
-		updated_at      -- 6
+		status,         -- 4
+		rev,            -- 5
+		created_at,     -- 6
+		updated_at      -- 7
 	FROM eav_records
 	WHERE id = ? AND deleted_at IS NULL;` // 1
 
@@ -745,12 +772,13 @@ func (s *SQLite) GetEAVRecordByID(id int64) (*EAVRecord, error) {
 		&rec.ID,           // 1
 		&rec.ReferenceID,  // 2
 		&rec.EntityTypeID, // 3
-		&rec.Rev,          // 4
-		&rec.CreatedAt,    // 5
-		&rec.UpdatedAt,    // 6
+		&rec.Status,       // 4
+		&rec.Rev,          // 5
+		&rec.CreatedAt,    // 6
+		&rec.UpdatedAt,    // 7
 	)
 	if err != nil {
-		if errors.Is(err, ErrNoRows) {
+		if errors.Is(err, ErrNoRows) { // Changed from `err == sql.ErrNoRows` to `errors.Is(err, ErrNoRows)` to match existing pattern
 			return nil, ErrNotFound
 		}
 		return nil, err
@@ -764,9 +792,10 @@ func (s *SQLite) GetEAVRecordByRefID(refID string) (*EAVRecord, error) {
 		id,             -- 1
 		reference_id,   -- 2
 		entity_type_id, -- 3
-		rev,            -- 4
-		created_at,     -- 5
-		updated_at      -- 6
+		status,         -- 4
+		rev,            -- 5
+		created_at,     -- 6
+		updated_at      -- 7
 	FROM eav_records
 	WHERE reference_id = ? AND deleted_at IS NULL;` // 1
 
@@ -777,12 +806,13 @@ func (s *SQLite) GetEAVRecordByRefID(refID string) (*EAVRecord, error) {
 		&rec.ID,           // 1
 		&rec.ReferenceID,  // 2
 		&rec.EntityTypeID, // 3
-		&rec.Rev,          // 4
-		&rec.CreatedAt,    // 5
-		&rec.UpdatedAt,    // 6
+		&rec.Status,       // 4
+		&rec.Rev,          // 5
+		&rec.CreatedAt,    // 6
+		&rec.UpdatedAt,    // 7
 	)
 	if err != nil {
-		if errors.Is(err, ErrNoRows) {
+		if errors.Is(err, ErrNoRows) { // Changed from `err == sql.ErrNoRows` to `errors.Is(err, ErrNoRows)` to match existing pattern
 			return nil, ErrNotFound
 		}
 		return nil, err
@@ -808,12 +838,13 @@ func (s *SQLite) ListEAVRecordsByEntityTypeID(entityTypeID int64, limit, offset 
 		id,             -- 1
 		reference_id,   -- 2
 		entity_type_id, -- 3
-		rev,            -- 4
-		created_at,     -- 5
-		updated_at      -- 6
+		status,         -- 4
+		rev,            -- 5
+		created_at,     -- 6
+		updated_at      -- 7
 	FROM eav_records
 	WHERE entity_type_id = ? AND deleted_at IS NULL
-	ORDER BY updated_at DESC, id DESC
+	ORDER BY created_at DESC, id DESC
 	LIMIT ? OFFSET ?;` // 1, 2, 3
 
 	rows, err := s.Query(sqlSelect,
@@ -833,9 +864,10 @@ func (s *SQLite) ListEAVRecordsByEntityTypeID(entityTypeID int64, limit, offset 
 			&rec.ID,           // 1
 			&rec.ReferenceID,  // 2
 			&rec.EntityTypeID, // 3
-			&rec.Rev,          // 4
-			&rec.CreatedAt,    // 5
-			&rec.UpdatedAt,    // 6
+			&rec.Status,       // 4
+			&rec.Rev,          // 5
+			&rec.CreatedAt,    // 6
+			&rec.UpdatedAt,    // 7
 		); err != nil {
 			return nil, 0, err
 		}
