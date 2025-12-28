@@ -95,8 +95,11 @@
                                     <textarea class="form-control" 
                                               id="attr_{{.MachineName}}" 
                                               name="attr_{{.MachineName}}"
-                                              rows="3"
+                                              rows="3"{{if .MaxLength}} maxlength="{{.MaxLength}}"{{end}}
                                               {{if .IsRequired}}required{{end}}>{{$value}}</textarea>
+                                    {{if .MaxLength}}
+                                    <div class="form-text">Máximo: {{.MaxLength}} caracteres</div>
+                                    {{end}}
                                 {{else if eq .PrimitiveKind "DATETIME"}}
                                     <input type="datetime-local" 
                                            class="form-control" 

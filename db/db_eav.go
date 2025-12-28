@@ -46,6 +46,7 @@ type EAVAttribute struct {
 	IsRequired    bool   `json:"is_required"`
 	IsUnique      bool   `json:"is_unique"`
 	IsIndexed     bool   `json:"is_indexed"`
+	MaxLength     *int   `json:"max_length,omitempty"` // For TEXT fields, NULL for other types
 	IsComputed    bool   `json:"is_computed"`
 	ComputedExpr  string `json:"computed_expr"` // Filo expression
 	// Default values for new records (user-defined)
@@ -297,7 +298,9 @@ func (s *SQLite) SoftDeleteEAVEntityType(id int64) error {
 func (s *SQLite) CreateEAVAttribute(
 	entityTypeID int64,
 	machineName, label, helpText, primitiveKind string,
-	isRequired, isUnique, isIndexed, isComputed bool,
+	isRequired, isUnique, isIndexed bool,
+	maxLength *int, // For TEXT fields, NULL for other types
+	isComputed bool,
 	computedExpr string,
 	defaultVBool *bool,
 	defaultVInt *int64,
@@ -327,17 +330,18 @@ func (s *SQLite) CreateEAVAttribute(
 		is_required,         -- 7
 		is_unique,           -- 8
 		is_indexed,          -- 9
-		is_computed,         -- 10
-		computed_expr,       -- 11
-		default_v_bool,      -- 12
-		default_v_int,       -- 13
-		default_v_real,      -- 14
-		default_v_text,      -- 15
-		default_v_datetime,  -- 16
+		max_length,          -- 10
+		is_computed,         -- 11
+		computed_expr,       -- 12
+		default_v_bool,      -- 13
+		default_v_int,       -- 14
+		default_v_real,      -- 15
+		default_v_text,      -- 16
+		default_v_datetime,  -- 17
 		created_at,
 		updated_at
 	) VALUES (
-		?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
+		?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
 		CURRENT_TIMESTAMP,
 		CURRENT_TIMESTAMP
 	) RETURNING
@@ -351,15 +355,16 @@ func (s *SQLite) CreateEAVAttribute(
 		is_required,         -- 8
 		is_unique,           -- 9
 		is_indexed,          -- 10
-		is_computed,         -- 11
-		computed_expr,       -- 12
-		default_v_bool,      -- 13
-		default_v_int,       -- 14
-		default_v_real,      -- 15
-		default_v_text,      -- 16
-		default_v_datetime,  -- 17
-		created_at,          -- 18
-		updated_at           -- 19
+		max_length,          -- 11
+		is_computed,         -- 12
+		computed_expr,       -- 13
+		default_v_bool,      -- 14
+		default_v_int,       -- 15
+		default_v_real,      -- 16
+		default_v_text,      -- 17
+		default_v_datetime,  -- 18
+		created_at,          -- 19
+		updated_at           -- 20
 	;`
 
 	var attr EAVAttribute
@@ -373,13 +378,14 @@ func (s *SQLite) CreateEAVAttribute(
 		isRequired,       // 7
 		isUnique,         // 8
 		isIndexed,        // 9
-		isComputed,       // 10
-		computedExpr,     // 11
-		defaultVBool,     // 12
-		defaultVInt,      // 13
-		defaultVReal,     // 14
-		defaultVText,     // 15
-		defaultVDatetime, // 16
+		maxLength,        // 10
+		isComputed,       // 11
+		computedExpr,     // 12
+		defaultVBool,     // 13
+		defaultVInt,      // 14
+		defaultVReal,     // 15
+		defaultVText,     // 16
+		defaultVDatetime, // 17
 	).Scan(
 		&attr.ID,               // 1
 		&attr.ReferenceID,      // 2
@@ -391,15 +397,16 @@ func (s *SQLite) CreateEAVAttribute(
 		&attr.IsRequired,       // 8
 		&attr.IsUnique,         // 9
 		&attr.IsIndexed,        // 10
-		&attr.IsComputed,       // 11
-		&attr.ComputedExpr,     // 12
-		&attr.DefaultVBool,     // 13
-		&attr.DefaultVInt,      // 14
-		&attr.DefaultVReal,     // 15
-		&attr.DefaultVText,     // 16
-		&attr.DefaultVDatetime, // 17
-		&attr.CreatedAt,        // 18
-		&attr.UpdatedAt,        // 19
+		&attr.MaxLength,        // 11
+		&attr.IsComputed,       // 12
+		&attr.ComputedExpr,     // 13
+		&attr.DefaultVBool,     // 14
+		&attr.DefaultVInt,      // 15
+		&attr.DefaultVReal,     // 16
+		&attr.DefaultVText,     // 17
+		&attr.DefaultVDatetime, // 18
+		&attr.CreatedAt,        // 19
+		&attr.UpdatedAt,        // 20
 	)
 	if err != nil {
 		return nil, err
@@ -411,7 +418,9 @@ func (s *SQLite) CreateEAVAttribute(
 func (s *SQLite) UpdateEAVAttribute(
 	id int64,
 	machineName, label, helpText, primitiveKind string,
-	isRequired, isUnique, isIndexed, isComputed bool,
+	isRequired, isUnique, isIndexed bool,
+	maxLength *int, // For TEXT fields
+	isComputed bool,
 	computedExpr string,
 	defaultVBool *bool,
 	defaultVInt *int64,
@@ -438,13 +447,14 @@ func (s *SQLite) UpdateEAVAttribute(
 		is_required = ?,         -- 5
 		is_unique = ?,           -- 6
 		is_indexed = ?,          -- 7
-		is_computed = ?,         -- 8
-		computed_expr = ?,       -- 9
-		default_v_bool = ?,      -- 10
-		default_v_int = ?,       -- 11
-		default_v_real = ?,      -- 12
-		default_v_text = ?,      -- 13
-		default_v_datetime = ?,  -- 14
+		max_length = ?,          -- 8
+		is_computed = ?,         -- 9
+		computed_expr = ?,       -- 10
+		default_v_bool = ?,      -- 11
+		default_v_int = ?,       -- 12
+		default_v_real = ?,      -- 13
+		default_v_text = ?,      -- 14
+		default_v_datetime = ?,  -- 15
 		updated_at = CURRENT_TIMESTAMP
 	WHERE id = ? AND deleted_at IS NULL
 	RETURNING
@@ -458,15 +468,16 @@ func (s *SQLite) UpdateEAVAttribute(
 		is_required,         -- 8
 		is_unique,           -- 9
 		is_indexed,          -- 10
-		is_computed,         -- 11
-		computed_expr,       -- 12
-		default_v_bool,      -- 13
-		default_v_int,       -- 14
-		default_v_real,      -- 15
-		default_v_text,      -- 16
-		default_v_datetime,  -- 17
-		created_at,          -- 18
-		updated_at           -- 19
+		max_length,          -- 11
+		is_computed,         -- 12
+		computed_expr,       -- 13
+		default_v_bool,      -- 14
+		default_v_int,       -- 15
+		default_v_real,      -- 16
+		default_v_text,      -- 17
+		default_v_datetime,  -- 18
+		created_at,          -- 19
+		updated_at           -- 20
 	`
 
 	var attr EAVAttribute
@@ -478,14 +489,15 @@ func (s *SQLite) UpdateEAVAttribute(
 		isRequired,       // 5
 		isUnique,         // 6
 		isIndexed,        // 7
-		isComputed,       // 8
-		computedExpr,     // 9
-		defaultVBool,     // 10
-		defaultVInt,      // 11
-		defaultVReal,     // 12
-		defaultVText,     // 13
-		defaultVDatetime, // 14
-		id,               // 15 (WHERE clause)
+		maxLength,        // 8
+		isComputed,       // 9
+		computedExpr,     // 10
+		defaultVBool,     // 11
+		defaultVInt,      // 12
+		defaultVReal,     // 13
+		defaultVText,     // 14
+		defaultVDatetime, // 15
+		id,               // 16 (WHERE clause)
 	).Scan(
 		&attr.ID,               // 1
 		&attr.ReferenceID,      // 2
@@ -497,15 +509,16 @@ func (s *SQLite) UpdateEAVAttribute(
 		&attr.IsRequired,       // 8
 		&attr.IsUnique,         // 9
 		&attr.IsIndexed,        // 10
-		&attr.IsComputed,       // 11
-		&attr.ComputedExpr,     // 12
-		&attr.DefaultVBool,     // 13
-		&attr.DefaultVInt,      // 14
-		&attr.DefaultVReal,     // 15
-		&attr.DefaultVText,     // 16
-		&attr.DefaultVDatetime, // 17
-		&attr.CreatedAt,        // 18
-		&attr.UpdatedAt,        // 19
+		&attr.MaxLength,        // 11
+		&attr.IsComputed,       // 12
+		&attr.ComputedExpr,     // 13
+		&attr.DefaultVBool,     // 14
+		&attr.DefaultVInt,      // 15
+		&attr.DefaultVReal,     // 16
+		&attr.DefaultVText,     // 17
+		&attr.DefaultVDatetime, // 18
+		&attr.CreatedAt,        // 19
+		&attr.UpdatedAt,        // 20
 	)
 	if err != nil {
 		if err == sql.ErrNoRows {
@@ -514,6 +527,99 @@ func (s *SQLite) UpdateEAVAttribute(
 		return nil, err
 	}
 	return &attr, nil
+}
+
+// CheckEAVValueUnique verifies if a value is unique for a given attribute.
+// Returns true if the value is unique (or NULL), false if a duplicate exists.
+//
+// Parameters:
+//   - attributeID: The attribute to check
+//   - primitiveKind: Type of the attribute (BOOL, INT, REAL, TEXT, DATETIME)
+//   - value: The value to check (must match primitiveKind type)
+//   - excludeRecordID: Record ID to exclude from check (use 0 for new records)
+//
+// Rules:
+//   - NULL values are always considered unique (multiple NULLs allowed)
+//   - Only checks against active (non-deleted) records
+//   - Uses read-only pool for optimal concurrency
+func (s *SQLite) CheckEAVValueUnique(
+	attributeID int64,
+	primitiveKind string,
+	value interface{},
+	excludeRecordID int64,
+) (bool, error) {
+	// NULL values are always unique
+	if value == nil {
+		return true, nil
+	}
+
+	// Build query based on primitive kind
+	var sqlCheck string
+	var args []interface{}
+
+	switch primitiveKind {
+	case "BOOL":
+		sqlCheck = `SELECT COUNT(*) FROM eav_values v
+			INNER JOIN eav_records r ON v.record_id = r.id
+			WHERE v.attribute_id = ?
+			  AND v.v_bool = ?
+			  AND v.record_id != ?
+			  AND v.deleted_at IS NULL
+			  AND r.deleted_at IS NULL`
+		args = []interface{}{attributeID, value, excludeRecordID}
+
+	case "INT":
+		sqlCheck = `SELECT COUNT(*) FROM eav_values v
+			INNER JOIN eav_records r ON v.record_id = r.id
+			WHERE v.attribute_id = ?
+			  AND v.v_int = ?
+			  AND v.record_id != ?
+			  AND v.deleted_at IS NULL
+			  AND r.deleted_at IS NULL`
+		args = []interface{}{attributeID, value, excludeRecordID}
+
+	case "REAL":
+		sqlCheck = `SELECT COUNT(*) FROM eav_values v
+			INNER JOIN eav_records r ON v.record_id = r.id
+			WHERE v.attribute_id = ?
+			  AND v.v_real = ?
+			  AND v.record_id != ?
+			  AND v.deleted_at IS NULL
+			  AND r.deleted_at IS NULL`
+		args = []interface{}{attributeID, value, excludeRecordID}
+
+	case "TEXT":
+		sqlCheck = `SELECT COUNT(*) FROM eav_values v
+			INNER JOIN eav_records r ON v.record_id = r.id
+			WHERE v.attribute_id = ?
+			  AND v.v_text = ?
+			  AND v.record_id != ?
+			  AND v.deleted_at IS NULL
+			  AND r.deleted_at IS NULL`
+		args = []interface{}{attributeID, value, excludeRecordID}
+
+	case "DATETIME":
+		sqlCheck = `SELECT COUNT(*) FROM eav_values v
+			INNER JOIN eav_records r ON v.record_id = r.id
+			WHERE v.attribute_id = ?
+			  AND v.v_datetime = ?
+			  AND v.record_id != ?
+			  AND v.deleted_at IS NULL
+			  AND r.deleted_at IS NULL`
+		args = []interface{}{attributeID, value, excludeRecordID}
+
+	default:
+		return false, fmt.Errorf("%w: unsupported primitive_kind: %s", ErrInvalidValue, primitiveKind)
+	}
+
+	var count int
+	err := s.QueryRow(sqlCheck, args...).Scan(&count)
+	if err != nil {
+		return false, err
+	}
+
+	// Unique if count == 0
+	return count == 0, nil
 }
 
 // GetEAVAttributeByID retrieves an attribute by internal ID.
@@ -529,10 +635,11 @@ func (s *SQLite) GetEAVAttributeByID(id int64) (*EAVAttribute, error) {
 		is_required,                 -- 8
 		is_unique,                   -- 9
 		is_indexed,                  -- 10
-		is_computed,                 -- 11
-		COALESCE(computed_expr, ''), -- 12
-		created_at,                  -- 13
-		updated_at                   -- 14
+		max_length,                  -- 11
+		is_computed,                 -- 12
+		COALESCE(computed_expr, ''), -- 13
+		created_at,                  -- 14
+		updated_at                   -- 15
 	FROM eav_attributes
 	WHERE id = ? AND deleted_at IS NULL;` // 1
 
@@ -550,10 +657,11 @@ func (s *SQLite) GetEAVAttributeByID(id int64) (*EAVAttribute, error) {
 		&attr.IsRequired,    // 8
 		&attr.IsUnique,      // 9
 		&attr.IsIndexed,     // 10
-		&attr.IsComputed,    // 11
-		&attr.ComputedExpr,  // 12
-		&attr.CreatedAt,     // 13
-		&attr.UpdatedAt,     // 14
+		&attr.MaxLength,     // 11
+		&attr.IsComputed,    // 12
+		&attr.ComputedExpr,  // 13
+		&attr.CreatedAt,     // 14
+		&attr.UpdatedAt,     // 15
 	)
 	if err != nil {
 		if errors.Is(err, ErrNoRows) {
@@ -577,10 +685,11 @@ func (s *SQLite) GetEAVAttributeByRefID(refID string) (*EAVAttribute, error) {
 		is_required,                 -- 8
 		is_unique,                   -- 9
 		is_indexed,                  -- 10
-		is_computed,                 -- 11
-		COALESCE(computed_expr, ''), -- 12
-		created_at,                  -- 13
-		updated_at                   -- 14
+		max_length,                  -- 11
+		is_computed,                 -- 12
+		COALESCE(computed_expr, ''), -- 13
+		created_at,                  -- 14
+		updated_at                   -- 15
 	FROM eav_attributes
 	WHERE reference_id = ? AND deleted_at IS NULL;` // 1
 
@@ -598,10 +707,11 @@ func (s *SQLite) GetEAVAttributeByRefID(refID string) (*EAVAttribute, error) {
 		&attr.IsRequired,    // 8
 		&attr.IsUnique,      // 9
 		&attr.IsIndexed,     // 10
-		&attr.IsComputed,    // 11
-		&attr.ComputedExpr,  // 12
-		&attr.CreatedAt,     // 13
-		&attr.UpdatedAt,     // 14
+		&attr.MaxLength,     // 11
+		&attr.IsComputed,    // 12
+		&attr.ComputedExpr,  // 13
+		&attr.CreatedAt,     // 14
+		&attr.UpdatedAt,     // 15
 	)
 	if err != nil {
 		if errors.Is(err, ErrNoRows) {
@@ -626,10 +736,11 @@ func (s *SQLite) ListEAVAttributesByEntityTypeID(entityTypeID int64) ([]EAVAttri
 		is_required,                 -- 8
 		is_unique,                   -- 9
 		is_indexed,                  -- 10
-		is_computed,                 -- 11
-		COALESCE(computed_expr, ''), -- 12
-		created_at,                  -- 13
-		updated_at                   -- 14
+		max_length,                  -- 11
+		is_computed,                 -- 12
+		COALESCE(computed_expr, ''), -- 13
+		created_at,                  -- 14
+		updated_at                   -- 15
 	FROM eav_attributes
 	WHERE entity_type_id = ? AND deleted_at IS NULL
 	ORDER BY machine_name ASC;` // 1
@@ -656,10 +767,11 @@ func (s *SQLite) ListEAVAttributesByEntityTypeID(entityTypeID int64) ([]EAVAttri
 			&attr.IsRequired,    // 8
 			&attr.IsUnique,      // 9
 			&attr.IsIndexed,     // 10
-			&attr.IsComputed,    // 11
-			&attr.ComputedExpr,  // 12
-			&attr.CreatedAt,     // 13
-			&attr.UpdatedAt,     // 14
+			&attr.MaxLength,     // 11
+			&attr.IsComputed,    // 12
+			&attr.ComputedExpr,  // 13
+			&attr.CreatedAt,     // 14
+			&attr.UpdatedAt,     // 15
 		); err != nil {
 			return nil, err
 		}

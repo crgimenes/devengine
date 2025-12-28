@@ -235,9 +235,11 @@ func TestEAVCreateAttribute(t *testing.T) {
 		et.ID,
 		"full_name", "Full Name", "Enter your full name",
 		"TEXT",
-		true, false, false, false,
-		"",
-		nil, nil, nil, nil, nil,
+		true, false, false,
+		nil,                     // maxLength
+		false,                   // isComputed
+		"",                      // computedExpr
+		nil, nil, nil, nil, nil, // default values
 	)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)
@@ -275,8 +277,10 @@ func TestEAVCreateAttributeInvalidKind(t *testing.T) {
 		et.ID,
 		"bad_field", "Bad", "",
 		"INVALID_KIND", // invalid
-		false, false, false, false,
-		"",
+		false, false, false,
+		nil,   // maxLength
+		false, // isComputed
+		"",    // computedExpr
 		nil, nil, nil, nil, nil,
 	)
 	if err == nil {
@@ -301,8 +305,10 @@ func TestEAVCreateAttributeAllKinds(t *testing.T) {
 			et.ID,
 			"field_"+kind, "Field "+kind, "",
 			kind,
-			false, false, false, false,
-			"",
+			false, false, false,
+			nil,   // maxLength
+			false, // isComputed
+			"",    // computedExpr
 			nil, nil, nil, nil, nil,
 		)
 		if err != nil {
@@ -323,17 +329,17 @@ func TestEAVListAttributesByEntityType(t *testing.T) {
 	}
 
 	// Create attributes in non-alphabetical order
-	_, err = s.CreateEAVAttribute(et.ID, "title", "Title", "", "TEXT", false, false, false, false, "", nil, nil, nil, nil, nil)
+	_, err = s.CreateEAVAttribute(et.ID, "title", "Title", "", "TEXT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)
 	}
 
-	_, err = s.CreateEAVAttribute(et.ID, "author", "Author", "", "TEXT", false, false, false, false, "", nil, nil, nil, nil, nil)
+	_, err = s.CreateEAVAttribute(et.ID, "author", "Author", "", "TEXT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)
 	}
 
-	_, err = s.CreateEAVAttribute(et.ID, "year", "Year", "", "INT", false, false, false, false, "", nil, nil, nil, nil, nil)
+	_, err = s.CreateEAVAttribute(et.ID, "year", "Year", "", "INT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)
 	}
@@ -367,7 +373,7 @@ func TestEAVSoftDeleteAttribute(t *testing.T) {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
 
-	attr, err := s.CreateEAVAttribute(et.ID, "temp", "Temp", "", "TEXT", false, false, false, false, "", nil, nil, nil, nil, nil)
+	attr, err := s.CreateEAVAttribute(et.ID, "temp", "Temp", "", "TEXT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)
 	}
@@ -611,7 +617,7 @@ func TestEAVUpsertValueBool(t *testing.T) {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
 
-	attr, err := s.CreateEAVAttribute(et.ID, "enabled", "Enabled", "", "BOOL", false, false, false, false, "", nil, nil, nil, nil, nil)
+	attr, err := s.CreateEAVAttribute(et.ID, "enabled", "Enabled", "", "BOOL", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)
 	}
@@ -654,7 +660,7 @@ func TestEAVUpsertValueInt(t *testing.T) {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
 
-	attr, err := s.CreateEAVAttribute(et.ID, "count", "Count", "", "INT", false, false, false, false, "", nil, nil, nil, nil, nil)
+	attr, err := s.CreateEAVAttribute(et.ID, "count", "Count", "", "INT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)
 	}
@@ -697,7 +703,7 @@ func TestEAVUpsertValueReal(t *testing.T) {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
 
-	attr, err := s.CreateEAVAttribute(et.ID, "temperature", "Temperature", "", "REAL", false, false, false, false, "", nil, nil, nil, nil, nil)
+	attr, err := s.CreateEAVAttribute(et.ID, "temperature", "Temperature", "", "REAL", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)
 	}
@@ -740,7 +746,7 @@ func TestEAVUpsertValueText(t *testing.T) {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
 
-	attr, err := s.CreateEAVAttribute(et.ID, "title", "Title", "", "TEXT", false, false, false, false, "", nil, nil, nil, nil, nil)
+	attr, err := s.CreateEAVAttribute(et.ID, "title", "Title", "", "TEXT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)
 	}
@@ -783,7 +789,7 @@ func TestEAVUpsertValueDatetime(t *testing.T) {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
 
-	attr, err := s.CreateEAVAttribute(et.ID, "scheduled_at", "Scheduled At", "", "DATETIME", false, false, false, false, "", nil, nil, nil, nil, nil)
+	attr, err := s.CreateEAVAttribute(et.ID, "scheduled_at", "Scheduled At", "", "DATETIME", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)
 	}
@@ -827,7 +833,7 @@ func TestEAVUpsertValueTypeMismatch(t *testing.T) {
 	}
 
 	// Create INT attribute
-	attr, err := s.CreateEAVAttribute(et.ID, "number", "Number", "", "INT", false, false, false, false, "", nil, nil, nil, nil, nil)
+	attr, err := s.CreateEAVAttribute(et.ID, "number", "Number", "", "INT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)
 	}
@@ -856,7 +862,7 @@ func TestEAVUpsertValueMultipleValues(t *testing.T) {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
 
-	attr, err := s.CreateEAVAttribute(et.ID, "field", "Field", "", "INT", false, false, false, false, "", nil, nil, nil, nil, nil)
+	attr, err := s.CreateEAVAttribute(et.ID, "field", "Field", "", "INT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)
 	}
@@ -886,7 +892,7 @@ func TestEAVValueUpsertSemantics(t *testing.T) {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
 
-	attr, err := s.CreateEAVAttribute(et.ID, "version", "Version", "", "INT", false, false, false, false, "", nil, nil, nil, nil, nil)
+	attr, err := s.CreateEAVAttribute(et.ID, "version", "Version", "", "INT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)
 	}
@@ -936,7 +942,7 @@ func TestEAVDeleteValue(t *testing.T) {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
 
-	attr, err := s.CreateEAVAttribute(et.ID, "field", "Field", "", "TEXT", false, false, false, false, "", nil, nil, nil, nil, nil)
+	attr, err := s.CreateEAVAttribute(et.ID, "field", "Field", "", "TEXT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)
 	}
@@ -981,12 +987,12 @@ func TestEAVGetValuesExcludesSoftDeletedAttributes(t *testing.T) {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
 
-	attr1, err := s.CreateEAVAttribute(et.ID, "field1", "Field 1", "", "TEXT", false, false, false, false, "", nil, nil, nil, nil, nil)
+	attr1, err := s.CreateEAVAttribute(et.ID, "field1", "Field 1", "", "TEXT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)
 	}
 
-	attr2, err := s.CreateEAVAttribute(et.ID, "field2", "Field 2", "", "TEXT", false, false, false, false, "", nil, nil, nil, nil, nil)
+	attr2, err := s.CreateEAVAttribute(et.ID, "field2", "Field 2", "", "TEXT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute() error: %v", err)
 	}
@@ -1046,17 +1052,17 @@ func TestEAVFullFlow(t *testing.T) {
 	}
 
 	// 2. Create attributes (TEXT + INT + DATETIME)
-	attrName, err := s.CreateEAVAttribute(et.ID, "name", "Name", "", "TEXT", true, false, false, false, "", nil, nil, nil, nil, nil)
+	attrName, err := s.CreateEAVAttribute(et.ID, "name", "Name", "", "TEXT", true, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute(name) error: %v", err)
 	}
 
-	attrAge, err := s.CreateEAVAttribute(et.ID, "age", "Age", "", "INT", false, false, false, false, "", nil, nil, nil, nil, nil)
+	attrAge, err := s.CreateEAVAttribute(et.ID, "age", "Age", "", "INT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute(age) error: %v", err)
 	}
 
-	attrBirthday, err := s.CreateEAVAttribute(et.ID, "birthday", "Birthday", "", "DATETIME", false, false, false, false, "", nil, nil, nil, nil, nil)
+	attrBirthday, err := s.CreateEAVAttribute(et.ID, "birthday", "Birthday", "", "DATETIME", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("CreateEAVAttribute(birthday) error: %v", err)
 	}

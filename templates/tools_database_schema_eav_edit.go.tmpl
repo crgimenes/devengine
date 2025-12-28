@@ -55,12 +55,11 @@
                 </div>
 
                 <!-- Attributes List -->
-                <div class="card p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h3 class="mb-0">Atributos</h3>
-                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#attributeModal">
+                        <a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/attributes/new" class="btn btn-primary">
                             Novo Atributo
-                        </button>
+                        </a>
                     </div>
 
                     {{if .Attributes}}
@@ -100,26 +99,10 @@
                                             </td>
                                             <td>
                                                 <div class="btn-group btn-group-sm" role="group">
-                                                    <button 
-                                                        type="button" 
-                                                        class="btn btn-outline-primary edit-attribute-btn"
-                                                        data-attr-id="{{.ReferenceID}}"
-                                                        data-machine-name="{{.MachineName}}"
-                                                        data-label="{{.Label}}"
-                                                        data-help-text="{{.HelpText}}"
-                                                        data-primitive-kind="{{.PrimitiveKind}}"
-                                                        data-is-required="{{.IsRequired}}"
-                                                        data-is-unique="{{.IsUnique}}"
-                                                        data-is-indexed="{{.IsIndexed}}"
-                                                        data-default-bool="{{if .DefaultVBool}}{{if .DefaultVBool}}1{{else}}0{{end}}{{end}}"
-                                                        data-default-int="{{if .DefaultVInt}}{{.DefaultVInt}}{{end}}"
-                                                        data-default-real="{{if .DefaultVReal}}{{.DefaultVReal}}{{end}}"
-                                                        data-default-text="{{if .DefaultVText}}{{.DefaultVText}}{{end}}"
-                                                        data-default-datetime="{{if .DefaultVDatetime}}{{.DefaultVDatetime}}{{end}}"
-                                                        data-bs-toggle="modal" 
-                                                        data-bs-target="#attributeModal">
+                                                    <a href="/tools/database-schema/eav/{{$.EntityType.ReferenceID}}/attributes/{{.ID}}/edit" 
+                                                       class="btn btn-outline-primary">
                                                         Editar
-                                                    </button>
+                                                    </a>
                                                     <form method="POST" action="/tools/database-schema/eav/{{$.EntityType.ReferenceID}}/attributes/{{.ReferenceID}}/delete" style="display: inline;" class="delete-attribute-form">
                                                         <button type="submit" class="btn btn-outline-danger btn-sm">
                                                             Excluir
@@ -141,114 +124,6 @@
             </div>
         </div>
     </main>
-
-    <!-- Attribute Modal -->
-    <div class="modal fade" id="attributeModal" tabindex="-1" aria-labelledby="attributeModalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="attributeModalLabel">Novo Atributo</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <form method="POST" action="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/attributes/new" class="needs-validation" novalidate>
-                    <div class="modal-body">
-                        <div class="mb-3">
-                            <label for="attr_label" class="form-label">Label <span class="text-danger">*</span></label>
-                            <input 
-                                type="text" 
-                                class="form-control" 
-                                id="attr_label" 
-                                name="label" 
-                                required
-                                maxlength="100"
-                                placeholder="ex: Nome do Produto, Preço, Data de Entrega"
-                            >
-                            <div class="form-text">Texto legível para humanos</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="attr_machine_name" class="form-label">Nome da Máquina <span class="text-danger">*</span></label>
-                            <input 
-                                type="text" 
-                                class="form-control font-monospace" 
-                                id="attr_machine_name" 
-                                name="machine_name" 
-                                required
-                                pattern="[a-z][a-z0-9_]*"
-                                maxlength="100"
-                                placeholder="ex: nome_produto, preco, data_entrega"
-                            >
-                            <div class="invalid-feedback">
-                                Apenas letras minúsculas, números e underscores. Deve começar com letra.
-                            </div>
-                            <div class="form-text">Identificador único (gerado automaticamente do label)</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="attr_help_text" class="form-label">Texto de Ajuda</label>
-                            <textarea 
-                                class="form-control" 
-                                id="attr_help_text" 
-                                name="help_text" 
-                                rows="2"
-                                maxlength="500"
-                                placeholder="Descreva o propósito deste campo..."
-                            ></textarea>
-                        </div>
-
-                        <div class="mb-3">
-                            <label for="attr_primitive_kind" class="form-label">Tipo <span class="text-danger">*</span></label>
-                            <select class="form-select" id="attr_primitive_kind" name="primitive_kind" required>
-                                <option value="">Selecione um tipo...</option>
-                                <option value="BOOL">BOOL - Verdadeiro/Falso</option>
-                                <option value="INT">INT - Número Inteiro</option>
-                                <option value="REAL">REAL - Número Decimal</option>
-                                <option value="TEXT">TEXT - Texto</option>
-                                <option value="DATETIME">DATETIME - Data/Hora</option>
-                            </select>
-                        </div>
-
-                        <div class="mb-3" id="default_value_container">
-                            <label for="attr_default_value" class="form-label">Valor Padrão</label>
-                            <input type="text" class="form-control" id="attr_default_value" name="default_value" placeholder="Selecione um tipo primeiro">
-                            <div class="form-text">Valor inicial para novos registros (editável pelo usuário)</div>
-                        </div>
-
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="attr_is_required" name="is_required" value="1">
-                                <label class="form-check-label" for="attr_is_required">
-                                    Campo obrigatório
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="attr_is_unique" name="is_unique" value="1">
-                                <label class="form-check-label" for="attr_is_unique">
-                                    Valor único (não permite duplicatas)
-                                </label>
-                            </div>
-                        </div>
-
-                        <div class="mb-0">
-                            <div class="form-check">
-                                <input class="form-check-input" type="checkbox" id="attr_is_indexed" name="is_indexed" value="1">
-                                <label class="form-check-label" for="attr_is_indexed">
-                                    Criar índice (melhora performance de buscas)
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                        <button type="submit" class="btn btn-primary">Salvar Atributo</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
 
     <footer>
       {{template "footer" .}}

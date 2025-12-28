@@ -192,3 +192,19 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 });
+
+// Show/hide max_length field based on primitive_kind
+document.addEventListener('DOMContentLoaded', () => {
+    const primitiveKindSelect = document.getElementById('attr_primitive_kind');
+    const maxLengthContainer = document.getElementById('max_length_container');
+
+    if (primitiveKindSelect && maxLengthContainer) {
+        primitiveKindSelect.addEventListener('change', () => {
+            if (primitiveKindSelect.value === 'TEXT') {
+                maxLengthContainer.style.display = 'block';
+            } else {
+                maxLengthContainer.style.display = 'none';
+            }
+        });
+    }
+});

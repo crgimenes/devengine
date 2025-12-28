@@ -17,7 +17,7 @@ func TestEAVUpsertValueWithRevOptimisticLocking(t *testing.T) {
 		et.ID,
 		"price", "Price", "",
 		"REAL",
-		false, false, false, false,
+		false, false, false, nil, false,
 		"",
 		nil, nil, nil, nil, nil,
 	)
@@ -103,7 +103,7 @@ func TestEAVUpsertValueWithRevTypeMismatch(t *testing.T) {
 		et.ID,
 		"count", "Count", "",
 		"INT",
-		false, false, false, false,
+		false, false, false, nil, false,
 		"",
 		nil, nil, nil, nil, nil,
 	)

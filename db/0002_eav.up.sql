@@ -59,6 +59,7 @@ CREATE TABLE IF NOT EXISTS eav_attributes (
     is_required    INTEGER NOT NULL DEFAULT 0 CHECK (is_required IN (0,1)),
     is_unique      INTEGER NOT NULL DEFAULT 0 CHECK (is_unique IN (0,1)),
     is_indexed     INTEGER NOT NULL DEFAULT 0 CHECK (is_indexed IN (0,1)),
+    max_length     INTEGER DEFAULT 256,  -- For TEXT fields, max character count
 
     is_computed    INTEGER NOT NULL DEFAULT 0 CHECK (is_computed IN (0,1)),
     computed_expr  TEXT,

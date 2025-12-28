@@ -5,8 +5,107 @@ import (
 	"strconv"
 
 	"github.com/crgimenes/devengine/auth"
+	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
 )
+
+// ToolsDatabaseSchemaEAVAttributeNew shows the form to create a new attribute
+func (h *Handlers) ToolsDatabaseSchemaEAVAttributeNew(w http.ResponseWriter, r *http.Request) {
+	user, _, authed, err := auth.Prelude(w, r,
+		[]string{http.MethodGet},
+		true, false, true,
+	)
+	if err != nil || !authed || !user.Sysop {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	entityRefID := r.PathValue("id")
+	entityType, err := db.Storage.GetEAVEntityTypeByRefID(entityRefID)
+	if err != nil {
+		http.Error(w, "Entity type not found", http.StatusNotFound)
+		return
+	}
+
+	data := struct {
+		Authed      bool
+		User        *db.User
+		Config      *config.Config
+		CurrentPage string
+		EntityType  *db.EAVEntityType
+		Attribute   *db.EAVAttribute
+		Message     string
+	}{
+		Authed:      authed,
+		User:        user,
+		Config:      config.Cfg,
+		CurrentPage: "tools",
+		EntityType:  entityType,
+		Attribute:   nil,
+		Message:     r.URL.Query().Get("message"),
+	}
+
+	err = h.templates(w, "tools_database_schema_eav_attribute_form.go.tmpl", data)
+	if err != nil {
+		http.Error(w, "template error", http.StatusInternalServerError)
+	}
+}
+
+// ToolsDatabaseSchemaEAVAttributeEdit shows the form to edit an existing attribute
+func (h *Handlers) ToolsDatabaseSchemaEAVAttributeEdit(w http.ResponseWriter, r *http.Request) {
+	user, _, authed, err := auth.Prelude(w, r,
+		[]string{http.MethodGet},
+		true, false, true,
+	)
+	if err != nil || !authed || !user.Sysop {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	entityRefID := r.PathValue("id")
+	attrIDStr := r.PathValue("attr_id")
+
+	attrID, err := strconv.ParseInt(attrIDStr, 10, 64)
+	if err != nil {
+		http.Error(w, "Invalid attribute ID", http.StatusBadRequest)
+		return
+	}
+
+	entityType, err := db.Storage.GetEAVEntityTypeByRefID(entityRefID)
+	if err != nil {
+		http.Error(w, "Entity type not found", http.StatusNotFound)
+		return
+	}
+
+	attribute, err := db.Storage.GetEAVAttributeByID(attrID)
+	if err != nil {
+		http.Error(w, "Attribute not found", http.StatusNotFound)
+		return
+	}
+
+	data := struct {
+		Authed      bool
+		User        *db.User
+		Config      *config.Config
+		CurrentPage string
+		EntityType  *db.EAVEntityType
+		Attribute   *db.EAVAttribute
+		Message     string
+	}{
+		Authed:      authed,
+		User:        user,
+		Config:      config.Cfg,
+		CurrentPage: "tools",
+		EntityType:  entityType,
+		Attribute:   attribute,
+		Message:     r.URL.Query().Get("message"),
+	}
+
+	err = h.templates(w, "tools_database_schema_eav_attribute_form.go.tmpl", data)
+	if err != nil {
+		http.Error(w, "template error", http.StatusInternalServerError)
+	}
+}
 
 // ToolsDatabaseSchemaEAVAttributeCreate handles POST requests to create a new attribute
 func (h *Handlers) ToolsDatabaseSchemaEAVAttributeCreate(w http.ResponseWriter, r *http.Request) {
@@ -100,6 +199,22 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeCreate(w http.ResponseWriter, 
 		}
 	}
 
+	// Get max_length from form (TEXT only)
+	var maxLength *int
+	if primitiveKind == "TEXT" {
+		if maxLenStr := r.FormValue("max_length"); maxLenStr != "" {
+			maxLenInt, err := strconv.Atoi(maxLenStr)
+			if err == nil && maxLenInt > 0 && maxLenInt <= 65535 {
+				maxLength = &maxLenInt
+			}
+		}
+		// Default to 256 if not specified
+		if maxLength == nil {
+			defaultLen := 256
+			maxLength = &defaultLen
+		}
+	}
+
 	// Create attribute
 	_, err = db.Storage.CreateEAVAttribute(
 		entityType.ID,
@@ -110,6 +225,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeCreate(w http.ResponseWriter, 
 		isRequired,
 		isUnique,
 		isIndexed,
+		maxLength,
 		false, // isComputed
 		"",    // computedExpr
 		defaultVBool,
@@ -275,6 +391,22 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeUpdate(w http.ResponseWriter, 
 		}
 	}
 
+	// Get max_length from form (TEXT only)
+	var maxLength *int
+	if primitiveKind == "TEXT" {
+		if maxLenStr := r.FormValue("max_length"); maxLenStr != "" {
+			maxLenInt, err := strconv.Atoi(maxLenStr)
+			if err == nil && maxLenInt > 0 && maxLenInt <= 65535 {
+				maxLength = &maxLenInt
+			}
+		}
+		// Default to 256 if not specified
+		if maxLength == nil {
+			defaultLen := 256
+			maxLength = &defaultLen
+		}
+	}
+
 	// Update attribute
 	_, err = db.Storage.UpdateEAVAttribute(
 		attr.ID,
@@ -285,6 +417,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeUpdate(w http.ResponseWriter, 
 		isRequired,
 		isUnique,
 		isIndexed,
+		maxLength,
 		false, // isComputed
 		"",    // computedExpr
 		defaultVBool,

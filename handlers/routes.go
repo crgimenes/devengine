@@ -13,6 +13,8 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("/tools/database-schema", h.ToolsDatabaseSchema)
 	mux.HandleFunc("/tools/database-schema/eav/new", h.ToolsDatabaseSchemaEAVNew)
 	mux.HandleFunc("/tools/database-schema/eav/{id}/edit", h.ToolsDatabaseSchemaEAVEdit)
+	mux.HandleFunc("GET /tools/database-schema/eav/{id}/attributes/new", h.ToolsDatabaseSchemaEAVAttributeNew)
+	mux.HandleFunc("GET /tools/database-schema/eav/{id}/attributes/{attr_id}/edit", h.ToolsDatabaseSchemaEAVAttributeEdit)
 	mux.HandleFunc("POST /tools/database-schema/eav/{id}/attributes/new", h.ToolsDatabaseSchemaEAVAttributeCreate)
 	mux.HandleFunc("/tools/database-schema/eav/{id}/attributes/{attr_id}/update", h.ToolsDatabaseSchemaEAVAttributeUpdate)
 	mux.HandleFunc("POST /tools/database-schema/eav/{id}/attributes/{attr_id}/delete", h.ToolsDatabaseSchemaEAVAttributeDelete)

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"strconv"
 
@@ -389,10 +390,47 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 			}
 			vReal = &realVal
 		case "TEXT":
+			// Validate max_length
+			if attr.MaxLength != nil && len(value) > *attr.MaxLength {
+				db.Storage.SoftDeleteEAVRecord(record.ID)
+				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Campo "+attr.Label+" excede o limite de "+fmt.Sprint(*attr.MaxLength)+" caracteres", http.StatusSeeOther)
+				return
+			}
 			vText = &value
 		case "DATETIME":
 			if value != "" {
 				vDatetime = &value
+			}
+		}
+
+		// Validate unique constraint
+		if attr.IsUnique && value != "" {
+			var uniqueValue interface{}
+			switch attr.PrimitiveKind {
+			case "BOOL":
+				uniqueValue = vBool
+			case "INT":
+				uniqueValue = vInt
+			case "REAL":
+				uniqueValue = vReal
+			case "TEXT":
+				uniqueValue = vText
+			case "DATETIME":
+				uniqueValue = vDatetime
+			}
+
+			if uniqueValue != nil {
+				isUnique, err := db.Storage.CheckEAVValueUnique(attr.ID, attr.PrimitiveKind, uniqueValue, 0)
+				if err != nil {
+					db.Storage.SoftDeleteEAVRecord(record.ID)
+					http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Erro ao validar unicidade: "+err.Error(), http.StatusSeeOther)
+					return
+				}
+				if !isUnique {
+					db.Storage.SoftDeleteEAVRecord(record.ID)
+					http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=O valor já existe para o campo "+attr.Label, http.StatusSeeOther)
+					return
+				}
 			}
 		}
 
@@ -587,9 +625,43 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 				}
 				vReal = &realVal
 			case "TEXT":
+				// Validate max_length
+				if attr.MaxLength != nil && len(value) > *attr.MaxLength {
+					http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Campo "+attr.Label+" excede o limite de "+fmt.Sprint(*attr.MaxLength)+" caracteres", http.StatusSeeOther)
+					return
+				}
 				vText = &value
 			case "DATETIME":
 				vDatetime = &value
+			}
+		}
+
+		// Validate unique constraint (exclude current record)
+		if attr.IsUnique && value != "" {
+			var uniqueValue interface{}
+			switch attr.PrimitiveKind {
+			case "BOOL":
+				uniqueValue = vBool
+			case "INT":
+				uniqueValue = vInt
+			case "REAL":
+				uniqueValue = vReal
+			case "TEXT":
+				uniqueValue = vText
+			case "DATETIME":
+				uniqueValue = vDatetime
+			}
+
+			if uniqueValue != nil {
+				isUnique, err := db.Storage.CheckEAVValueUnique(attr.ID, attr.PrimitiveKind, uniqueValue, record.ID)
+				if err != nil {
+					http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Erro ao validar unicidade: "+err.Error(), http.StatusSeeOther)
+					return
+				}
+				if !isUnique {
+					http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=O valor já existe para o campo "+attr.Label, http.StatusSeeOther)
+					return
+				}
 			}
 		}
 
