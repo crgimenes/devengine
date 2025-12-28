@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
@@ -173,6 +174,9 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeCreate(w http.ResponseWriter, 
 	var defaultVDatetime *string
 
 	if defaultValue != "" {
+		// Normalize decimal separator
+		defaultValue = strings.ReplaceAll(defaultValue, ",", ".")
+
 		switch primitiveKind {
 		case "BOOL":
 			val, err := strconv.ParseInt(defaultValue, 10, 64)
@@ -346,6 +350,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeUpdate(w http.ResponseWriter, 
 	helpText := r.FormValue("help_text")
 	primitiveKind := r.FormValue("primitive_kind")
 	defaultValue := r.FormValue("default_value")
+
 	isRequired := r.FormValue("is_required") == "1"
 	isUnique := r.FormValue("is_unique") == "1"
 	isIndexed := r.FormValue("is_indexed") == "1"
@@ -365,6 +370,9 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeUpdate(w http.ResponseWriter, 
 	var defaultVDatetime *string
 
 	if defaultValue != "" {
+		// Normalize decimal separator
+		defaultValue = strings.ReplaceAll(defaultValue, ",", ".")
+
 		switch primitiveKind {
 		case "BOOL":
 			val, err := strconv.ParseInt(defaultValue, 10, 64)

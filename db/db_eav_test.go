@@ -21,23 +21,11 @@ func initTestDBWithEAVMigrations(t *testing.T) *SQLite {
 		t.Fatalf("NewWithPath() error: %v", err)
 	}
 
-	// Protect global Storage manipulation
-	testStorageMutex.Lock()
-	defer testStorageMutex.Unlock()
-
-	// Set global Storage for migrations
-	oldStorage := Storage
-	Storage = s
-
-	// Run migrations
-	if err := RunMigration(); err != nil {
+	// Run migrations on the isolated test database
+	if err := RunMigrationOn(s); err != nil {
 		s.Close()
-		Storage = oldStorage
-		t.Fatalf("RunMigration() error: %v", err)
+		t.Fatalf("RunMigrationOn() error: %v", err)
 	}
-
-	// Restore old storage
-	Storage = oldStorage
 
 	return s
 }

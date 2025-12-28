@@ -173,7 +173,13 @@ func recordMigration(tx *Transaction, id string) error {
 //
 // Migrations are sorted lexicographically by ID, ensuring engine migrations
 // run before application migrations due to the numbering convention.
+// RunMigration applies all pending migrations using the global Storage.
 func RunMigration() error {
+	return RunMigrationOn(Storage)
+}
+
+// RunMigrationOn applies all pending migrations on the provided SQLite instance.
+func RunMigrationOn(s *SQLite) error {
 	// Collect engine migrations
 	engineMigrations, err := collectMigrations(engineMigrationsFS)
 	if err != nil {
@@ -204,7 +210,7 @@ func RunMigration() error {
 	})
 
 	// Begin transaction
-	tx, err := Storage.BeginTransaction()
+	tx, err := s.BeginTransaction()
 	if err != nil {
 		return fmt.Errorf("failed to begin transaction: %w", err)
 	}

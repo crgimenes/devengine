@@ -638,8 +638,13 @@ func (s *SQLite) GetEAVAttributeByID(id int64) (*EAVAttribute, error) {
 		max_length,                  -- 11
 		is_computed,                 -- 12
 		COALESCE(computed_expr, ''), -- 13
-		created_at,                  -- 14
-		updated_at                   -- 15
+		default_v_bool,              -- 14
+		default_v_int,               -- 15
+		default_v_real,              -- 16
+		default_v_text,              -- 17
+		default_v_datetime,          -- 18
+		created_at,                  -- 19
+		updated_at                   -- 20
 	FROM eav_attributes
 	WHERE id = ? AND deleted_at IS NULL;` // 1
 
@@ -647,21 +652,26 @@ func (s *SQLite) GetEAVAttributeByID(id int64) (*EAVAttribute, error) {
 	err := s.QueryRow(sqlSelect,
 		id, // 1
 	).Scan(
-		&attr.ID,            // 1
-		&attr.ReferenceID,   // 2
-		&attr.EntityTypeID,  // 3
-		&attr.MachineName,   // 4
-		&attr.Label,         // 5
-		&attr.HelpText,      // 6
-		&attr.PrimitiveKind, // 7
-		&attr.IsRequired,    // 8
-		&attr.IsUnique,      // 9
-		&attr.IsIndexed,     // 10
-		&attr.MaxLength,     // 11
-		&attr.IsComputed,    // 12
-		&attr.ComputedExpr,  // 13
-		&attr.CreatedAt,     // 14
-		&attr.UpdatedAt,     // 15
+		&attr.ID,               // 1
+		&attr.ReferenceID,      // 2
+		&attr.EntityTypeID,     // 3
+		&attr.MachineName,      // 4
+		&attr.Label,            // 5
+		&attr.HelpText,         // 6
+		&attr.PrimitiveKind,    // 7
+		&attr.IsRequired,       // 8
+		&attr.IsUnique,         // 9
+		&attr.IsIndexed,        // 10
+		&attr.MaxLength,        // 11
+		&attr.IsComputed,       // 12
+		&attr.ComputedExpr,     // 13
+		&attr.DefaultVBool,     // 14
+		&attr.DefaultVInt,      // 15
+		&attr.DefaultVReal,     // 16
+		&attr.DefaultVText,     // 17
+		&attr.DefaultVDatetime, // 18
+		&attr.CreatedAt,        // 19
+		&attr.UpdatedAt,        // 20
 	)
 	if err != nil {
 		if errors.Is(err, ErrNoRows) {
@@ -688,8 +698,13 @@ func (s *SQLite) GetEAVAttributeByRefID(refID string) (*EAVAttribute, error) {
 		max_length,                  -- 11
 		is_computed,                 -- 12
 		COALESCE(computed_expr, ''), -- 13
-		created_at,                  -- 14
-		updated_at                   -- 15
+		default_v_bool,              -- 14
+		default_v_int,               -- 15
+		default_v_real,              -- 16
+		default_v_text,              -- 17
+		default_v_datetime,          -- 18
+		created_at,                  -- 19
+		updated_at                   -- 20
 	FROM eav_attributes
 	WHERE reference_id = ? AND deleted_at IS NULL;` // 1
 
@@ -697,21 +712,26 @@ func (s *SQLite) GetEAVAttributeByRefID(refID string) (*EAVAttribute, error) {
 	err := s.QueryRow(sqlSelect,
 		refID, // 1
 	).Scan(
-		&attr.ID,            // 1
-		&attr.ReferenceID,   // 2
-		&attr.EntityTypeID,  // 3
-		&attr.MachineName,   // 4
-		&attr.Label,         // 5
-		&attr.HelpText,      // 6
-		&attr.PrimitiveKind, // 7
-		&attr.IsRequired,    // 8
-		&attr.IsUnique,      // 9
-		&attr.IsIndexed,     // 10
-		&attr.MaxLength,     // 11
-		&attr.IsComputed,    // 12
-		&attr.ComputedExpr,  // 13
-		&attr.CreatedAt,     // 14
-		&attr.UpdatedAt,     // 15
+		&attr.ID,               // 1
+		&attr.ReferenceID,      // 2
+		&attr.EntityTypeID,     // 3
+		&attr.MachineName,      // 4
+		&attr.Label,            // 5
+		&attr.HelpText,         // 6
+		&attr.PrimitiveKind,    // 7
+		&attr.IsRequired,       // 8
+		&attr.IsUnique,         // 9
+		&attr.IsIndexed,        // 10
+		&attr.MaxLength,        // 11
+		&attr.IsComputed,       // 12
+		&attr.ComputedExpr,     // 13
+		&attr.DefaultVBool,     // 14
+		&attr.DefaultVInt,      // 15
+		&attr.DefaultVReal,     // 16
+		&attr.DefaultVText,     // 17
+		&attr.DefaultVDatetime, // 18
+		&attr.CreatedAt,        // 19
+		&attr.UpdatedAt,        // 20
 	)
 	if err != nil {
 		if errors.Is(err, ErrNoRows) {
@@ -739,8 +759,13 @@ func (s *SQLite) ListEAVAttributesByEntityTypeID(entityTypeID int64) ([]EAVAttri
 		max_length,                  -- 11
 		is_computed,                 -- 12
 		COALESCE(computed_expr, ''), -- 13
-		created_at,                  -- 14
-		updated_at                   -- 15
+		default_v_bool,              -- 14
+		default_v_int,               -- 15
+		default_v_real,              -- 16
+		default_v_text,              -- 17
+		default_v_datetime,          -- 18
+		created_at,                  -- 19
+		updated_at                   -- 20
 	FROM eav_attributes
 	WHERE entity_type_id = ? AND deleted_at IS NULL
 	ORDER BY machine_name ASC;` // 1
@@ -757,21 +782,26 @@ func (s *SQLite) ListEAVAttributesByEntityTypeID(entityTypeID int64) ([]EAVAttri
 	for rows.Next() {
 		var attr EAVAttribute
 		if err := rows.Scan(
-			&attr.ID,            // 1
-			&attr.ReferenceID,   // 2
-			&attr.EntityTypeID,  // 3
-			&attr.MachineName,   // 4
-			&attr.Label,         // 5
-			&attr.HelpText,      // 6
-			&attr.PrimitiveKind, // 7
-			&attr.IsRequired,    // 8
-			&attr.IsUnique,      // 9
-			&attr.IsIndexed,     // 10
-			&attr.MaxLength,     // 11
-			&attr.IsComputed,    // 12
-			&attr.ComputedExpr,  // 13
-			&attr.CreatedAt,     // 14
-			&attr.UpdatedAt,     // 15
+			&attr.ID,               // 1
+			&attr.ReferenceID,      // 2
+			&attr.EntityTypeID,     // 3
+			&attr.MachineName,      // 4
+			&attr.Label,            // 5
+			&attr.HelpText,         // 6
+			&attr.PrimitiveKind,    // 7
+			&attr.IsRequired,       // 8
+			&attr.IsUnique,         // 9
+			&attr.IsIndexed,        // 10
+			&attr.MaxLength,        // 11
+			&attr.IsComputed,       // 12
+			&attr.ComputedExpr,     // 13
+			&attr.DefaultVBool,     // 14
+			&attr.DefaultVInt,      // 15
+			&attr.DefaultVReal,     // 16
+			&attr.DefaultVText,     // 17
+			&attr.DefaultVDatetime, // 18
+			&attr.CreatedAt,        // 19
+			&attr.UpdatedAt,        // 20
 		); err != nil {
 			return nil, err
 		}

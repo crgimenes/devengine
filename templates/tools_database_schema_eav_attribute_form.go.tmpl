@@ -38,7 +38,7 @@
                 <!-- Form Card -->
                 <div class="card p-4">
                     <form method="POST" 
-                          action="{{if .Attribute}}/tools/database-schema/eav/{{.EntityType.ReferenceID}}/attributes/{{.Attribute.ID}}/update{{else}}/tools/database-schema/eav/{{.EntityType.ReferenceID}}/attributes/new{{end}}"
+                          action="{{if .Attribute}}/tools/database-schema/eav/{{.EntityType.ReferenceID}}/attributes/{{.Attribute.ReferenceID}}/update{{else}}/tools/database-schema/eav/{{.EntityType.ReferenceID}}/attributes/new{{end}}"
                           class="needs-validation"
                           novalidate>
                         
@@ -64,7 +64,7 @@
                                 id="attr_machine_name" 
                                 name="machine_name" 
                                 required
-                                pattern="[a-z][a-z0-9_]*"
+                                {{if not .Attribute}}pattern="[a-z][a-z0-9_]*"{{end}}
                                 maxlength="100"
                                 value="{{if .Attribute}}{{.Attribute.MachineName}}{{end}}"
                                 {{if .Attribute}}readonly{{end}}
@@ -117,6 +117,18 @@
                                    value="{{if .Attribute}}{{if .Attribute.MaxLength}}{{.Attribute.MaxLength}}{{end}}{{end}}"
                                    placeholder="256">
                             <div class="form-text">Máximo de caracteres permitidos (padrão: 256)</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="attr_default_value" class="form-label">Valor Padrão</label>
+                            <input type="text" 
+                                   class="form-control" 
+                                   id="attr_default_value" 
+                                   name="default_value" 
+                                   value="{{if .Attribute}}{{if eq .Attribute.PrimitiveKind "BOOL"}}{{if .Attribute.DefaultVBool}}{{if .Attribute.DefaultVBool}}1{{else}}0{{end}}{{end}}{{else if eq .Attribute.PrimitiveKind "INT"}}{{if .Attribute.DefaultVInt}}{{.Attribute.DefaultVInt}}{{end}}{{else if eq .Attribute.PrimitiveKind "REAL"}}{{if .Attribute.DefaultVReal}}{{.Attribute.DefaultVReal}}{{end}}{{else if eq .Attribute.PrimitiveKind "TEXT"}}{{if .Attribute.DefaultVText}}{{.Attribute.DefaultVText}}{{end}}{{else if eq .Attribute.PrimitiveKind "DATETIME"}}{{if .Attribute.DefaultVDatetime}}{{.Attribute.DefaultVDatetime}}{{end}}{{end}}{{end}}"
+                                   {{if not .Attribute}}disabled{{end}}
+                                   placeholder="Selecione um tipo primeiro">
+                            <div class="form-text">Valor inicial para novos registros (editável pelo usuário)</div>
                         </div>
 
                         <div class="mb-3">

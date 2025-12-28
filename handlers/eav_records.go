@@ -287,6 +287,23 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordNew(w http.ResponseWriter, r *htt
 		return
 	}
 
+	// Prepare initial values with defaults
+	values := make(map[string]interface{})
+	for _, attr := range attributes {
+		if attr.DefaultVBool != nil {
+			// Convert bool pointer to bool value for template
+			values[attr.MachineName] = *attr.DefaultVBool
+		} else if attr.DefaultVInt != nil {
+			values[attr.MachineName] = *attr.DefaultVInt
+		} else if attr.DefaultVReal != nil {
+			values[attr.MachineName] = *attr.DefaultVReal
+		} else if attr.DefaultVText != nil {
+			values[attr.MachineName] = *attr.DefaultVText
+		} else if attr.DefaultVDatetime != nil {
+			values[attr.MachineName] = *attr.DefaultVDatetime
+		}
+	}
+
 	data := struct {
 		Authed      bool
 		User        db.User
@@ -305,7 +322,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordNew(w http.ResponseWriter, r *htt
 		EntityType:  entityType,
 		Attributes:  attributes,
 		Record:      nil, // New record
-		Values:      make(map[string]interface{}),
+		Values:      values,
 		Message:     r.URL.Query().Get("message"),
 	}
 
