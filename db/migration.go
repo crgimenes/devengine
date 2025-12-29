@@ -1,7 +1,6 @@
 package db
 
 import (
-	"database/sql"
 	"embed"
 	"fmt"
 	"io/fs"
@@ -282,23 +281,6 @@ func RunMigrationOn(s *SQLite) error {
 	}
 
 	return nil
-}
-
-// Legacy functions for backward compatibility with old tests
-
-func getMigrationMaxTx(tx *Transaction) (int, error) {
-	const query = "SELECT MAX(version) FROM schema_migrations"
-	var max sql.NullInt64
-	err := tx.QueryRow(query).Scan(&max)
-	if err != nil {
-		return 0, fmt.Errorf("failed to get max migration version: %w", err)
-	}
-
-	if !max.Valid {
-		return 0, nil
-	}
-
-	return int(max.Int64), nil
 }
 
 func findMigrationFile(fsys fs.FS, version int) (string, error) {
