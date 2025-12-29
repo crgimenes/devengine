@@ -231,3 +231,106 @@ table td[data-align="right"] {
 .card-text table {
     margin: 0.5rem 0;
 }
+
+/* ==========================================================================
+   Utility Classes (to replace inline styles)
+   ========================================================================== */
+
+/* Avatar sizes */
+.avatar-sm {
+    object-fit: cover;
+    width: 32px;
+    height: 32px;
+    aspect-ratio: 1/1;
+}
+
+.avatar-md {
+    object-fit: cover;
+    width: 100px;
+    height: 100px;
+    aspect-ratio: 1/1;
+}
+
+.avatar-placeholder-sm {
+    width: 32px;
+    height: 32px;
+    font-size: 0.75em;
+}
+
+/* Action buttons (square icon buttons) */
+.action-btn-square {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Forms */
+.form-inline {
+    display: inline;
+}
+
+/* Table columns */
+.col-actions {
+    width: 150px;
+}
+
+/* Scrollable containers */
+.scroll-container-sm {
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 0.5rem;
+}
+
+/* Card transitions */
+.card-hover {
+    transition: all 0.2s;
+    cursor: pointer;
+}
+
+.card-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Gradient badges */
+.badge-eav {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+}
+
+.badge-relational {
+    background: linear-gradient(135deg, #00c9ff 0%, #92fe9d 100%) !important;
+}
+
+/* Text utilities */
+.text-truncate-3 {
+    max-height: 3rem;
+}
+
+.font-sm {
+    font-size: 0.9rem;
+    line-height: 1.2;
+}
+
+.font-xs {
+    font-size: 0.8rem;
+}
+
+/* Layout helpers */
+.divider-or {
+    margin: -30px 0 15px;
+    background: var(--bs-body-bg);
+}
+
+.divider-or span {
+    padding: 0 10px;
+}
+
+/* Card offset */
+.card-offset-top {
+    margin-top: 10vh;
+}
