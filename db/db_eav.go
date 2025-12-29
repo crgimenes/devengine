@@ -564,7 +564,6 @@ func (s *SQLite) CheckEAVValueUnique(
 			WHERE v.attribute_id = ?
 			  AND v.v_bool = ?
 			  AND v.record_id != ?
-			  AND v.deleted_at IS NULL
 			  AND r.deleted_at IS NULL`
 		args = []interface{}{attributeID, value, excludeRecordID}
 
@@ -574,7 +573,6 @@ func (s *SQLite) CheckEAVValueUnique(
 			WHERE v.attribute_id = ?
 			  AND v.v_int = ?
 			  AND v.record_id != ?
-			  AND v.deleted_at IS NULL
 			  AND r.deleted_at IS NULL`
 		args = []interface{}{attributeID, value, excludeRecordID}
 
@@ -584,7 +582,6 @@ func (s *SQLite) CheckEAVValueUnique(
 			WHERE v.attribute_id = ?
 			  AND v.v_real = ?
 			  AND v.record_id != ?
-			  AND v.deleted_at IS NULL
 			  AND r.deleted_at IS NULL`
 		args = []interface{}{attributeID, value, excludeRecordID}
 
@@ -594,7 +591,6 @@ func (s *SQLite) CheckEAVValueUnique(
 			WHERE v.attribute_id = ?
 			  AND v.v_text = ?
 			  AND v.record_id != ?
-			  AND v.deleted_at IS NULL
 			  AND r.deleted_at IS NULL`
 		args = []interface{}{attributeID, value, excludeRecordID}
 
@@ -604,7 +600,6 @@ func (s *SQLite) CheckEAVValueUnique(
 			WHERE v.attribute_id = ?
 			  AND v.v_datetime = ?
 			  AND v.record_id != ?
-			  AND v.deleted_at IS NULL
 			  AND r.deleted_at IS NULL`
 		args = []interface{}{attributeID, value, excludeRecordID}
 
