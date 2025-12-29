@@ -2,13 +2,9 @@ package db
 
 import (
 	"path/filepath"
-	"sync"
 	"testing"
 	"time"
 )
-
-// testStorageMutex protects access to global Storage variable during tests.
-var testStorageMutex sync.Mutex
 
 // initTestDBWithEAVMigrations creates a test database and runs migrations up to EAV schema.
 func initTestDBWithEAVMigrations(t *testing.T) *SQLite {

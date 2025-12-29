@@ -112,8 +112,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const form = document.querySelector('.needs-validation');
     if (form) {
         form.addEventListener('submit', event => {
-            console.log('Form submission started');
-
             // Ensure default value input is enabled so it is included in the POST request,
             // but only if a type is selected.
             if (defaultValueInput && primitiveKindSelect && primitiveKindSelect.value) {
@@ -121,11 +119,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             if (!form.checkValidity()) {
-                console.log('Form validation failed');
                 event.preventDefault();
                 event.stopPropagation();
-            } else {
-                console.log('Form validation passed');
             }
             form.classList.add('was-validated');
         }, false);
