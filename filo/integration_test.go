@@ -172,3 +172,153 @@ func TestMultipleStatements(t *testing.T) {
 		t.Fatalf("Expected enabled = true, got false")
 	}
 }
+
+// TestSetGlobalMapOfLists verifies that a map[string][]string is correctly set and retrieved.
+func TestSetGlobalMapOfLists(t *testing.T) {
+	f := New()
+	defer f.Close()
+
+	m := map[string][]string{
+		"work": {"work", "secret"},
+		"home": {"personal"},
+		"blog": {"blog", "public", "writing"},
+	}
+	f.SetGlobalMapOfLists("DirectoryTags", m)
+
+	result := f.MustGetMapOfLists("DirectoryTags")
+	if len(result) != len(m) {
+		t.Fatalf("Expected map length %d, got %d", len(m), len(result))
+	}
+
+	for k, expected := range m {
+		got, ok := result[k]
+		if !ok {
+			t.Fatalf("Expected key %q not found in result", k)
+		}
+		if len(got) != len(expected) {
+			t.Fatalf("Expected %d values for key %q, got %d", len(expected), k, len(got))
+		}
+		for i, v := range expected {
+			if got[i] != v {
+				t.Fatalf("Expected result[%q][%d] = %q, got %q", k, i, v, got[i])
+			}
+		}
+	}
+}
+
+// TestHasFunction verifies the HasFunction method.
+func TestHasFunction(t *testing.T) {
+	f := New()
+	defer f.Close()
+
+	// Initially no functions
+	if f.HasFunction("my-func") {
+		t.Fatal("Expected HasFunction to return false for undefined function")
+	}
+
+	// Define a function via script
+	script := `(def my-func (fn (x) (* x 2)))`
+	if err := f.DoString(script); err != nil {
+		t.Fatalf("DoString error: %v", err)
+	}
+
+	// Now it should exist
+	if !f.HasFunction("my-func") {
+		t.Fatal("Expected HasFunction to return true for defined function")
+	}
+
+	// Non-function global should return false
+	f.SetGlobal("not-a-func", "hello")
+	if f.HasFunction("not-a-func") {
+		t.Fatal("Expected HasFunction to return false for non-function global")
+	}
+}
+
+// TestCallFunction verifies calling a Filo-defined function from Go.
+func TestCallFunction(t *testing.T) {
+	f := New()
+	defer f.Close()
+
+	// Define a function
+	script := `(def double (fn (x) (* x 2)))`
+	if err := f.DoString(script); err != nil {
+		t.Fatalf("DoString error: %v", err)
+	}
+
+	// Call it
+	result, err := f.CallFunction("double", 21)
+	if err != nil {
+		t.Fatalf("CallFunction error: %v", err)
+	}
+
+	n, err := result.AsNumber()
+	if err != nil {
+		t.Fatalf("Expected number result: %v", err)
+	}
+	if n != 42 {
+		t.Fatalf("Expected 42, got %v", n)
+	}
+}
+
+// TestCallFunctionWithStrings verifies calling a function with string arguments.
+func TestCallFunctionWithStrings(t *testing.T) {
+	f := New()
+	defer f.Close()
+	RegisterStringBuiltins(f.eng)
+
+	// Define a greeting function
+	script := `(def greet (fn (name) (str-concat "Hello, " name "!")))`
+	if err := f.DoString(script); err != nil {
+		t.Fatalf("DoString error: %v", err)
+	}
+
+	// Call it
+	result, err := f.CallFunction("greet", "World")
+	if err != nil {
+		t.Fatalf("CallFunction error: %v", err)
+	}
+
+	s, err := result.AsString()
+	if err != nil {
+		t.Fatalf("Expected string result: %v", err)
+	}
+	if s != "Hello, World!" {
+		t.Fatalf("Expected 'Hello, World!', got %q", s)
+	}
+}
+
+// TestCallFunctionString verifies the convenience wrapper.
+func TestCallFunctionString(t *testing.T) {
+	f := New()
+	defer f.Close()
+	RegisterStringBuiltins(f.eng)
+
+	// Test with non-existent function (should return fallback)
+	result := f.CallFunctionString("not-exists", "fallback", "arg")
+	if result != "fallback" {
+		t.Fatalf("Expected fallback, got %q", result)
+	}
+
+	// Define a function
+	script := `(def process (fn (text) (str-upper text)))`
+	if err := f.DoString(script); err != nil {
+		t.Fatalf("DoString error: %v", err)
+	}
+
+	// Call it
+	result = f.CallFunctionString("process", "fallback", "hello")
+	if result != "HELLO" {
+		t.Fatalf("Expected 'HELLO', got %q", result)
+	}
+}
+
+// TestCallFunctionNotFound verifies error handling for missing functions.
+func TestCallFunctionNotFound(t *testing.T) {
+	f := New()
+	defer f.Close()
+
+	_, err := f.CallFunction("not-exists", 1, 2, 3)
+	if err == nil {
+		t.Fatal("Expected error for non-existent function")
+	}
+}

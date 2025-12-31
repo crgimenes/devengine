@@ -104,7 +104,10 @@ No modules, long loops, or complex structures.
 Step by step, Filo provides:
 
 - essential operations (`+`, `-`, `*`, `/`, `%`, `pow`);
-- lists and higher-order functions (`map`, `fold`);
+- comparisons (`=`, `!=`, `<`, `<=`, `>`, `>=`);
+- boolean logic (`and`, `or`, `not`);
+- lists and higher-order functions (`map`, `fold`, `list`, `length`, `head`, `tail`, `nth`);
+- string operations (`str-concat`, `str-join`, `str-split`, `str-find`, `str-trim`, `str-replace`, `str-upper`, `str-lower`, `str-len`, `str-sub`);
 - basic control flow (`if`);
 - local scope (`let`, `letv`);
 - multiple returns (`values`);

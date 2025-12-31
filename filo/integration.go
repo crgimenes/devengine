@@ -37,6 +37,11 @@ func (f *Filo) RegisterBuiltin(name string, fn Builtin) {
 	f.eng.RegisterBuiltin(name, fn)
 }
 
+// GetEngine returns the underlying Filo engine for advanced operations.
+func (f *Filo) GetEngine() *Engine {
+	return f.eng
+}
+
 // SetGlobal sets a global variable that will be available in the Filo script.
 func (f *Filo) SetGlobal(name string, value any) {
 	switch v := value.(type) {
@@ -179,4 +184,154 @@ func (f *Filo) MustGetMap(vGlobal string) map[string]string {
 		ret[key] = val
 	}
 	return ret
+}
+
+// SetGlobalMapOfLists sets a global variable from a map[string][]string.
+// The structure is stored as a list of (key, list-of-values) tuples.
+// Example: {"a": ["x", "y"]} becomes (list (list "a" (list "x" "y")))
+func (f *Filo) SetGlobalMapOfLists(name string, m map[string][]string) {
+	pairs := make([]Value, 0, len(m))
+	for k, vals := range m {
+		valList := make([]Value, len(vals))
+		for i, v := range vals {
+			valList[i] = VString(v)
+		}
+		pairs = append(pairs, VList([]Value{VString(k), VList(valList)}))
+	}
+	f.globals[name] = VList(pairs)
+}
+
+// MustGetMapOfLists retrieves a global variable as a map[string][]string or fatals.
+// Expects the structure: (list (list "key" (list "val1" "val2")) ...)
+func (f *Filo) MustGetMapOfLists(vGlobal string) map[string][]string {
+	v, ok := f.globals[vGlobal]
+	if !ok {
+		log.Fatalf("Global variable %q not found", vGlobal)
+	}
+	list, err := v.AsList()
+	if err != nil {
+		log.Fatalf("Error converting %q to list: %v", vGlobal, err)
+	}
+	ret := make(map[string][]string)
+	for i, item := range list {
+		tuple, tupleErr := item.AsList()
+		if tupleErr != nil {
+			log.Fatalf("Error converting map item %d to list: %v", i, tupleErr)
+		}
+		if len(tuple) != 2 {
+			log.Fatalf("Map list item %d must have exactly 2 elements", i)
+		}
+		key, keyErr := tuple[0].AsString()
+		if keyErr != nil {
+			log.Fatalf("Error converting map key %d to string: %v", i, keyErr)
+		}
+		valList, valErr := tuple[1].AsList()
+		if valErr != nil {
+			log.Fatalf("Error converting map value %d to list: %v", i, valErr)
+		}
+		vals := make([]string, len(valList))
+		for j, val := range valList {
+			s, sErr := val.AsString()
+			if sErr != nil {
+				log.Fatalf("Error converting value list item %d.%d to string: %v", i, j, sErr)
+			}
+			vals[j] = s
+		}
+		ret[key] = vals
+	}
+	return ret
+}
+
+// HasFunction checks if a function with the given name is defined in globals.
+func (f *Filo) HasFunction(name string) bool {
+	v, ok := f.globals[name]
+	if !ok {
+		return false
+	}
+	return v.Kind == KFunc
+}
+
+// CallFunction invokes a Filo-defined function by name with the given arguments.
+// Arguments are converted from Go types to Filo Values.
+// Returns the result Value or an error if the function doesn't exist or fails.
+func (f *Filo) CallFunction(name string, args ...any) (Value, error) {
+	fnVal, ok := f.globals[name]
+	if !ok {
+		return Value{}, fmt.Errorf("%w: %s", ErrorFunctionNotFound, name)
+	}
+	if fnVal.Kind != KFunc {
+		return Value{}, fmt.Errorf("%s is not a function", name)
+	}
+
+	// Convert Go args to Filo Values
+	filoArgs := make([]Value, len(args))
+	for i, arg := range args {
+		switch v := arg.(type) {
+		case string:
+			filoArgs[i] = VString(v)
+		case int:
+			filoArgs[i] = VNum(float64(v))
+		case int64:
+			filoArgs[i] = VNum(float64(v))
+		case float64:
+			filoArgs[i] = VNum(v)
+		case bool:
+			filoArgs[i] = VBool(v)
+		case []byte:
+			filoArgs[i] = VString(string(v))
+		case Value:
+			filoArgs[i] = v
+		default:
+			filoArgs[i] = VString(fmt.Sprintf("%v", v))
+		}
+	}
+
+	// Build call expression
+	var callExpr string
+	callExpr = "(" + name
+	for i := range filoArgs {
+		callExpr += fmt.Sprintf(" arg%d", i)
+	}
+	callExpr += ")"
+
+	// Set up globals with args
+	callGlobals := make(map[string]Value, len(f.globals)+len(filoArgs))
+	for k, v := range f.globals {
+		callGlobals[k] = v
+	}
+	for i, v := range filoArgs {
+		callGlobals[fmt.Sprintf("arg%d", i)] = v
+	}
+
+	ctx := context.Background()
+	cfg := EvalConfig{
+		StepLimit:      10000,
+		RecursionLimit: 64,
+		Timeout:        5 * time.Second,
+	}
+
+	result, _, err := f.eng.RunScript(ctx, callExpr, callGlobals, cfg)
+	if err != nil {
+		return Value{}, fmt.Errorf("error calling %s: %w", name, err)
+	}
+
+	return result, nil
+}
+
+// CallFunctionString is a convenience wrapper that calls a function and converts
+// the result to a string. If the function doesn't exist or returns a non-string,
+// the fallback string is returned.
+func (f *Filo) CallFunctionString(name string, fallback string, args ...any) string {
+	if !f.HasFunction(name) {
+		return fallback
+	}
+	result, err := f.CallFunction(name, args...)
+	if err != nil {
+		return fallback
+	}
+	s, err := result.AsString()
+	if err != nil {
+		return fallback
+	}
+	return s
 }

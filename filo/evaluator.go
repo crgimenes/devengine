@@ -112,8 +112,8 @@ func (ev *evaluator) evalArgs(nodes []Node, env *Env) ([]Value, error) {
 }
 
 func (ev *evaluator) evalIf(args []Node, env *Env) (Value, error) {
-	if len(args) != 3 {
-		return Value{}, fmt.Errorf("if expects 3 arguments")
+	if len(args) < 2 || len(args) > 3 {
+		return Value{}, fmt.Errorf("if expects 2 or 3 arguments (condition then [else])")
 	}
 	cond, err := ev.eval(args[0], env)
 	if err != nil {
@@ -125,6 +125,10 @@ func (ev *evaluator) evalIf(args []Node, env *Env) (Value, error) {
 	}
 	if condVal {
 		return ev.eval(args[1], env)
+	}
+	// If no else branch provided, return empty list
+	if len(args) == 2 {
+		return VList([]Value{}), nil
 	}
 	return ev.eval(args[2], env)
 }

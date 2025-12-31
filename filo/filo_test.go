@@ -179,6 +179,39 @@ func TestStrings(t *testing.T) {
 	}
 }
 
+func TestIfOptionalElse(t *testing.T) {
+	cfg := defaultCfg()
+	// Test if with condition true - should return the then-branch
+	val, _ := run(t, "(if #t \"yes\")", nil, cfg)
+	got, err := val.AsString()
+	if err != nil {
+		t.Fatalf("expected string: %v", err)
+	}
+	if got != "yes" {
+		t.Fatalf("expected 'yes', got %s", got)
+	}
+
+	// Test if with condition false and no else - should return empty list
+	val2, _ := run(t, "(if #f \"yes\")", nil, cfg)
+	list, err := val2.AsList()
+	if err != nil {
+		t.Fatalf("expected list: %v", err)
+	}
+	if len(list) != 0 {
+		t.Fatalf("expected empty list, got %v", list)
+	}
+
+	// Test if with 3 args still works
+	val3, _ := run(t, "(if #f \"yes\" \"no\")", nil, cfg)
+	got, err = val3.AsString()
+	if err != nil {
+		t.Fatalf("expected string: %v", err)
+	}
+	if got != "no" {
+		t.Fatalf("expected 'no', got %s", got)
+	}
+}
+
 func TestLetLetvValues(t *testing.T) {
 	cfg := defaultCfg()
 	val, _ := run(t, "(let ((a 10) (b 20)) (+ a b))", nil, cfg)
