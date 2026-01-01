@@ -24,7 +24,7 @@ func greet(ctx context.Context, args []filo.Value) (filo.Value, error) {
 
 func main() {
 	eng := filo.NewEngine()
-	eng.RegisterBuiltin("greet", greet)
+	eng.MustRegisterBuiltin("greet", greet)
 
 	ctx := context.Background()
 	cfg := filo.EvalConfig{StepLimit: 64, RecursionLimit: 8, Timeout: time.Second}

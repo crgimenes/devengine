@@ -40,6 +40,7 @@ a clear need appears:
 Using Lua was considered, but it has issues:
 
 ### Problems when using Lua/gopher-lua
+
 - No granular execution control (`SetHook` does not exist in the library).
 - It is difficult to guarantee:
   - there are no *infinite loops*,
@@ -55,7 +56,9 @@ Therefore, something **simpler, controlled, and safe** was necessary.
 ## Why create the Filo language?
 
 ### 1. **Absolute security**
+
 The Filo runtime is designed with:
+
 - `StepLimit` — prevents infinite loops.
 - `RecursionLimit` — blocks stack explosions.
 - `Timeout` — execution is automatically aborted.
@@ -63,9 +66,11 @@ The Filo runtime is designed with:
 - `recover()` — no script can cause a server `panic`.
 
 ### 2. **Determinism**
+
 Scripts must always produce the same results, with no unexpected side effects.
 
 ### 3. **Simplicity**
+
 Filo uses a minimalist Lisp-like syntax:
 
 ```lisp
@@ -77,12 +82,14 @@ Filo uses a minimalist Lisp-like syntax:
 Small, easy to teach, easy to understand, and extremely predictable.
 
 ### 4. **Smooth Go integration**
+
 - Builtins written directly in Go.
 - Global environment passed as `map[string]Value`.
 - Safe calls made in the backend.
 - Ideal for validations, RPG rules, and configuration scripts.
 
 ### 5. **Extensible**
+
 - Go functions can be registered as Filo commands — from simple sums to database queries.
 
 ---
@@ -92,6 +99,7 @@ Small, easy to teach, easy to understand, and extremely predictable.
 Filo's philosophy is summarized in four principles:
 
 ### **1. Short, declarative scripts**
+
 Users should write:
 
 - mathematical expressions,
@@ -101,6 +109,7 @@ Users should write:
 No modules, long loops, or complex structures.
 
 ### **2. Small, powerful, testable language**
+
 Step by step, Filo provides:
 
 - essential operations (`+`, `-`, `*`, `/`, `%`, `pow`);
@@ -116,11 +125,14 @@ Step by step, Filo provides:
 - functions (`fn`, `def`) with recursion limits.
 
 ### **Extension Packages**
+
 Filo can be extended with specialized packages:
+
 - **filomath**: Advanced math functions (`sin`, `cos`, `log`, `to-int`, etc).
 - **filorand**: Non-deterministic functions (`rand-float`, `rand-int`, `uuid-v4`).
 
 ### **3. Restricted environment**
+
 No:
 
 - file access,
@@ -130,6 +142,7 @@ No:
 All advanced integration happens only through explicitly registered Go functions.
 
 ### **4. Interpreter over AST**
+
 For now, Filo:
 
 - compiles to an AST,
@@ -143,6 +156,7 @@ Bytecode may be added in the future, but only when there is a real need.
 ## Language Reference
 
 ### Special Forms
+
 | Name | Syntax | Description |
 |------|--------|-------------|
 | `if` | `(if cond then [else])` | Conditional execution. Returns `list()` (empty/nil) if else is missing and cond is false. |
@@ -155,6 +169,7 @@ Bytecode may be added in the future, but only when there is a real need.
 | `values`| `(values v1 v2 ...)` | Returns multiple values (a tuple). |
 
 ### Core Builtins
+
 | Category | Function | Description |
 |----------|----------|-------------|
 | **Math** | `+`, `-`, `*`, `/`, `%` | Basic arithmetic. |
@@ -175,6 +190,7 @@ Bytecode may be added in the future, but only when there is a real need.
 | | `fold` | `(fold fn init list)` Reduces list with accumulator. |
 
 ### String Builtins
+
 | Function | Description |
 |----------|-------------|
 | `str-fmt` | `(str-fmt format args...)` Safe implementation of `fmt.Sprintf`. |
@@ -190,6 +206,7 @@ Bytecode may be added in the future, but only when there is a real need.
 | `str-lower` | Converts to lowercase. |
 
 ### Extension: filomath
+
 | Function | Description |
 |----------|-------------|
 | `abs`, `sqrt` | Absolute value, Square root. |
@@ -201,6 +218,7 @@ Bytecode may be added in the future, but only when there is a real need.
 | `pi`, `e` | Constants. |
 
 ### Extension: filorand
+
 | Function | Description |
 |----------|-------------|
 | `rand-float` | Random number [0.0, 1.0). |
@@ -293,7 +311,7 @@ func addTwo(ctx context.Context, args []filo.Value) (filo.Value, error) {
 }
 
 func registerMathBuiltins(eng *filo.Engine) {
-    eng.RegisterBuiltin("add-two", addTwo)
+    eng.MustRegisterBuiltin("add-two", addTwo)
 }
 
 eng := filo.NewEngine()
@@ -331,7 +349,7 @@ func fullName(ctx context.Context, args []filo.Value) (filo.Value, error) {
 }
 
 func registerStringBuiltins(eng *filo.Engine) {
-    eng.RegisterBuiltin("full-name", fullName)
+    eng.MustRegisterBuiltin("full-name", fullName)
 }
 
 eng := filo.NewEngine()
@@ -388,7 +406,7 @@ func minMax(ctx context.Context, args []filo.Value) (filo.Value, error) {
 }
 
 func registerAggregatorBuiltins(eng *filo.Engine) {
-    eng.RegisterBuiltin("min-max", minMax)
+    eng.MustRegisterBuiltin("min-max", minMax)
 }
 
 eng := filo.NewEngine()
@@ -435,12 +453,14 @@ This combination makes Filo **secure by construction**.
 ## How it will be used in projects
 
 ### RAD system
+
 - calculated fields,
 - validations,
 - transformations,
 - custom behaviors.
 
 ### RPG site
+
 - rules,
 - attribute calculations,
 - modifiers,
@@ -448,6 +468,7 @@ This combination makes Filo **secure by construction**.
 - combat automations.
 
 ### System configuration
+
 - allow administrators to configure the application using declarative logic.
 
 ---
@@ -455,15 +476,16 @@ This combination makes Filo **secure by construction**.
 ## Current state and next steps
 
 ### Current state
+
 - specification consolidated,
 - Go integration defined,
-- examples and tests planned,
-- `filo` package ready for implementation by the agent.
+- examples and tests included,
+- `filo` package implemented and used by engine tools.
 
 ### Next steps
-- full package implementation,
-- robust test suite,
-- creation of official language documentation,
+
+- keep expanding documentation and reference material,
+- add more safety tests (limits, panic recovery, fuzzing),
 - syntax highlighting for Neovim.
 
 ---

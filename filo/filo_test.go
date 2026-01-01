@@ -28,7 +28,7 @@ func addTwoBuiltin(ctx context.Context, args []Value) (Value, error) {
 }
 
 func registerMathBuiltins(eng *Engine) {
-	eng.RegisterBuiltin("add-two", addTwoBuiltin)
+	eng.MustRegisterBuiltin("add-two", addTwoBuiltin)
 }
 
 func fullNameBuiltin(ctx context.Context, args []Value) (Value, error) {
@@ -51,7 +51,7 @@ func fullNameBuiltin(ctx context.Context, args []Value) (Value, error) {
 }
 
 func registerStringBuiltins(eng *Engine) {
-	eng.RegisterBuiltin("full-name", fullNameBuiltin)
+	eng.MustRegisterBuiltin("full-name", fullNameBuiltin)
 }
 
 func minMaxBuiltin(ctx context.Context, args []Value) (Value, error) {
@@ -93,7 +93,7 @@ func minMaxBuiltin(ctx context.Context, args []Value) (Value, error) {
 }
 
 func registerAggregatorBuiltins(eng *Engine) {
-	eng.RegisterBuiltin("min-max", minMaxBuiltin)
+	eng.MustRegisterBuiltin("min-max", minMaxBuiltin)
 }
 
 func run(t *testing.T, script string, globals map[string]Value, cfg EvalConfig) (Value, map[string]Value) {
@@ -122,19 +122,6 @@ func TestArithmetic(t *testing.T) {
 		{"sub", "(- 10 3 2)", 5},
 		{"unary-sub", "(- 5)", -5},
 		{"mul", "(* 2 3 4)", 24},
-	}
-	for _, tc := range cases {
-		tc := tc
-		t.Run(tc.name, func(t *testing.T) {
-			val, _ := run(t, tc.script, nil, cfg)
-			got, err := val.AsNumber()
-			if err != nil {
-				t.Fatalf("expected number: %v", err)
-			}
-			if got != tc.want {
-				t.Fatalf("want %v got %v", tc.want, got)
-			}
-		})
 	}
 	for _, tc := range cases {
 		tc := tc
@@ -493,6 +480,17 @@ func TestRegisterBuiltin(t *testing.T) {
 	}
 	if num != 42 {
 		t.Fatalf("unexpected result %v", num)
+	}
+}
+
+func TestRunScriptRecoversFromPanic(t *testing.T) {
+	eng := NewEngine()
+	eng.MustRegisterBuiltin("panic-now", func(ctx context.Context, args []Value) (Value, error) {
+		panic("boom")
+	})
+	_, _, err := eng.RunScript(context.Background(), "(panic-now)", nil, defaultCfg())
+	if err == nil {
+		t.Fatalf("expected error for panic in script")
 	}
 }
 

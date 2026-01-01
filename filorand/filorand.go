@@ -27,10 +27,10 @@ var (
 //   - rand-seed: Seeds the random number generator
 //   - uuid-v4: Returns a new random UUID v4 string
 func RegisterRandomBuiltins(eng *filo.Engine) {
-	eng.RegisterBuiltin("rand-float", builtinRandFloat)
-	eng.RegisterBuiltin("rand-int", builtinRandInt)
-	eng.RegisterBuiltin("rand-seed", builtinRandSeed)
-	eng.RegisterBuiltin("uuid-v4", builtinUUIDv4)
+	eng.MustRegisterBuiltin("rand-float", builtinRandFloat)
+	eng.MustRegisterBuiltin("rand-int", builtinRandInt)
+	eng.MustRegisterBuiltin("rand-seed", builtinRandSeed)
+	eng.MustRegisterBuiltin("uuid-v4", builtinUUIDv4)
 }
 
 func builtinRandFloat(_ context.Context, args []filo.Value) (filo.Value, error) {

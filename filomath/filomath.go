@@ -23,22 +23,22 @@ import (
 //   - exp: Exponential (e^x)
 //   - min, max: Multi-argument minimum/maximum
 func RegisterMathBuiltins(eng *filo.Engine) {
-	eng.RegisterBuiltin("abs", builtinAbs)
-	eng.RegisterBuiltin("sqrt", builtinSqrt)
-	eng.RegisterBuiltin("floor", builtinFloor)
-	eng.RegisterBuiltin("ceil", builtinCeil)
-	eng.RegisterBuiltin("round", builtinRound)
-	eng.RegisterBuiltin("sin", builtinSin)
-	eng.RegisterBuiltin("cos", builtinCos)
-	eng.RegisterBuiltin("tan", builtinTan)
-	eng.RegisterBuiltin("log", builtinLog)
-	eng.RegisterBuiltin("log10", builtinLog10)
-	eng.RegisterBuiltin("exp", builtinExp)
-	eng.RegisterBuiltin("math-min", builtinMin) // prefixed to avoid conflicts with other packages
-	eng.RegisterBuiltin("math-max", builtinMax) // prefixed to avoid conflicts with other packages
-	eng.RegisterBuiltin("pi", builtinPi)
-	eng.RegisterBuiltin("e", builtinE)
-	eng.RegisterBuiltin("to-int", builtinToInt)
+	eng.MustRegisterBuiltin("abs", builtinAbs)
+	eng.MustRegisterBuiltin("sqrt", builtinSqrt)
+	eng.MustRegisterBuiltin("floor", builtinFloor)
+	eng.MustRegisterBuiltin("ceil", builtinCeil)
+	eng.MustRegisterBuiltin("round", builtinRound)
+	eng.MustRegisterBuiltin("sin", builtinSin)
+	eng.MustRegisterBuiltin("cos", builtinCos)
+	eng.MustRegisterBuiltin("tan", builtinTan)
+	eng.MustRegisterBuiltin("log", builtinLog)
+	eng.MustRegisterBuiltin("log10", builtinLog10)
+	eng.MustRegisterBuiltin("exp", builtinExp)
+	eng.MustRegisterBuiltin("math-min", builtinMin) // prefixed to avoid conflicts with other packages
+	eng.MustRegisterBuiltin("math-max", builtinMax) // prefixed to avoid conflicts with other packages
+	eng.MustRegisterBuiltin("pi", builtinPi)
+	eng.MustRegisterBuiltin("e", builtinE)
+	eng.MustRegisterBuiltin("to-int", builtinToInt)
 }
 
 // builtinToInt converts a number to an integer by truncation (e.g., 3.9 -> 3.0).

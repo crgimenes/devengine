@@ -198,7 +198,7 @@ func TestStringBuiltins(t *testing.T) {
 		{
 			name:   "str-len unicode",
 			script: `(str-len "café")`,
-			want:   `5`, // byte length, not rune count
+			want:   `4`, // rune count
 		},
 		{
 			name:    "str-len wrong args",
@@ -209,32 +209,42 @@ func TestStringBuiltins(t *testing.T) {
 		// str-sub tests
 		{
 			name:   "str-sub basic",
-			script: `(str-sub 0 5 "hello world")`,
+			script: `(str-sub "hello world" 0 5)`,
 			want:   `"hello"`,
 		},
 		{
 			name:   "str-sub middle",
-			script: `(str-sub 6 11 "hello world")`,
+			script: `(str-sub "hello world" 6 11)`,
 			want:   `"world"`,
 		},
 		{
 			name:   "str-sub end beyond length",
-			script: `(str-sub 6 100 "hello world")`,
+			script: `(str-sub "hello world" 6 100)`,
 			want:   `"world"`,
 		},
 		{
 			name:   "str-sub start negative",
-			script: `(str-sub -5 5 "hello world")`,
+			script: `(str-sub "hello world" -5 5)`,
 			want:   `"hello"`,
 		},
 		{
 			name:   "str-sub start beyond end",
-			script: `(str-sub 10 5 "hello world")`,
+			script: `(str-sub "hello world" 10 5)`,
 			want:   `""`,
 		},
 		{
+			name:   "str-sub end omitted",
+			script: `(str-sub "hello" 2)`,
+			want:   `"llo"`,
+		},
+		{
+			name:   "str-sub unicode runes",
+			script: `(str-sub "café" 2 4)`,
+			want:   `"fé"`,
+		},
+		{
 			name:    "str-sub wrong args",
-			script:  `(str-sub 0 5)`,
+			script:  `(str-sub "x")`,
 			wantErr: true,
 		},
 	}

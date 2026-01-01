@@ -3,24 +3,26 @@ package filo
 import (
 	"context"
 	"fmt"
+	"math"
 	"strings"
+	"unicode/utf8"
 )
 
 // RegisterStringBuiltins adds string manipulation functions to the engine.
 // These builtins are pure, deterministic functions that do not access
 // external resources.
 func RegisterStringBuiltins(eng *Engine) {
-	eng.RegisterBuiltin("str-join", builtinStrJoin)
-	eng.RegisterBuiltin("str-split", builtinStrSplit)
-	eng.RegisterBuiltin("str-find", builtinStrFind)
-	eng.RegisterBuiltin("str-trim", builtinStrTrim)
-	eng.RegisterBuiltin("str-replace", builtinStrReplace)
-	eng.RegisterBuiltin("str-upper", builtinStrUpper)
-	eng.RegisterBuiltin("str-lower", builtinStrLower)
-	eng.RegisterBuiltin("str-concat", builtinStrConcat)
-	eng.RegisterBuiltin("str-len", builtinStrLen)
-	eng.RegisterBuiltin("str-sub", builtinStrSub)
-	eng.RegisterBuiltin("str-fmt", builtinStrFmt)
+	eng.MustRegisterBuiltin("str-join", builtinStrJoin)
+	eng.MustRegisterBuiltin("str-split", builtinStrSplit)
+	eng.MustRegisterBuiltin("str-find", builtinStrFind)
+	eng.MustRegisterBuiltin("str-trim", builtinStrTrim)
+	eng.MustRegisterBuiltin("str-replace", builtinStrReplace)
+	eng.MustRegisterBuiltin("str-upper", builtinStrUpper)
+	eng.MustRegisterBuiltin("str-lower", builtinStrLower)
+	eng.MustRegisterBuiltin("str-concat", builtinStrConcat)
+	eng.MustRegisterBuiltin("str-len", builtinStrLen)
+	eng.MustRegisterBuiltin("str-sub", builtinStrSub)
+	eng.MustRegisterBuiltin("str-fmt", builtinStrFmt)
 }
 
 // builtinStrFmt formats a string according to a format specifier.
@@ -202,7 +204,7 @@ func builtinStrConcat(ctx context.Context, args []Value) (Value, error) {
 	return VString(b.String()), nil
 }
 
-// builtinStrLen returns the length of a string in bytes.
+// builtinStrLen returns the length of a string in runes.
 // Usage: (str-len string) -> number
 // Example: (str-len "hello") -> 5
 func builtinStrLen(ctx context.Context, args []Value) (Value, error) {
@@ -213,39 +215,53 @@ func builtinStrLen(ctx context.Context, args []Value) (Value, error) {
 	if err != nil {
 		return Value{}, fmt.Errorf("str-len: argument must be string: %w", err)
 	}
-	return VNum(float64(len(str))), nil
+	return VNum(float64(utf8.RuneCountInString(str))), nil
 }
 
 // builtinStrSub extracts a substring from a string.
-// Usage: (str-sub start end string) -> string
-// Indices are 0-based. End is exclusive.
-// Example: (str-sub 0 5 "hello world") -> "hello"
+// Usage: (str-sub str start [end]) -> string
+// Indices are 0-based, in runes. End is exclusive. If end is omitted, it slices to the end.
+// Example: (str-sub "hello world" 0 5) -> "hello"
 func builtinStrSub(ctx context.Context, args []Value) (Value, error) {
-	if len(args) != 3 {
-		return Value{}, fmt.Errorf("str-sub expects 3 arguments (start, end, string)")
+	if len(args) != 2 && len(args) != 3 {
+		return Value{}, fmt.Errorf("str-sub expects 2 or 3 arguments (string, start, [end])")
 	}
-	startF, err := args[0].AsNumber()
+	str, err := args[0].AsString()
+	if err != nil {
+		return Value{}, fmt.Errorf("str-sub: first argument must be string: %w", err)
+	}
+	startF, err := args[1].AsNumber()
 	if err != nil {
 		return Value{}, fmt.Errorf("str-sub: start must be number: %w", err)
 	}
-	endF, err := args[1].AsNumber()
-	if err != nil {
-		return Value{}, fmt.Errorf("str-sub: end must be number: %w", err)
-	}
-	str, err := args[2].AsString()
-	if err != nil {
-		return Value{}, fmt.Errorf("str-sub: third argument must be string: %w", err)
+	if math.Trunc(startF) != startF {
+		return Value{}, fmt.Errorf("str-sub: start must be an integer")
 	}
 	start := int(startF)
-	end := int(endF)
+	end := -1
+	if len(args) == 3 {
+		endF, err := args[2].AsNumber()
+		if err != nil {
+			return Value{}, fmt.Errorf("str-sub: end must be number: %w", err)
+		}
+		if math.Trunc(endF) != endF {
+			return Value{}, fmt.Errorf("str-sub: end must be an integer")
+		}
+		end = int(endF)
+	}
+
+	runes := []rune(str)
 	if start < 0 {
 		start = 0
 	}
-	if end > len(str) {
-		end = len(str)
+	if start > len(runes) {
+		start = len(runes)
+	}
+	if end < 0 || end > len(runes) {
+		end = len(runes)
 	}
 	if start > end {
 		return VString(""), nil
 	}
-	return VString(str[start:end]), nil
+	return VString(string(runes[start:end])), nil
 }

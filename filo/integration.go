@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/crgimenes/devengine/log"
@@ -33,8 +34,8 @@ func (f *Filo) Close() {
 }
 
 // RegisterBuiltin registers a custom builtin function in the Filo engine.
-func (f *Filo) RegisterBuiltin(name string, fn Builtin) {
-	f.eng.RegisterBuiltin(name, fn)
+func (f *Filo) RegisterBuiltin(name string, fn Builtin) error {
+	return f.eng.RegisterBuiltin(name, fn)
 }
 
 // GetEngine returns the underlying Filo engine for advanced operations.
@@ -66,8 +67,13 @@ func (f *Filo) SetGlobal(name string, value any) {
 	case map[string]string:
 		// Convert map to list of key-value tuples for Filo
 		pairs := make([]Value, 0, len(v))
-		for k, val := range v {
-			pairs = append(pairs, VTuple([]Value{VString(k), VString(val)}))
+		keys := make([]string, 0, len(v))
+		for k := range v {
+			keys = append(keys, k)
+		}
+		sort.Strings(keys)
+		for _, k := range keys {
+			pairs = append(pairs, VTuple([]Value{VString(k), VString(v[k])}))
 		}
 		f.globals[name] = VList(pairs)
 	default:
@@ -191,7 +197,13 @@ func (f *Filo) MustGetMap(vGlobal string) map[string]string {
 // Example: {"a": ["x", "y"]} becomes (list (list "a" (list "x" "y")))
 func (f *Filo) SetGlobalMapOfLists(name string, m map[string][]string) {
 	pairs := make([]Value, 0, len(m))
-	for k, vals := range m {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	for _, k := range keys {
+		vals := m[k]
 		valList := make([]Value, len(vals))
 		for i, v := range vals {
 			valList[i] = VString(v)
