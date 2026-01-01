@@ -105,6 +105,55 @@ func TestSetGlobalMap(t *testing.T) {
 	}
 }
 
+func TestSetGlobalMapDeterministicOrder(t *testing.T) {
+	f := New()
+	defer f.Close()
+
+	// Use intentionally unsorted insertion order.
+	f.SetGlobal("map", map[string]string{
+		"b": "2",
+		"a": "1",
+		"c": "3",
+	})
+
+	v, ok := f.globals["map"]
+	if !ok {
+		t.Fatalf("expected global %q", "map")
+	}
+	list, err := v.AsList()
+	if err != nil {
+		t.Fatalf("expected list global: %v", err)
+	}
+	if len(list) != 3 {
+		t.Fatalf("expected 3 pairs, got %d", len(list))
+	}
+
+	getKey := func(i int) string {
+		tuple, tupleErr := list[i].AsTuple()
+		if tupleErr != nil {
+			t.Fatalf("expected tuple at %d: %v", i, tupleErr)
+		}
+		if len(tuple) != 2 {
+			t.Fatalf("expected tuple length 2 at %d, got %d", i, len(tuple))
+		}
+		k, keyErr := tuple[0].AsString()
+		if keyErr != nil {
+			t.Fatalf("expected string key at %d: %v", i, keyErr)
+		}
+		return k
+	}
+
+	if got := getKey(0); got != "a" {
+		t.Fatalf("expected first key to be %q, got %q", "a", got)
+	}
+	if got := getKey(1); got != "b" {
+		t.Fatalf("expected second key to be %q, got %q", "b", got)
+	}
+	if got := getKey(2); got != "c" {
+		t.Fatalf("expected third key to be %q, got %q", "c", got)
+	}
+}
+
 // TestScriptWithGlobals verifies that globals set before script execution are available in the script.
 func TestScriptWithGlobals(t *testing.T) {
 	f := New()
@@ -203,6 +252,54 @@ func TestSetGlobalMapOfLists(t *testing.T) {
 				t.Fatalf("Expected result[%q][%d] = %q, got %q", k, i, v, got[i])
 			}
 		}
+	}
+}
+
+func TestSetGlobalMapOfListsDeterministicOrder(t *testing.T) {
+	f := New()
+	defer f.Close()
+
+	f.SetGlobalMapOfLists("DirectoryTags", map[string][]string{
+		"b": {"b"},
+		"a": {"a"},
+		"c": {"c"},
+	})
+
+	v, ok := f.globals["DirectoryTags"]
+	if !ok {
+		t.Fatalf("expected global %q", "DirectoryTags")
+	}
+	list, err := v.AsList()
+	if err != nil {
+		t.Fatalf("expected list global: %v", err)
+	}
+	if len(list) != 3 {
+		t.Fatalf("expected 3 items, got %d", len(list))
+	}
+
+	getKey := func(i int) string {
+		pair, pairErr := list[i].AsList()
+		if pairErr != nil {
+			t.Fatalf("expected list pair at %d: %v", i, pairErr)
+		}
+		if len(pair) != 2 {
+			t.Fatalf("expected pair length 2 at %d, got %d", i, len(pair))
+		}
+		k, keyErr := pair[0].AsString()
+		if keyErr != nil {
+			t.Fatalf("expected string key at %d: %v", i, keyErr)
+		}
+		return k
+	}
+
+	if got := getKey(0); got != "a" {
+		t.Fatalf("expected first key to be %q, got %q", "a", got)
+	}
+	if got := getKey(1); got != "b" {
+		t.Fatalf("expected second key to be %q, got %q", "b", got)
+	}
+	if got := getKey(2); got != "c" {
+		t.Fatalf("expected third key to be %q, got %q", "c", got)
 	}
 }
 

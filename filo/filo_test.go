@@ -466,6 +466,118 @@ func TestSecurityLimits(t *testing.T) {
 	}
 }
 
+func TestEvaluatorErrorContext(t *testing.T) {
+	eng := NewEngine()
+	RegisterStringBuiltins(eng)
+	cfg := defaultCfg()
+	ctx := context.Background()
+
+	// Builtin type error should mention the builtin.
+	_, _, err := eng.RunScript(ctx, `(+ 1 "x")`, nil, cfg)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), `in builtin "+"`) {
+		t.Fatalf("expected builtin context, got: %v", err)
+	}
+
+	// Argument evaluation error should mention argument evaluation.
+	_, _, err = eng.RunScript(ctx, `(+ missing 1)`, nil, cfg)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), `while evaluating arguments for "+"`) {
+		t.Fatalf("expected argument context, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), `argument 0:`) {
+		t.Fatalf("expected argument index context, got: %v", err)
+	}
+
+	// Special form error should mention the form.
+	_, _, err = eng.RunScript(ctx, `(if 1 2 3)`, nil, cfg)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), "in if:") {
+		t.Fatalf("expected if context, got: %v", err)
+	}
+
+	// let context.
+	_, _, err = eng.RunScript(ctx, `(let ((x missing)) x)`, nil, cfg)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), "in let:") {
+		t.Fatalf("expected let context, got: %v", err)
+	}
+
+	// do context.
+	_, _, err = eng.RunScript(ctx, `(do 1 missing)`, nil, cfg)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), "in do:") {
+		t.Fatalf("expected do context, got: %v", err)
+	}
+
+	// set context when value evaluation fails.
+	_, _, err = eng.RunScript(ctx, `(set x missing)`, nil, cfg)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), "in set:") {
+		t.Fatalf("expected set context, got: %v", err)
+	}
+
+	// fn context for invalid params.
+	_, _, err = eng.RunScript(ctx, `(fn 1 2)`, nil, cfg)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), "in fn:") {
+		t.Fatalf("expected fn context, got: %v", err)
+	}
+
+	// call arguments context for non-builtin function calls.
+	_, _, err = eng.RunScript(ctx, `((fn (x) x) missing)`, nil, cfg)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), "in call arguments:") {
+		t.Fatalf("expected call arguments context, got: %v", err)
+	}
+
+	// function call context for wrong arity.
+	_, _, err = eng.RunScript(ctx, `((fn (x) x) 1 2)`, nil, cfg)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), "in function call:") {
+		t.Fatalf("expected function call context, got: %v", err)
+	}
+
+	// values context and argument index.
+	_, _, err = eng.RunScript(ctx, `(values 1 missing)`, nil, cfg)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), "in values:") {
+		t.Fatalf("expected values context, got: %v", err)
+	}
+	if !strings.Contains(err.Error(), `argument 1:`) {
+		t.Fatalf("expected argument index for values, got: %v", err)
+	}
+
+	// attempt to call non-function should be clear.
+	_, _, err = eng.RunScript(ctx, `((+ 1 2) 3)`, nil, cfg)
+	if err == nil {
+		t.Fatalf("expected error")
+	}
+	if !strings.Contains(err.Error(), "attempt to call non-function") {
+		t.Fatalf("expected non-function call message, got: %v", err)
+	}
+}
+
 func TestRegisterBuiltin(t *testing.T) {
 	eng := NewEngine()
 	registerMathBuiltins(eng)

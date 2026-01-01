@@ -48,8 +48,15 @@ func (ev *evaluator) eval(node Node, env *Env) (Value, error) {
 	case *List:
 		return ev.evalList(n, env)
 	default:
-		return Value{}, fmt.Errorf("unknown node type")
+		return Value{}, fmt.Errorf("unknown node type: %T", node)
 	}
+}
+
+func wrapIn(ctx string, err error) error {
+	if err == nil {
+		return nil
+	}
+	return fmt.Errorf("in %s: %w", ctx, err)
 }
 
 func (ev *evaluator) evalList(list *List, env *Env) (Value, error) {
@@ -61,44 +68,57 @@ func (ev *evaluator) evalList(list *List, env *Env) (Value, error) {
 	if ok {
 		switch headSym.Name {
 		case "if":
-			return ev.evalIf(list.Elems[1:], env)
+			v, err := ev.evalIf(list.Elems[1:], env)
+			return v, wrapIn("if", err)
 		case "do":
-			return ev.evalDo(list.Elems[1:], env)
+			v, err := ev.evalDo(list.Elems[1:], env)
+			return v, wrapIn("do", err)
 		case "let":
-			return ev.evalLet(list.Elems[1:], env)
+			v, err := ev.evalLet(list.Elems[1:], env)
+			return v, wrapIn("let", err)
 		case "letv":
-			return ev.evalLetv(list.Elems[1:], env)
+			v, err := ev.evalLetv(list.Elems[1:], env)
+			return v, wrapIn("letv", err)
 		case "set":
-			return ev.evalSet(list.Elems[1:], env)
+			v, err := ev.evalSet(list.Elems[1:], env)
+			return v, wrapIn("set", err)
 		case "fn":
-			return ev.evalFn(list.Elems[1:], env)
+			v, err := ev.evalFn(list.Elems[1:], env)
+			return v, wrapIn("fn", err)
 		case "def":
-			return ev.evalDef(list.Elems[1:], env)
+			v, err := ev.evalDef(list.Elems[1:], env)
+			return v, wrapIn("def", err)
 		case "values":
-			return ev.evalValues(list.Elems[1:], env)
+			v, err := ev.evalValues(list.Elems[1:], env)
+			return v, wrapIn("values", err)
 		}
 		builtin, okBuiltin := ev.builtins[headSym.Name]
 		if okBuiltin {
 			args, err := ev.evalArgs(list.Elems[1:], env)
 			if err != nil {
-				return Value{}, err
+				return Value{}, fmt.Errorf("while evaluating arguments for %q: %w", headSym.Name, err)
 			}
-			return builtin(ev.ctx, ev, args)
+			v, callErr := builtin(ev.ctx, ev, args)
+			if callErr != nil {
+				return Value{}, fmt.Errorf("in builtin %q: %w", headSym.Name, callErr)
+			}
+			return v, nil
 		}
 	}
 
 	fnVal, err := ev.eval(list.Elems[0], env)
 	if err != nil {
-		return Value{}, err
+		return Value{}, wrapIn("call", err)
 	}
 	args, err := ev.evalArgs(list.Elems[1:], env)
 	if err != nil {
-		return Value{}, err
+		return Value{}, wrapIn("call arguments", err)
 	}
 	if fnVal.Kind != KFunc {
-		return Value{}, fmt.Errorf("attempt to call non-function")
+		return Value{}, fmt.Errorf("attempt to call non-function (got %s)", fnVal.describe())
 	}
-	return ev.callFunc(ev.ctx, fnVal.Fn, args)
+	v, callErr := ev.callFunc(ev.ctx, fnVal.Fn, args)
+	return v, wrapIn("function call", callErr)
 }
 
 func (ev *evaluator) evalArgs(nodes []Node, env *Env) ([]Value, error) {
@@ -106,7 +126,7 @@ func (ev *evaluator) evalArgs(nodes []Node, env *Env) ([]Value, error) {
 	for i, n := range nodes {
 		val, err := ev.eval(n, env)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("argument %d: %w", i, err)
 		}
 		result[i] = val
 	}
