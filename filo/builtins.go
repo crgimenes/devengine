@@ -256,6 +256,92 @@ func defaultBuiltins() map[string]builtinFunc {
 		return VBool(false), nil
 	}
 
+	bi["type-of"] = func(ctx context.Context, _ *evaluator, args []Value) (Value, error) {
+		if len(args) != 1 {
+			return Value{}, fmt.Errorf("type-of expects 1 argument")
+		}
+		switch args[0].Kind {
+		case KNumber:
+			return VString("number"), nil
+		case KString:
+			return VString("string"), nil
+		case KBool:
+			return VString("bool"), nil
+		case KList:
+			return VString("list"), nil
+		case KTuple:
+			return VString("tuple"), nil
+		case KFunc:
+			return VString("func"), nil
+		default:
+			return VString("unknown"), nil
+		}
+	}
+
+	bi["is-empty"] = func(ctx context.Context, _ *evaluator, args []Value) (Value, error) {
+		if len(args) != 1 {
+			return Value{}, fmt.Errorf("is-empty expects 1 argument")
+		}
+		val := args[0]
+		switch val.Kind {
+		case KString:
+			return VBool(len(val.Str) == 0), nil
+		case KList:
+			return VBool(len(val.List) == 0), nil
+		case KTuple:
+			return VBool(len(val.Tup) == 0), nil
+		default:
+			return VBool(false), nil
+		}
+	}
+
+	bi["is-nil"] = func(ctx context.Context, _ *evaluator, args []Value) (Value, error) {
+		if len(args) != 1 {
+			return Value{}, fmt.Errorf("is-nil expects 1 argument")
+		}
+		// In Filo, we don't have a specific nil/null type yet, but empty list/string checks covers most "empty" cases.
+		// For now, this behaves similarly to checking if something is "missing" or zero-value.
+		// However, without a true NIL value, is-empty is often what users want.
+		// Let's defer is-nil logic unless we introduce a real NIL type.
+		// For now, checks for empty list which is the closest to NIL in Lisp.
+		return VBool(args[0].Kind == KList && len(args[0].List) == 0), nil
+	}
+
+	bi["list-append"] = func(ctx context.Context, _ *evaluator, args []Value) (Value, error) {
+		if len(args) != 2 {
+			return Value{}, fmt.Errorf("list-append expects 2 arguments (list, value)")
+		}
+		list, err := args[0].AsList()
+		if err != nil {
+			return Value{}, fmt.Errorf("list-append: first argument must be list: %w", err)
+		}
+		// Create new list to preserve immutability
+		newList := make([]Value, len(list)+1)
+		copy(newList, list)
+		newList[len(list)] = args[1]
+		return VList(newList), nil
+	}
+
+	bi["list-concat"] = func(ctx context.Context, _ *evaluator, args []Value) (Value, error) {
+		if len(args) < 2 {
+			return Value{}, fmt.Errorf("list-concat expects at least 2 arguments")
+		}
+		totalLen := 0
+		for i, arg := range args {
+			l, err := arg.AsList()
+			if err != nil {
+				return Value{}, fmt.Errorf("list-concat: argument %d is not a list", i)
+			}
+			totalLen += len(l)
+		}
+		newList := make([]Value, 0, totalLen)
+		for _, arg := range args {
+			l, _ := arg.AsList() // already checked
+			newList = append(newList, l...)
+		}
+		return VList(newList), nil
+	}
+
 	bi["list"] = func(ctx context.Context, _ *evaluator, args []Value) (Value, error) {
 		return VList(args), nil
 	}

@@ -106,12 +106,19 @@ Step by step, Filo provides:
 - essential operations (`+`, `-`, `*`, `/`, `%`, `pow`);
 - comparisons (`=`, `!=`, `<`, `<=`, `>`, `>=`);
 - boolean logic (`and`, `or`, `not`);
-- lists and higher-order functions (`map`, `fold`, `list`, `length`, `head`, `tail`, `nth`);
-- string operations (`str-concat`, `str-join`, `str-split`, `str-find`, `str-trim`, `str-replace`, `str-upper`, `str-lower`, `str-len`, `str-sub`);
-- basic control flow (`if`);
+- lists and higher-order functions (`map`, `fold`, `list`, `length`, `head`, `tail`, `nth`, `append`, `concat`);
+- string operations (`str-fmt`, `str-concat`, `str-join`, `str-split`, `str-find`, `str-trim`, `str-replace`, `str-upper`, `str-lower`, `str-len`, `str-sub`);
+- basic control flow (`if`, `do`);
+- introspection (`type-of`);
+- validation (`is-empty`, `is-nil`);
 - local scope (`let`, `letv`);
 - multiple returns (`values`);
 - functions (`fn`, `def`) with recursion limits.
+
+### **Extension Packages**
+Filo can be extended with specialized packages:
+- **filomath**: Advanced math functions (`sin`, `cos`, `log`, `to-int`, etc).
+- **filorand**: Non-deterministic functions (`rand-float`, `rand-int`, `uuid-v4`).
 
 ### **3. Restricted environment**
 No:
@@ -130,6 +137,76 @@ For now, Filo:
 - can optionally cache AST or serialized IR.
 
 Bytecode may be added in the future, but only when there is a real need.
+
+---
+
+## Language Reference
+
+### Special Forms
+| Name | Syntax | Description |
+|------|--------|-------------|
+| `if` | `(if cond then [else])` | Conditional execution. Returns `list()` (empty/nil) if else is missing and cond is false. |
+| `do` | `(do expr1 expr2 ...)` | Evaluates expressions in order, returns the last result. |
+| `let` | `(let ((n v) ...) body)` | Defines local variables. Scope is limited to the body. |
+| `letv` | `(letv (n1 n2) (values v1 v2) body)` | Destructures multi-value returns (tuples). |
+| `fn` | `(fn (args) body)` | Creates an anonymous function. |
+| `def` | `(def name expr)` | Defines a global variable or function in the current scope. |
+| `set` | `(set name expr)` | Updates an existing variable in the nearest scope. |
+| `values`| `(values v1 v2 ...)` | Returns multiple values (a tuple). |
+
+### Core Builtins
+| Category | Function | Description |
+|----------|----------|-------------|
+| **Math** | `+`, `-`, `*`, `/`, `%` | Basic arithmetic. |
+| | `pow` | `(pow x y)` Power function. |
+| **Logic** | `=`, `!=` | Equality checks. |
+| | `<`, `<=`, `>`, `>=` | Numeric comparison. |
+| | `and`, `or`, `not` | Boolean logic. |
+| **Types** | `type-of` | Returns "number", "string", "list", etc. |
+| | `is-empty` | Returns true for "" or empty list. |
+| | `is-nil` | Returns true for nil/empty list (legacy alias). |
+| **Lists** | `list` | Creates a list `(list 1 2 3)`. |
+| | `length` | Returns list length. |
+| | `head`, `tail` | First element / Rest of list. |
+| | `nth` | `(nth list index)` Access element by index (0-based). |
+| | `append` | `(append list item)` Returns new list with item appended. |
+| | `concat` | `(concat l1 l2)` Concatenates two lists. |
+| | `map` | `(map fn list)` Applies function to each element. |
+| | `fold` | `(fold fn init list)` Reduces list with accumulator. |
+
+### String Builtins
+| Function | Description |
+|----------|-------------|
+| `str-fmt` | `(str-fmt format args...)` Safe implementation of `fmt.Sprintf`. |
+| `str-concat` | Concatenates arguments into a string. |
+| `str-join` | `(str-join sep list)` Joins list elements with separator. |
+| `str-split` | `(str-split sep str)` Splits string into list. |
+| `str-len` | Returns string length (runes). |
+| `str-sub` | `(str-sub str start [end])` Substring operations. |
+| `str-find` | `(str-find sub str)` Validation/Search. |
+| `str-replace`| `(str-replace old new str)` Replaces occurrences. |
+| `str-trim` | Trims whitespace. |
+| `str-upper` | Converts to uppercase. |
+| `str-lower` | Converts to lowercase. |
+
+### Extension: filomath
+| Function | Description |
+|----------|-------------|
+| `abs`, `sqrt` | Absolute value, Square root. |
+| `floor`, `ceil`, `round`| Rounding operations. |
+| `to-int` | `(to-int n)` Truncates float to integer. |
+| `sin`, `cos`, `tan` | Trigonometric functions (radians). |
+| `log`, `log10`, `exp` | Logarithmic functions. |
+| `math-min`, `math-max` | Min/Max of arguments. |
+| `pi`, `e` | Constants. |
+
+### Extension: filorand
+| Function | Description |
+|----------|-------------|
+| `rand-float` | Random number [0.0, 1.0). |
+| `rand-int` | `(rand-int n)` Random integer [0, n). |
+| `rand-seed` | `(rand-seed [n])` Reseed RNG. |
+| `uuid-v4` | Generates a standard UUID string. |
 
 ---
 

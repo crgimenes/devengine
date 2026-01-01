@@ -62,6 +62,8 @@ func (ev *evaluator) evalList(list *List, env *Env) (Value, error) {
 		switch headSym.Name {
 		case "if":
 			return ev.evalIf(list.Elems[1:], env)
+		case "do":
+			return ev.evalDo(list.Elems[1:], env)
 		case "let":
 			return ev.evalLet(list.Elems[1:], env)
 		case "letv":
@@ -133,6 +135,21 @@ func (ev *evaluator) evalIf(args []Node, env *Env) (Value, error) {
 	return ev.eval(args[2], env)
 }
 
+func (ev *evaluator) evalDo(args []Node, env *Env) (Value, error) {
+	if len(args) == 0 {
+		return Value{}, fmt.Errorf("do requires at least one expression")
+	}
+	var result Value
+	for _, arg := range args {
+		val, err := ev.eval(arg, env)
+		if err != nil {
+			return Value{}, err
+		}
+		result = val
+	}
+	return result, nil
+}
+
 func (ev *evaluator) evalLet(args []Node, env *Env) (Value, error) {
 	if len(args) < 2 {
 		return Value{}, fmt.Errorf("let expects bindings and body")
@@ -202,7 +219,7 @@ func (ev *evaluator) evalSet(args []Node, env *Env) (Value, error) {
 	if err != nil {
 		return Value{}, err
 	}
-	ev.root.Assign(ev.root, nameSym.Name, val)
+	env.Assign(ev.root, nameSym.Name, val)
 	return val, nil
 }
 

@@ -40,7 +40,11 @@ func TestMathBuiltins(t *testing.T) {
 		{"exp 0", "(exp 0)", 1, 0},
 		{"exp 1", "(exp 1)", math.E, 1e-10},
 		{"math-min", "(math-min 5 3 8 1 4)", 1, 0},
+		{"math-min", "(math-min 5 3 8 1 4)", 1, 0},
 		{"math-max", "(math-max 5 3 8 1 4)", 8, 0},
+		{"to-int basic", "(to-int 3.9)", 3, 0},
+		{"to-int negative", "(to-int -3.9)", -3, 0},
+		{"to-int exact", "(to-int 4.0)", 4, 0},
 	}
 
 	for _, tt := range tests {

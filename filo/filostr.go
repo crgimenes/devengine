@@ -20,6 +20,40 @@ func RegisterStringBuiltins(eng *Engine) {
 	eng.RegisterBuiltin("str-concat", builtinStrConcat)
 	eng.RegisterBuiltin("str-len", builtinStrLen)
 	eng.RegisterBuiltin("str-sub", builtinStrSub)
+	eng.RegisterBuiltin("str-fmt", builtinStrFmt)
+}
+
+// builtinStrFmt formats a string according to a format specifier.
+// Usage: (str-fmt format args...) -> string
+// Example: (str-fmt "Hello %s" "World") -> "Hello World"
+// Supports %s, %d, %f, %v, %t.
+func builtinStrFmt(ctx context.Context, args []Value) (Value, error) {
+	if len(args) < 1 {
+		return Value{}, fmt.Errorf("str-fmt expects at least 1 argument (format string)")
+	}
+	format, err := args[0].AsString()
+	if err != nil {
+		return Value{}, fmt.Errorf("str-fmt: format must be string: %w", err)
+	}
+
+	fmtArgs := make([]interface{}, len(args)-1)
+	for i, arg := range args[1:] {
+		switch arg.Kind {
+		case KNumber:
+			fmtArgs[i] = arg.Num
+		case KString:
+			fmtArgs[i] = arg.Str
+		case KBool:
+			fmtArgs[i] = arg.Bool
+		case KList:
+			fmtArgs[i] = arg.List
+		case KTuple:
+			fmtArgs[i] = arg.Tup
+		default:
+			fmtArgs[i] = arg
+		}
+	}
+	return VString(fmt.Sprintf(format, fmtArgs...)), nil
 }
 
 // builtinStrJoin joins a list of strings with a separator.

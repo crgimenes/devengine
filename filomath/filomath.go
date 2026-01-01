@@ -38,6 +38,19 @@ func RegisterMathBuiltins(eng *filo.Engine) {
 	eng.RegisterBuiltin("math-max", builtinMax) // prefixed to avoid conflicts with other packages
 	eng.RegisterBuiltin("pi", builtinPi)
 	eng.RegisterBuiltin("e", builtinE)
+	eng.RegisterBuiltin("to-int", builtinToInt)
+}
+
+// builtinToInt converts a number to an integer by truncation (e.g., 3.9 -> 3.0).
+func builtinToInt(_ context.Context, args []filo.Value) (filo.Value, error) {
+	if len(args) != 1 {
+		return filo.Value{}, fmt.Errorf("to-int expects 1 argument")
+	}
+	n, err := args[0].AsNumber()
+	if err != nil {
+		return filo.Value{}, err
+	}
+	return filo.VNum(float64(int64(n))), nil
 }
 
 // builtinAbs returns the absolute value of a number.
