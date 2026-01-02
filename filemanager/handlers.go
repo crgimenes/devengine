@@ -398,14 +398,14 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("file validated: name %q type=%q size=%d", fh.Filename, typeDetected, size)
 
 		// Reset file pointer after validation
-		if seeker, ok := file.(io.Seeker); ok {
-			if _, err := seeker.Seek(0, io.SeekStart); err != nil {
-				log.Printf("error seeking file to start: %v", err)
-				http.Error(w, "internal server error", http.StatusInternalServerError)
-				return
-			}
-		} else {
+		seeker, ok := file.(io.Seeker)
+		if !ok {
 			log.Printf("uploaded file is not seekable")
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+		if _, err := seeker.Seek(0, io.SeekStart); err != nil {
+			log.Printf("error seeking file to start: %v", err)
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}

@@ -276,10 +276,9 @@ func RunMigrationOn(s *SQLite) error {
 
 	if appliedCount == 0 {
 		log.Printf("no new migrations to apply")
-	} else {
-		log.Printf("applied %d migration(s)", appliedCount)
+		return nil
 	}
-
+	log.Printf("applied %d migration(s)", appliedCount)
 	return nil
 }
 

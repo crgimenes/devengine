@@ -141,18 +141,17 @@ func (p GitHubProvider) CallbackHandler(w http.ResponseWriter, r *http.Request) 
 	if err != nil {
 		log.Printf("GetUserOrCreateByOAuth failed: %v; attempting fallback user creation", err)
 		// If creation fails, attempt to create minimal user with email only for profile completion
-		if gu.Email != "" {
-			u, err = db.Storage.CreateMinimalUserForOAuthFallback(gu.Email, gu.AvatarURL)
-			if err != nil {
-				log.Printf("CreateMinimalUserForOAuthFallback failed: %v", err)
-				http.Error(w, "user creation failed: "+err.Error(), http.StatusInternalServerError)
-				return
-			}
-			log.Printf("created minimal fallback user with email %s", gu.Email)
-		} else {
+		if gu.Email == "" {
 			http.Error(w, "user creation failed: "+err.Error(), http.StatusInternalServerError)
 			return
 		}
+		u, err = db.Storage.CreateMinimalUserForOAuthFallback(gu.Email, gu.AvatarURL)
+		if err != nil {
+			log.Printf("CreateMinimalUserForOAuthFallback failed: %v", err)
+			http.Error(w, "user creation failed: "+err.Error(), http.StatusInternalServerError)
+			return
+		}
+		log.Printf("created minimal fallback user with email %s", gu.Email)
 	}
 
 	sid := utils.NewOpaqueID()

@@ -92,13 +92,13 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		if seeker, ok := file.(io.Seeker); ok {
-			_, err = seeker.Seek(0, io.SeekStart)
-			if err != nil {
-				http.Error(w, "internal server error", http.StatusInternalServerError)
-				return
-			}
-		} else {
+		seeker, ok := file.(io.Seeker)
+		if !ok {
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+		_, err = seeker.Seek(0, io.SeekStart)
+		if err != nil {
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
