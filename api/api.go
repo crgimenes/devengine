@@ -40,9 +40,7 @@ func parsePagination(r *http.Request) (offset, limit int) {
 		}
 	}
 
-	if limit > maxLimit {
-		limit = maxLimit
-	}
+	limit = min(limit, maxLimit)
 
 	return offset, limit
 }
