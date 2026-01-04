@@ -33,11 +33,11 @@
                 {{template "tools_sidebar" .}}
             </div>
             <div class="col-md-9">
-                <!-- Entity Type Details -->
+                <!-- Entity Type Edit Form -->
                 <div class="card p-4 mb-4">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
-                            <h2 class="mb-1">{{.EntityType.Name}}</h2>
+                            <h2 class="mb-1">Editar Tabela EAV</h2>
                             <p class="text-muted mb-0 small font-monospace">{{.EntityType.MachineName}}</p>
                         </div>
                         <div class="d-flex gap-2">
@@ -49,9 +49,49 @@
                             </a>
                         </div>
                     </div>
-                    {{if .EntityType.Description}}
-                        <p class="mb-0">{{.EntityType.Description}}</p>
-                    {{end}}
+
+                    <form method="POST" action="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/edit">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Nome <span class="text-danger">*</span></label>
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                id="name" 
+                                name="name" 
+                                value="{{.EntityType.Name}}"
+                                required
+                                maxlength="100"
+                            >
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descrição</label>
+                            <textarea 
+                                class="form-control" 
+                                id="description" 
+                                name="description" 
+                                rows="3"
+                                maxlength="500"
+                            >{{.EntityType.Description}}</textarea>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="pos_save" class="form-label">Script Pós-Salvamento (Filo)</label>
+                            <textarea 
+                                class="form-control font-monospace" 
+                                id="pos_save" 
+                                name="pos_save" 
+                                rows="6"
+                                placeholder="(set error &quot;Mensagem de erro&quot;)"
+                            >{{.EntityType.PosSave}}</textarea>
+                            <div class="form-text">
+                                Código Filo executado antes de salvar registros. 
+                                Variáveis dos campos disponíveis pelo machine_name.
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                    </form>
                 </div>
 
                 <!-- Attributes List -->

@@ -36,7 +36,7 @@ func TestEAVCreateEntityType(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Contact", "contact", "Manage contacts")
+	et, err := s.CreateEAVEntityType("Contact", "contact", "Manage contacts", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -64,7 +64,7 @@ func TestEAVGetEntityTypeByID(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	created, err := s.CreateEAVEntityType("Product", "product", "Product catalog")
+	created, err := s.CreateEAVEntityType("Product", "product", "Product catalog", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -88,7 +88,7 @@ func TestEAVGetEntityTypeByRefID(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	created, err := s.CreateEAVEntityType("Order", "order", "Sales orders")
+	created, err := s.CreateEAVEntityType("Order", "order", "Sales orders", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -109,7 +109,7 @@ func TestEAVGetEntityTypeByMachineName(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	created, err := s.CreateEAVEntityType("Invoice", "invoice", "Invoices")
+	created, err := s.CreateEAVEntityType("Invoice", "invoice", "Invoices", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -132,17 +132,17 @@ func TestEAVListEntityTypes(t *testing.T) {
 	defer s.Close()
 
 	// Create entity types in non-alphabetical order
-	_, err := s.CreateEAVEntityType("Zebra", "zebra", "")
+	_, err := s.CreateEAVEntityType("Zebra", "zebra", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
 
-	_, err = s.CreateEAVEntityType("Alpha", "alpha", "")
+	_, err = s.CreateEAVEntityType("Alpha", "alpha", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
 
-	_, err = s.CreateEAVEntityType("Beta", "beta", "")
+	_, err = s.CreateEAVEntityType("Beta", "beta", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -171,7 +171,7 @@ func TestEAVSoftDeleteEntityType(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	created, err := s.CreateEAVEntityType("Temp", "temp", "")
+	created, err := s.CreateEAVEntityType("Temp", "temp", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -200,6 +200,53 @@ func TestEAVSoftDeleteEntityType(t *testing.T) {
 	}
 }
 
+func TestEAVUpdateEntityType(t *testing.T) {
+	t.Parallel()
+
+	s := initTestDBWithEAVMigrations(t)
+	defer s.Close()
+
+	// Create entity type
+	created, err := s.CreateEAVEntityType("Original Name", "original_name", "Original desc", "")
+	if err != nil {
+		t.Fatalf("CreateEAVEntityType() error: %v", err)
+	}
+
+	// Update entity type
+	updated, err := s.UpdateEAVEntityType(created.ID, "New Name", "New description", "(set error \"test\")")
+	if err != nil {
+		t.Fatalf("UpdateEAVEntityType() error: %v", err)
+	}
+
+	// Verify updated values
+	if updated.Name != "New Name" {
+		t.Errorf("expected Name = 'New Name', got %q", updated.Name)
+	}
+	if updated.Description != "New description" {
+		t.Errorf("expected Description = 'New description', got %q", updated.Description)
+	}
+	if updated.PosSave != "(set error \"test\")" {
+		t.Errorf("expected PosSave = '(set error \"test\")', got %q", updated.PosSave)
+	}
+
+	// machine_name should not change
+	if updated.MachineName != "original_name" {
+		t.Errorf("expected MachineName = 'original_name', got %q", updated.MachineName)
+	}
+
+	// Verify by fetching again
+	fetched, err := s.GetEAVEntityTypeByID(updated.ID)
+	if err != nil {
+		t.Fatalf("GetEAVEntityTypeByID() error: %v", err)
+	}
+	if fetched.Name != "New Name" {
+		t.Errorf("fetched Name = %q, expected 'New Name'", fetched.Name)
+	}
+	if fetched.PosSave != "(set error \"test\")" {
+		t.Errorf("fetched PosSave = %q, expected '(set error \"test\")'", fetched.PosSave)
+	}
+}
+
 // ====================================================================
 // Attribute Tests
 // ====================================================================
@@ -210,7 +257,7 @@ func TestEAVCreateAttribute(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Person", "person", "")
+	et, err := s.CreateEAVEntityType("Person", "person", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -252,7 +299,7 @@ func TestEAVCreateAttributeInvalidKind(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Test", "test", "")
+	et, err := s.CreateEAVEntityType("Test", "test", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -278,7 +325,7 @@ func TestEAVCreateAttributeAllKinds(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("AllTypes", "all_types", "")
+	et, err := s.CreateEAVEntityType("AllTypes", "all_types", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -307,7 +354,7 @@ func TestEAVListAttributesByEntityType(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Book", "book", "")
+	et, err := s.CreateEAVEntityType("Book", "book", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -352,7 +399,7 @@ func TestEAVSoftDeleteAttribute(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Test", "test", "")
+	et, err := s.CreateEAVEntityType("Test", "test", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -396,7 +443,7 @@ func TestEAVCreateRecord(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Task", "task", "")
+	et, err := s.CreateEAVEntityType("Task", "task", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -426,7 +473,7 @@ func TestEAVGetRecordByRefID(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Note", "note", "")
+	et, err := s.CreateEAVEntityType("Note", "note", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -452,7 +499,7 @@ func TestEAVListRecordsPagination(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Item", "item", "")
+	et, err := s.CreateEAVEntityType("Item", "item", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -505,7 +552,7 @@ func TestEAVUpdateRecordRevOptimisticLocking(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Doc", "doc", "")
+	et, err := s.CreateEAVEntityType("Doc", "doc", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -552,7 +599,7 @@ func TestEAVSoftDeleteRecord(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Temp", "temp", "")
+	et, err := s.CreateEAVEntityType("Temp", "temp", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -596,7 +643,7 @@ func TestEAVUpsertValueBool(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Settings", "settings", "")
+	et, err := s.CreateEAVEntityType("Settings", "settings", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -639,7 +686,7 @@ func TestEAVUpsertValueInt(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Counter", "counter", "")
+	et, err := s.CreateEAVEntityType("Counter", "counter", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -682,7 +729,7 @@ func TestEAVUpsertValueReal(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Measurement", "measurement", "")
+	et, err := s.CreateEAVEntityType("Measurement", "measurement", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -725,7 +772,7 @@ func TestEAVUpsertValueText(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Article", "article", "")
+	et, err := s.CreateEAVEntityType("Article", "article", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -768,7 +815,7 @@ func TestEAVUpsertValueDatetime(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Event", "event", "")
+	et, err := s.CreateEAVEntityType("Event", "event", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -811,7 +858,7 @@ func TestEAVUpsertValueTypeMismatch(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Test", "test", "")
+	et, err := s.CreateEAVEntityType("Test", "test", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -841,7 +888,7 @@ func TestEAVUpsertValueMultipleValues(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Test", "test", "")
+	et, err := s.CreateEAVEntityType("Test", "test", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -871,7 +918,7 @@ func TestEAVValueUpsertSemantics(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Test", "test", "")
+	et, err := s.CreateEAVEntityType("Test", "test", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -921,7 +968,7 @@ func TestEAVDeleteValue(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Test", "test", "")
+	et, err := s.CreateEAVEntityType("Test", "test", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -966,7 +1013,7 @@ func TestEAVGetValuesExcludesSoftDeletedAttributes(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Test", "test", "")
+	et, err := s.CreateEAVEntityType("Test", "test", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -1030,7 +1077,7 @@ func TestEAVFullFlow(t *testing.T) {
 	defer s.Close()
 
 	// 1. Create entity type
-	et, err := s.CreateEAVEntityType("Person", "person", "Person records")
+	et, err := s.CreateEAVEntityType("Person", "person", "Person records", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}

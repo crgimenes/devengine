@@ -89,6 +89,22 @@
                             <div class="form-text">Opcional, até 500 caracteres</div>
                         </div>
 
+                        <div class="mb-4">
+                            <label for="pos_save" class="form-label">Script Pós-Salvamento (Filo)</label>
+                            <textarea 
+                                class="form-control font-monospace" 
+                                id="pos_save" 
+                                name="pos_save" 
+                                rows="6"
+                                placeholder="(set error &quot;Mensagem de erro&quot;)"
+                            >{{.FormData.PosSave}}</textarea>
+                            <div class="form-text">
+                                Código Filo executado antes de salvar registros. 
+                                Variáveis dos campos disponíveis pelo machine_name. 
+                                Se "error" não estiver vazia, o salvamento é cancelado.
+                            </div>
+                        </div>
+
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">Criar Tabela</button>
                             <a href="/tools/database-schema" class="btn btn-secondary">Cancelar</a>

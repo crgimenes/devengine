@@ -356,14 +356,17 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 		return
 	}
 
-	// Create record with status='draft'
-	record, err := db.Storage.CreateEAVRecord(entityType.ID)
-	if err != nil {
-		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message=Erro ao criar registro", http.StatusSeeOther)
-		return
+	// Build attribute lookup by machine_name for later use
+	attrByMachine := make(map[string]db.EAVAttribute)
+	for _, attr := range attributes {
+		attrByMachine[attr.MachineName] = attr
 	}
 
-	// Parse and save values
+	// =========================================================
+	// PHASE 1: Parse all values into a map (without saving)
+	// =========================================================
+	parsedValues := make(db.EAVRecordValues)
+
 	for _, attr := range attributes {
 		value := r.FormValue("attr_" + attr.MachineName)
 
@@ -374,80 +377,135 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 
 		// Validate required fields
 		if value == "" && attr.IsRequired {
-			db.Storage.SoftDeleteEAVRecord(record.ID) // Cleanup
 			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Campo obrigatório: "+attr.Label, http.StatusSeeOther)
 			return
 		}
 
-		// Parse and upsert value based on type
+		// Parse value based on type
+		switch attr.PrimitiveKind {
+		case "BOOL":
+			parsedValues[attr.MachineName] = value == "1" || value == "true"
+		case "INT":
+			intVal, err := strconv.ParseInt(value, 10, 64)
+			if err != nil {
+				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Valor inválido para "+attr.Label, http.StatusSeeOther)
+				return
+			}
+			parsedValues[attr.MachineName] = intVal
+		case "REAL":
+			realVal, err := strconv.ParseFloat(value, 64)
+			if err != nil {
+				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Valor inválido para "+attr.Label, http.StatusSeeOther)
+				return
+			}
+			parsedValues[attr.MachineName] = realVal
+		case "TEXT":
+			// Validate max_length
+			if attr.MaxLength != nil && len(value) > *attr.MaxLength {
+				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Campo "+attr.Label+" excede o limite de "+fmt.Sprint(*attr.MaxLength)+" caracteres", http.StatusSeeOther)
+				return
+			}
+			parsedValues[attr.MachineName] = value
+		case "DATETIME":
+			if value != "" {
+				parsedValues[attr.MachineName] = value
+			}
+		}
+	}
+
+	// =========================================================
+	// PHASE 2: Execute pos_save script (if defined)
+	// =========================================================
+	if entityType.PosSave != "" {
+		modifiedValues, userError, execErr := db.ExecutePosSaveScript(entityType, parsedValues)
+		if execErr != nil {
+			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Erro no script: "+execErr.Error(), http.StatusSeeOther)
+			return
+		}
+		if userError != "" {
+			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message="+userError, http.StatusSeeOther)
+			return
+		}
+		// Apply modified values
+		parsedValues = modifiedValues
+	}
+
+	// =========================================================
+	// PHASE 3: Create record and save values
+	// =========================================================
+	record, err := db.Storage.CreateEAVRecord(entityType.ID)
+	if err != nil {
+		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message=Erro ao criar registro", http.StatusSeeOther)
+		return
+	}
+
+	// Save each value
+	for machineName, rawValue := range parsedValues {
+		attr, ok := attrByMachine[machineName]
+		if !ok {
+			continue // Skip values for unknown attributes
+		}
+
 		var vBool *bool
 		var vInt *int64
 		var vReal *float64
 		var vText *string
 		var vDatetime *string
 
+		// Convert back to typed pointers
 		switch attr.PrimitiveKind {
 		case "BOOL":
-			boolVal := value == "1" || value == "true"
-			vBool = &boolVal
+			if v, ok := rawValue.(bool); ok {
+				vBool = &v
+			}
 		case "INT":
-			intVal, err := strconv.ParseInt(value, 10, 64)
-			if err != nil {
-				db.Storage.SoftDeleteEAVRecord(record.ID)
-				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Valor inválido para "+attr.Label, http.StatusSeeOther)
-				return
+			if v, ok := rawValue.(int64); ok {
+				vInt = &v
 			}
-			vInt = &intVal
 		case "REAL":
-			realVal, err := strconv.ParseFloat(value, 64)
-			if err != nil {
-				db.Storage.SoftDeleteEAVRecord(record.ID)
-				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Valor inválido para "+attr.Label, http.StatusSeeOther)
-				return
+			if v, ok := rawValue.(float64); ok {
+				vReal = &v
+			} else if v, ok := rawValue.(int64); ok {
+				// Handle case where script returned int instead of float
+				fv := float64(v)
+				vReal = &fv
 			}
-			vReal = &realVal
 		case "TEXT":
-			// Validate max_length
-			if attr.MaxLength != nil && len(value) > *attr.MaxLength {
-				db.Storage.SoftDeleteEAVRecord(record.ID)
-				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Campo "+attr.Label+" excede o limite de "+fmt.Sprint(*attr.MaxLength)+" caracteres", http.StatusSeeOther)
-				return
+			if v, ok := rawValue.(string); ok {
+				vText = &v
 			}
-			vText = &value
 		case "DATETIME":
-			if value != "" {
-				vDatetime = &value
+			if v, ok := rawValue.(string); ok {
+				vDatetime = &v
 			}
 		}
 
 		// Validate unique constraint
-		if attr.IsUnique && value != "" {
-			var uniqueValue interface{}
-			switch attr.PrimitiveKind {
-			case "BOOL":
-				uniqueValue = vBool
-			case "INT":
-				uniqueValue = vInt
-			case "REAL":
-				uniqueValue = vReal
-			case "TEXT":
-				uniqueValue = vText
-			case "DATETIME":
-				uniqueValue = vDatetime
-			}
+		var uniqueValue interface{}
+		switch attr.PrimitiveKind {
+		case "BOOL":
+			uniqueValue = vBool
+		case "INT":
+			uniqueValue = vInt
+		case "REAL":
+			uniqueValue = vReal
+		case "TEXT":
+			uniqueValue = vText
+		case "DATETIME":
+			uniqueValue = vDatetime
+		}
 
-			if uniqueValue != nil {
-				isUnique, err := db.Storage.CheckEAVValueUnique(attr.ID, attr.PrimitiveKind, uniqueValue, 0)
-				if err != nil {
-					db.Storage.SoftDeleteEAVRecord(record.ID)
-					http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Erro ao validar unicidade: "+err.Error(), http.StatusSeeOther)
-					return
-				}
-				if !isUnique {
-					db.Storage.SoftDeleteEAVRecord(record.ID)
-					http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=O valor já existe para o campo "+attr.Label, http.StatusSeeOther)
-					return
-				}
+		if attr.IsUnique && uniqueValue != nil {
+			isUnique, err := db.Storage.CheckEAVValueUnique(attr.ID, attr.PrimitiveKind, uniqueValue, 0)
+			if err != nil {
+				db.Storage.SoftDeleteEAVRecord(record.ID)
+				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Erro ao validar unicidade: "+err.Error(), http.StatusSeeOther)
+				return
+			}
+			if !isUnique {
+				db.Storage.SoftDeleteEAVRecord(record.ID)
+				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=O valor já existe para o campo "+attr.Label, http.StatusSeeOther)
+				return
 			}
 		}
 
@@ -598,6 +656,12 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 		return
 	}
 
+	// Build attribute lookup by machine_name for later use
+	attrByMachine := make(map[string]db.EAVAttribute)
+	for _, attr := range attributes {
+		attrByMachine[attr.MachineName] = attr
+	}
+
 	// Get current rev from form
 	currentRev, err := strconv.Atoi(r.FormValue("rev"))
 	if err != nil {
@@ -605,7 +669,11 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 		return
 	}
 
-	// Update values with optimistic locking
+	// =========================================================
+	// PHASE 1: Parse all values into a map (without saving)
+	// =========================================================
+	parsedValues := make(db.EAVRecordValues)
+
 	for _, attr := range attributes {
 		value := r.FormValue("attr_" + attr.MachineName)
 
@@ -615,70 +683,124 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 			return
 		}
 
-		// Parse value
+		if value == "" {
+			continue
+		}
+
+		// Parse value based on type
+		switch attr.PrimitiveKind {
+		case "BOOL":
+			parsedValues[attr.MachineName] = value == "1" || value == "true"
+		case "INT":
+			intVal, err := strconv.ParseInt(value, 10, 64)
+			if err != nil {
+				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Valor inválido para "+attr.Label, http.StatusSeeOther)
+				return
+			}
+			parsedValues[attr.MachineName] = intVal
+		case "REAL":
+			realVal, err := strconv.ParseFloat(value, 64)
+			if err != nil {
+				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Valor inválido para "+attr.Label, http.StatusSeeOther)
+				return
+			}
+			parsedValues[attr.MachineName] = realVal
+		case "TEXT":
+			// Validate max_length
+			if attr.MaxLength != nil && len(value) > *attr.MaxLength {
+				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Campo "+attr.Label+" excede o limite de "+fmt.Sprint(*attr.MaxLength)+" caracteres", http.StatusSeeOther)
+				return
+			}
+			parsedValues[attr.MachineName] = value
+		case "DATETIME":
+			parsedValues[attr.MachineName] = value
+		}
+	}
+
+	// =========================================================
+	// PHASE 2: Execute pos_save script (if defined)
+	// =========================================================
+	if entityType.PosSave != "" {
+		modifiedValues, userError, execErr := db.ExecutePosSaveScript(entityType, parsedValues)
+		if execErr != nil {
+			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Erro no script: "+execErr.Error(), http.StatusSeeOther)
+			return
+		}
+		if userError != "" {
+			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message="+userError, http.StatusSeeOther)
+			return
+		}
+		// Apply modified values
+		parsedValues = modifiedValues
+	}
+
+	// =========================================================
+	// PHASE 3: Save values with optimistic locking
+	// =========================================================
+	for machineName, rawValue := range parsedValues {
+		attr, ok := attrByMachine[machineName]
+		if !ok {
+			continue // Skip values for unknown attributes
+		}
+
 		var vBool *bool
 		var vInt *int64
 		var vReal *float64
 		var vText *string
 		var vDatetime *string
 
-		if value != "" {
-			switch attr.PrimitiveKind {
-			case "BOOL":
-				boolVal := value == "1" || value == "true"
-				vBool = &boolVal
-			case "INT":
-				intVal, err := strconv.ParseInt(value, 10, 64)
-				if err != nil {
-					http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Valor inválido para "+attr.Label, http.StatusSeeOther)
-					return
-				}
-				vInt = &intVal
-			case "REAL":
-				realVal, err := strconv.ParseFloat(value, 64)
-				if err != nil {
-					http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Valor inválido para "+attr.Label, http.StatusSeeOther)
-					return
-				}
-				vReal = &realVal
-			case "TEXT":
-				// Validate max_length
-				if attr.MaxLength != nil && len(value) > *attr.MaxLength {
-					http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Campo "+attr.Label+" excede o limite de "+fmt.Sprint(*attr.MaxLength)+" caracteres", http.StatusSeeOther)
-					return
-				}
-				vText = &value
-			case "DATETIME":
-				vDatetime = &value
+		// Convert back to typed pointers
+		switch attr.PrimitiveKind {
+		case "BOOL":
+			if v, ok := rawValue.(bool); ok {
+				vBool = &v
+			}
+		case "INT":
+			if v, ok := rawValue.(int64); ok {
+				vInt = &v
+			}
+		case "REAL":
+			if v, ok := rawValue.(float64); ok {
+				vReal = &v
+			} else if v, ok := rawValue.(int64); ok {
+				// Handle case where script returned int instead of float
+				fv := float64(v)
+				vReal = &fv
+			}
+		case "TEXT":
+			if v, ok := rawValue.(string); ok {
+				vText = &v
+			}
+		case "DATETIME":
+			if v, ok := rawValue.(string); ok {
+				vDatetime = &v
 			}
 		}
 
 		// Validate unique constraint (exclude current record)
-		if attr.IsUnique && value != "" {
-			var uniqueValue interface{}
-			switch attr.PrimitiveKind {
-			case "BOOL":
-				uniqueValue = vBool
-			case "INT":
-				uniqueValue = vInt
-			case "REAL":
-				uniqueValue = vReal
-			case "TEXT":
-				uniqueValue = vText
-			case "DATETIME":
-				uniqueValue = vDatetime
-			}
+		var uniqueValue interface{}
+		switch attr.PrimitiveKind {
+		case "BOOL":
+			uniqueValue = vBool
+		case "INT":
+			uniqueValue = vInt
+		case "REAL":
+			uniqueValue = vReal
+		case "TEXT":
+			uniqueValue = vText
+		case "DATETIME":
+			uniqueValue = vDatetime
+		}
 
-			if uniqueValue != nil {
-				isUnique, err := db.Storage.CheckEAVValueUnique(attr.ID, attr.PrimitiveKind, uniqueValue, record.ID)
-				if err != nil {
-					http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Erro ao validar unicidade: "+err.Error(), http.StatusSeeOther)
-					return
-				}
-				if !isUnique {
-					http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=O valor já existe para o campo "+attr.Label, http.StatusSeeOther)
-					return
-				}
+		if attr.IsUnique && uniqueValue != nil {
+			isUnique, err := db.Storage.CheckEAVValueUnique(attr.ID, attr.PrimitiveKind, uniqueValue, record.ID)
+			if err != nil {
+				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Erro ao validar unicidade: "+err.Error(), http.StatusSeeOther)
+				return
+			}
+			if !isUnique {
+				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=O valor já existe para o campo "+attr.Label, http.StatusSeeOther)
+				return
 			}
 		}
 
@@ -698,7 +820,6 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 	}
 
 	// Always set status to 'active' after successful save
-	// Note: currentRev was already incremented in the loop above
 	err = db.Storage.UpdateEAVRecordStatus(record.ID, currentRev, "active")
 	if err != nil {
 		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Erro ao ativar registro: "+err.Error(), http.StatusSeeOther)

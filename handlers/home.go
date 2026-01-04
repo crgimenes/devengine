@@ -435,6 +435,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 		Name        string
 		MachineName string
 		Description string
+		PosSave     string
 	}
 
 	// Handle POST - Create entity type
@@ -442,6 +443,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 		name := r.FormValue("name")
 		machineName := r.FormValue("machine_name")
 		description := r.FormValue("description")
+		posSave := r.FormValue("pos_save")
 
 		// Validation
 		var errorMsg string
@@ -499,6 +501,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 					Name:        name,
 					MachineName: machineName,
 					Description: description,
+					PosSave:     posSave,
 				},
 			}
 			h.templates(w, "tools_database_schema_eav_new.go.tmpl", data)
@@ -506,7 +509,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 		}
 
 		// Create entity type
-		entityType, err := db.Storage.CreateEAVEntityType(name, machineName, description)
+		entityType, err := db.Storage.CreateEAVEntityType(name, machineName, description, posSave)
 		if err != nil {
 			data := struct {
 				Authed      bool
@@ -525,6 +528,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 					Name:        name,
 					MachineName: machineName,
 					Description: description,
+					PosSave:     posSave,
 				},
 			}
 			h.templates(w, "tools_database_schema_eav_new.go.tmpl", data)
@@ -561,7 +565,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 
 func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
-		[]string{http.MethodGet},
+		[]string{http.MethodGet, http.MethodPost},
 		true,  // check auth - must be logged in
 		false, // check ratelimit
 		true,  // prevent cache
@@ -606,6 +610,80 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 		return
 	}
 
+	// Handle POST - Update entity type
+	if r.Method == http.MethodPost {
+		name := r.FormValue("name")
+		description := r.FormValue("description")
+		posSave := r.FormValue("pos_save")
+
+		// Validation
+		var errorMsg string
+		if name == "" {
+			errorMsg = "Nome é obrigatório"
+		} else if len(name) > 100 {
+			errorMsg = "Nome deve ter no máximo 100 caracteres"
+		} else if len(description) > 500 {
+			errorMsg = "Descrição deve ter no máximo 500 caracteres"
+		}
+
+		if errorMsg != "" {
+			data := struct {
+				Authed      bool
+				User        db.User
+				Error       string
+				Message     string
+				Config      config.Config
+				CurrentPage string
+				EntityID    string
+				EntityType  *db.EAVEntityType
+				Attributes  []db.EAVAttribute
+			}{
+				Authed:      true,
+				User:        *user,
+				Error:       errorMsg,
+				Config:      *h.cfg,
+				CurrentPage: "database-schema",
+				EntityID:    id,
+				EntityType:  entityType,
+				Attributes:  attributes,
+			}
+			h.templates(w, "tools_database_schema_eav_edit.go.tmpl", data)
+			return
+		}
+
+		// Update entity type
+		updatedET, err := db.Storage.UpdateEAVEntityType(entityType.ID, name, description, posSave)
+		if err != nil {
+			data := struct {
+				Authed      bool
+				User        db.User
+				Error       string
+				Message     string
+				Config      config.Config
+				CurrentPage string
+				EntityID    string
+				EntityType  *db.EAVEntityType
+				Attributes  []db.EAVAttribute
+			}{
+				Authed:      true,
+				User:        *user,
+				Error:       "Erro ao atualizar tabela: " + err.Error(),
+				Config:      *h.cfg,
+				CurrentPage: "database-schema",
+				EntityID:    id,
+				EntityType:  entityType,
+				Attributes:  attributes,
+			}
+			h.templates(w, "tools_database_schema_eav_edit.go.tmpl", data)
+			return
+		}
+
+		// Redirect with success message
+		http.Redirect(w, r, "/tools/database-schema/eav/"+updatedET.ReferenceID+"/edit?message=Tabela atualizada com sucesso", http.StatusSeeOther)
+		return
+	}
+
+	// Handle GET - Show form
 	message := r.URL.Query().Get("message")
 	if len(message) > 200 {
 		message = ""
