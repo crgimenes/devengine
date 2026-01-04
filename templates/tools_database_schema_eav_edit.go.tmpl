@@ -76,17 +76,32 @@
                         </div>
 
                         <div class="mb-4">
-                            <label for="pos_save" class="form-label">Script Pós-Salvamento (Filo)</label>
+                            <label for="pos_load" class="form-label">Script Pós-Carregamento (Filo)</label>
                             <textarea 
                                 class="form-control font-monospace" 
-                                id="pos_save" 
-                                name="pos_save" 
+                                id="pos_load" 
+                                name="pos_load" 
+                                rows="6"
+                                placeholder="(set campo (str-concat campo &quot; - editado&quot;))"
+                            >{{.EntityType.PosLoad}}</textarea>
+                            <div class="form-text">
+                                Código Filo executado após carregar registros e defaults, antes de exibir.
+                                Se "error" estiver preenchida, mostra a mensagem na tela.
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label for="pre_save" class="form-label">Script Pré-Salvamento (Filo)</label>
+                            <textarea 
+                                class="form-control font-monospace" 
+                                id="pre_save" 
+                                name="pre_save" 
                                 rows="6"
                                 placeholder="(set error &quot;Mensagem de erro&quot;)"
-                            >{{.EntityType.PosSave}}</textarea>
+                            >{{.EntityType.PreSave}}</textarea>
                             <div class="form-text">
                                 Código Filo executado antes de salvar registros. 
-                                Variáveis dos campos disponíveis pelo machine_name.
+                                Se "error" estiver preenchida, o salvamento é bloqueado.
                             </div>
                         </div>
 

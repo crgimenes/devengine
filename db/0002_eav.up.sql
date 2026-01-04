@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS eav_entity_types (
     machine_name  TEXT    NOT NULL COLLATE NOCASE,
     name          TEXT    NOT NULL,
     description   TEXT,
-    pos_save      TEXT,  -- Filo script executed before saving records
+    pre_save      TEXT,  -- Filo script executed before saving records
+    pos_load      TEXT,  -- Filo script executed after loading records (before display)
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at    DATETIME

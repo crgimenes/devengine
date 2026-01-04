@@ -29,7 +29,8 @@ type EAVEntityType struct {
 	MachineName string    `json:"machine_name"`
 	Name        string    `json:"name"`
 	Description string    `json:"description"`
-	PosSave     string    `json:"pos_save"` // Filo script executed before saving records
+	PreSave     string    `json:"pre_save"` // Filo script executed before saving records
+	PosLoad     string    `json:"pos_load"` // Filo script executed after loading records
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 	DeletedAt   time.Time `json:"deleted_at,omitempty"` // zero value means not deleted
@@ -91,17 +92,19 @@ type EAVValue struct {
 // ====================================================================
 
 // CreateEAVEntityType creates a new entity type with an opaque reference_id.
-func (s *SQLite) CreateEAVEntityType(name, machineName, description, posSave string) (*EAVEntityType, error) {
+func (s *SQLite) CreateEAVEntityType(name, machineName, description, preSave, posLoad string) (*EAVEntityType, error) {
 	refID := utils.NewOpaqueID()
 	const sqlInsert = `INSERT INTO eav_entity_types (
 		reference_id,  -- 1
 		machine_name,  -- 2
 		name,          -- 3
 		description,   -- 4
-		pos_save,      -- 5
+		pre_save,      -- 5
+		pos_load,      -- 6
 		created_at,
 		updated_at
 	) VALUES (
+		?,
 		?,
 		?,
 		?,
@@ -115,9 +118,10 @@ func (s *SQLite) CreateEAVEntityType(name, machineName, description, posSave str
 		machine_name,   -- 3
 		name,           -- 4
 		description,    -- 5
-		COALESCE(pos_save, ''), -- 6
-		created_at,     -- 7
-		updated_at      -- 8
+		COALESCE(pre_save, ''), -- 6
+		COALESCE(pos_load, ''), -- 7
+		created_at,     -- 8
+		updated_at      -- 9
 	;`
 
 	var et EAVEntityType
@@ -126,16 +130,18 @@ func (s *SQLite) CreateEAVEntityType(name, machineName, description, posSave str
 		machineName, // 2
 		name,        // 3
 		description, // 4
-		posSave,     // 5
+		preSave,     // 5
+		posLoad,     // 6
 	).Scan(
 		&et.ID,          // 1
 		&et.ReferenceID, // 2
 		&et.MachineName, // 3
 		&et.Name,        // 4
 		&et.Description, // 5
-		&et.PosSave,     // 6
-		&et.CreatedAt,   // 7
-		&et.UpdatedAt,   // 8
+		&et.PreSave,     // 6
+		&et.PosLoad,     // 7
+		&et.CreatedAt,   // 8
+		&et.UpdatedAt,   // 9
 	)
 	if err != nil {
 		return nil, err
@@ -151,9 +157,10 @@ func (s *SQLite) GetEAVEntityTypeByID(id int64) (*EAVEntityType, error) {
 		machine_name,               -- 3
 		name,                       -- 4
 		COALESCE(description, ''),  -- 5
-		COALESCE(pos_save, ''),     -- 6
-		created_at,                 -- 7
-		updated_at                  -- 8
+		COALESCE(pre_save, ''),     -- 6
+		COALESCE(pos_load, ''),     -- 7
+		created_at,                 -- 8
+		updated_at                  -- 9
 	FROM eav_entity_types
 	WHERE id = ? AND deleted_at IS NULL;` // 1
 
@@ -166,9 +173,10 @@ func (s *SQLite) GetEAVEntityTypeByID(id int64) (*EAVEntityType, error) {
 		&et.MachineName, // 3
 		&et.Name,        // 4
 		&et.Description, // 5
-		&et.PosSave,     // 6
-		&et.CreatedAt,   // 7
-		&et.UpdatedAt,   // 8
+		&et.PreSave,     // 6
+		&et.PosLoad,     // 7
+		&et.CreatedAt,   // 8
+		&et.UpdatedAt,   // 9
 	)
 	if err != nil {
 		if errors.Is(err, ErrNoRows) {
@@ -187,9 +195,10 @@ func (s *SQLite) GetEAVEntityTypeByRefID(refID string) (*EAVEntityType, error) {
 		machine_name,               -- 3
 		name,                       -- 4
 		COALESCE(description, ''),  -- 5
-		COALESCE(pos_save, ''),     -- 6
-		created_at,                 -- 7
-		updated_at                  -- 8
+		COALESCE(pre_save, ''),     -- 6
+		COALESCE(pos_load, ''),     -- 7
+		created_at,                 -- 8
+		updated_at                  -- 9
 	FROM eav_entity_types
 	WHERE reference_id = ? AND deleted_at IS NULL;` // 1
 
@@ -202,9 +211,10 @@ func (s *SQLite) GetEAVEntityTypeByRefID(refID string) (*EAVEntityType, error) {
 		&et.MachineName, // 3
 		&et.Name,        // 4
 		&et.Description, // 5
-		&et.PosSave,     // 6
-		&et.CreatedAt,   // 7
-		&et.UpdatedAt,   // 8
+		&et.PreSave,     // 6
+		&et.PosLoad,     // 7
+		&et.CreatedAt,   // 8
+		&et.UpdatedAt,   // 9
 	)
 	if err != nil {
 		if errors.Is(err, ErrNoRows) {
@@ -223,9 +233,10 @@ func (s *SQLite) GetEAVEntityTypeByMachineName(machineName string) (*EAVEntityTy
 		machine_name,               -- 3
 		name,                       -- 4
 		COALESCE(description, ''),  -- 5
-		COALESCE(pos_save, ''),     -- 6
-		created_at,                 -- 7
-		updated_at                  -- 8
+		COALESCE(pre_save, ''),     -- 6
+		COALESCE(pos_load, ''),     -- 7
+		created_at,                 -- 8
+		updated_at                  -- 9
 	FROM eav_entity_types
 	WHERE LOWER(machine_name) = LOWER(?) AND deleted_at IS NULL;` // 1
 
@@ -238,9 +249,10 @@ func (s *SQLite) GetEAVEntityTypeByMachineName(machineName string) (*EAVEntityTy
 		&et.MachineName, // 3
 		&et.Name,        // 4
 		&et.Description, // 5
-		&et.PosSave,     // 6
-		&et.CreatedAt,   // 7
-		&et.UpdatedAt,   // 8
+		&et.PreSave,     // 6
+		&et.PosLoad,     // 7
+		&et.CreatedAt,   // 8
+		&et.UpdatedAt,   // 9
 	)
 	if err != nil {
 		if errors.Is(err, ErrNoRows) {
@@ -259,9 +271,10 @@ func (s *SQLite) ListEAVEntityTypes() ([]EAVEntityType, error) {
 		machine_name,               -- 3
 		name,                       -- 4
 		COALESCE(description, ''),  -- 5
-		COALESCE(pos_save, ''),     -- 6
-		created_at,                 -- 7
-		updated_at                  -- 8
+		COALESCE(pre_save, ''),     -- 6
+		COALESCE(pos_load, ''),     -- 7
+		created_at,                 -- 8
+		updated_at                  -- 9
 	FROM eav_entity_types
 	WHERE deleted_at IS NULL
 	ORDER BY machine_name ASC;`
@@ -281,9 +294,10 @@ func (s *SQLite) ListEAVEntityTypes() ([]EAVEntityType, error) {
 			&et.MachineName, // 3
 			&et.Name,        // 4
 			&et.Description, // 5
-			&et.PosSave,     // 6
-			&et.CreatedAt,   // 7
-			&et.UpdatedAt,   // 8
+			&et.PreSave,     // 6
+			&et.PosLoad,     // 7
+			&et.CreatedAt,   // 8
+			&et.UpdatedAt,   // 9
 		); err != nil {
 			return nil, err
 		}
@@ -293,11 +307,12 @@ func (s *SQLite) ListEAVEntityTypes() ([]EAVEntityType, error) {
 }
 
 // UpdateEAVEntityType updates an existing entity type's metadata.
-func (s *SQLite) UpdateEAVEntityType(id int64, name, description, posSave string) (*EAVEntityType, error) {
+func (s *SQLite) UpdateEAVEntityType(id int64, name, description, preSave, posLoad string) (*EAVEntityType, error) {
 	const sqlUpdate = `UPDATE eav_entity_types SET
 		name = ?,        -- 1
 		description = ?, -- 2
-		pos_save = ?,    -- 3
+		pre_save = ?,    -- 3
+		pos_load = ?,    -- 4
 		updated_at = CURRENT_TIMESTAMP
 	WHERE id = ? AND deleted_at IS NULL
 	RETURNING
@@ -306,26 +321,29 @@ func (s *SQLite) UpdateEAVEntityType(id int64, name, description, posSave string
 		machine_name,               -- 3
 		name,                       -- 4
 		COALESCE(description, ''),  -- 5
-		COALESCE(pos_save, ''),     -- 6
-		created_at,                 -- 7
-		updated_at                  -- 8
+		COALESCE(pre_save, ''),     -- 6
+		COALESCE(pos_load, ''),     -- 7
+		created_at,                 -- 8
+		updated_at                  -- 9
 	;`
 
 	var et EAVEntityType
 	err := s.QueryRowRW(sqlUpdate,
 		name,        // 1
 		description, // 2
-		posSave,     // 3
-		id,          // 4 (WHERE clause)
+		preSave,     // 3
+		posLoad,     // 4
+		id,          // 5 (WHERE clause)
 	).Scan(
 		&et.ID,          // 1
 		&et.ReferenceID, // 2
 		&et.MachineName, // 3
 		&et.Name,        // 4
 		&et.Description, // 5
-		&et.PosSave,     // 6
-		&et.CreatedAt,   // 7
-		&et.UpdatedAt,   // 8
+		&et.PreSave,     // 6
+		&et.PosLoad,     // 7
+		&et.CreatedAt,   // 8
+		&et.UpdatedAt,   // 9
 	)
 	if err != nil {
 		if errors.Is(err, ErrNoRows) {

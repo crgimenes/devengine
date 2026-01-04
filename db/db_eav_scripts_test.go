@@ -10,7 +10,7 @@ func TestExecutePosSaveEmptyScript(t *testing.T) {
 	entityType := &EAVEntityType{
 		ID:      1,
 		Name:    "Test",
-		PosSave: "", // Empty script
+		PreSave: "", // Empty script
 	}
 
 	values := EAVRecordValues{
@@ -18,9 +18,9 @@ func TestExecutePosSaveEmptyScript(t *testing.T) {
 		"field2": int64(42),
 	}
 
-	modifiedValues, userError, err := ExecutePosSaveScript(entityType, values)
+	modifiedValues, userError, err := ExecutePreSaveScript(entityType, values)
 	if err != nil {
-		t.Fatalf("ExecutePosSaveScript() error: %v", err)
+		t.Fatalf("ExecutePreSaveScript() error: %v", err)
 	}
 	if userError != "" {
 		t.Errorf("expected no userError, got %q", userError)
@@ -41,16 +41,16 @@ func TestExecutePosSaveModifiesValues(t *testing.T) {
 	entityType := &EAVEntityType{
 		ID:      1,
 		Name:    "Test",
-		PosSave: `(set field1 (str-concat field1 " - modified"))`,
+		PreSave: `(set field1 (str-concat field1 " - modified"))`,
 	}
 
 	values := EAVRecordValues{
 		"field1": "original",
 	}
 
-	modifiedValues, userError, err := ExecutePosSaveScript(entityType, values)
+	modifiedValues, userError, err := ExecutePreSaveScript(entityType, values)
 	if err != nil {
-		t.Fatalf("ExecutePosSaveScript() error: %v", err)
+		t.Fatalf("ExecutePreSaveScript() error: %v", err)
 	}
 	if userError != "" {
 		t.Errorf("expected no userError, got %q", userError)
@@ -69,16 +69,16 @@ func TestExecutePosSaveErrorVariable(t *testing.T) {
 	entityType := &EAVEntityType{
 		ID:      1,
 		Name:    "Test",
-		PosSave: `(set error "Campo obrigatório não preenchido")`,
+		PreSave: `(set error "Campo obrigatório não preenchido")`,
 	}
 
 	values := EAVRecordValues{
 		"field1": "",
 	}
 
-	modifiedValues, userError, err := ExecutePosSaveScript(entityType, values)
+	modifiedValues, userError, err := ExecutePreSaveScript(entityType, values)
 	if err != nil {
-		t.Fatalf("ExecutePosSaveScript() error: %v", err)
+		t.Fatalf("ExecutePreSaveScript() error: %v", err)
 	}
 
 	// Should return user error
@@ -90,20 +90,20 @@ func TestExecutePosSaveErrorVariable(t *testing.T) {
 	}
 }
 
-func TestExecutePosSaveScriptError(t *testing.T) {
+func TestExecutePreSaveScriptError(t *testing.T) {
 	t.Parallel()
 
 	entityType := &EAVEntityType{
 		ID:      1,
 		Name:    "Test",
-		PosSave: `(undefined-function arg)`, // Invalid script
+		PreSave: `(undefined-function arg)`, // Invalid script
 	}
 
 	values := EAVRecordValues{
 		"field1": "value",
 	}
 
-	modifiedValues, userError, err := ExecutePosSaveScript(entityType, values)
+	modifiedValues, userError, err := ExecutePreSaveScript(entityType, values)
 
 	// Should return system error
 	if err == nil {
@@ -123,7 +123,7 @@ func TestExecutePosSaveTypedValues(t *testing.T) {
 	entityType := &EAVEntityType{
 		ID:   1,
 		Name: "Test",
-		PosSave: `
+		PreSave: `
 			(set count (+ count 1))
 			(set price (* price 1.1))
 			(set active (not active))
@@ -136,9 +136,9 @@ func TestExecutePosSaveTypedValues(t *testing.T) {
 		"active": true,
 	}
 
-	modifiedValues, userError, err := ExecutePosSaveScript(entityType, values)
+	modifiedValues, userError, err := ExecutePreSaveScript(entityType, values)
 	if err != nil {
-		t.Fatalf("ExecutePosSaveScript() error: %v", err)
+		t.Fatalf("ExecutePreSaveScript() error: %v", err)
 	}
 	if userError != "" {
 		t.Errorf("expected no userError, got %q", userError)
@@ -169,7 +169,7 @@ func TestExecutePosSaveConditionalValidation(t *testing.T) {
 	entityType := &EAVEntityType{
 		ID:   1,
 		Name: "Test",
-		PosSave: `
+		PreSave: `
 			(if (< price 0)
 				(set error "Preço deve ser positivo"))
 		`,
@@ -180,9 +180,9 @@ func TestExecutePosSaveConditionalValidation(t *testing.T) {
 		"price": -50.0,
 	}
 
-	modifiedValues, userError, err := ExecutePosSaveScript(entityType, values)
+	modifiedValues, userError, err := ExecutePreSaveScript(entityType, values)
 	if err != nil {
-		t.Fatalf("ExecutePosSaveScript() error: %v", err)
+		t.Fatalf("ExecutePreSaveScript() error: %v", err)
 	}
 
 	// Should have user error
@@ -198,9 +198,9 @@ func TestExecutePosSaveConditionalValidation(t *testing.T) {
 		"price": 50.0,
 	}
 
-	modifiedValues, userError, err = ExecutePosSaveScript(entityType, values)
+	modifiedValues, userError, err = ExecutePreSaveScript(entityType, values)
 	if err != nil {
-		t.Fatalf("ExecutePosSaveScript() error: %v", err)
+		t.Fatalf("ExecutePreSaveScript() error: %v", err)
 	}
 	if userError != "" {
 		t.Errorf("expected no userError for valid price, got %q", userError)

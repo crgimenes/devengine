@@ -22,27 +22,56 @@ func filoDefaultConfig() filo.EvalConfig {
 	}
 }
 
-// ExecutePosSaveScript runs the entity type's pos_save Filo script.
+// ExecutePreSaveScript runs the entity type's pre_save Filo script.
 // This is a core EAV function that must be called before any record is saved,
 // regardless of the caller (sysop tools, forms, APIs, etc.).
 //
 // Parameters:
-//   - entityType: The entity type containing the pos_save script
+//   - entityType: The entity type containing the pre_save script
 //   - values: Current field values keyed by attribute machine_name
 //
 // Returns:
 //   - modifiedValues: Values after script execution (may be modified by script)
 //   - userError: User-facing error message if script set "error" variable
 //   - err: System error if script execution failed
-func ExecutePosSaveScript(
+func ExecutePreSaveScript(
 	entityType *EAVEntityType,
 	values EAVRecordValues,
 ) (modifiedValues EAVRecordValues, userError string, err error) {
 	// If no script, return original values unchanged
-	if entityType.PosSave == "" {
+	if entityType.PreSave == "" {
 		return values, "", nil
 	}
 
+	return executeFiloScript(entityType.PreSave, values, "pre_save")
+}
+
+// ExecutePosLoadScript runs the entity type's pos_load Filo script.
+// This is called after loading record data and applying defaults, but before display.
+// It is the last transformation step before the user sees the data.
+//
+// Parameters:
+//   - entityType: The entity type containing the pos_load script
+//   - values: Current field values keyed by attribute machine_name (after defaults applied)
+//
+// Returns:
+//   - modifiedValues: Values after script execution (may be modified by script)
+//   - userError: User-facing error message if script set "error" variable
+//   - err: System error if script execution failed
+func ExecutePosLoadScript(
+	entityType *EAVEntityType,
+	values EAVRecordValues,
+) (modifiedValues EAVRecordValues, userError string, err error) {
+	// If no script, return original values unchanged
+	if entityType.PosLoad == "" {
+		return values, "", nil
+	}
+
+	return executeFiloScript(entityType.PosLoad, values, "pos_load")
+}
+
+// executeFiloScript is the shared implementation for pre_save and pos_load scripts.
+func executeFiloScript(script string, values EAVRecordValues, scriptName string) (EAVRecordValues, string, error) {
 	// Create Filo engine and register string builtins
 	eng := filo.NewEngine()
 	filo.RegisterStringBuiltins(eng)
@@ -58,13 +87,13 @@ func ExecutePosSaveScript(
 
 	// Execute script
 	ctx := context.Background()
-	_, newGlobals, execErr := eng.RunScript(ctx, entityType.PosSave, globals, filoDefaultConfig())
+	_, newGlobals, execErr := eng.RunScript(ctx, script, globals, filoDefaultConfig())
 	if execErr != nil {
 		// Handle comment-only scripts gracefully - they result in "empty script" error
 		if strings.Contains(execErr.Error(), "empty script") {
 			return values, "", nil
 		}
-		return nil, "", fmt.Errorf("pos_save script execution failed: %w", execErr)
+		return nil, "", fmt.Errorf("%s script execution failed: %w", scriptName, execErr)
 	}
 
 	// Check if error variable was set
@@ -75,7 +104,7 @@ func ExecutePosSaveScript(
 	}
 
 	// Extract modified values from globals
-	modifiedValues = make(EAVRecordValues)
+	modifiedValues := make(EAVRecordValues)
 	for k := range values {
 		if newVal, ok := newGlobals[k]; ok {
 			modifiedValues[k] = filoValueToGoValue(newVal)

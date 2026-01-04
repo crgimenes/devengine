@@ -8,7 +8,7 @@ func TestEAVUpsertValueWithRevOptimisticLocking(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Product", "product", "", "")
+	et, err := s.CreateEAVEntityType("Product", "product", "", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}
@@ -94,7 +94,7 @@ func TestEAVUpsertValueWithRevTypeMismatch(t *testing.T) {
 	s := initTestDBWithEAVMigrations(t)
 	defer s.Close()
 
-	et, err := s.CreateEAVEntityType("Test", "test", "", "")
+	et, err := s.CreateEAVEntityType("Test", "test", "", "", "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType() error: %v", err)
 	}

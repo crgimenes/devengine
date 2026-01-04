@@ -304,26 +304,44 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordNew(w http.ResponseWriter, r *htt
 		}
 	}
 
+	// Execute pos_load script (last step before display)
+	var posLoadError string
+	if entityType.PosLoad != "" {
+		modifiedValues, userError, execErr := db.ExecutePosLoadScript(entityType, db.EAVRecordValues(values))
+		if execErr != nil {
+			// Log error but continue with original values
+			// Script errors shouldn't block viewing
+		} else {
+			// Update values with modified values
+			for k, v := range modifiedValues {
+				values[k] = v
+			}
+			posLoadError = userError
+		}
+	}
+
 	data := struct {
-		Authed      bool
-		User        db.User
-		Config      config.Config
-		CurrentPage string
-		EntityType  *db.EAVEntityType
-		Attributes  []db.EAVAttribute
-		Record      *db.EAVRecord
-		Values      map[string]interface{}
-		Message     string
+		Authed       bool
+		User         db.User
+		Config       config.Config
+		CurrentPage  string
+		EntityType   *db.EAVEntityType
+		Attributes   []db.EAVAttribute
+		Record       *db.EAVRecord
+		Values       map[string]interface{}
+		Message      string
+		PosLoadError string
 	}{
-		Authed:      true,
-		User:        *user,
-		Config:      *h.cfg,
-		CurrentPage: "database-schema",
-		EntityType:  entityType,
-		Attributes:  attributes,
-		Record:      nil, // New record
-		Values:      values,
-		Message:     r.URL.Query().Get("message"),
+		Authed:       true,
+		User:         *user,
+		Config:       *h.cfg,
+		CurrentPage:  "database-schema",
+		EntityType:   entityType,
+		Attributes:   attributes,
+		Record:       nil, // New record
+		Values:       values,
+		Message:      r.URL.Query().Get("message"),
+		PosLoadError: posLoadError,
 	}
 
 	err = h.templates(w, "tools_database_schema_eav_record_edit.go.tmpl", data)
@@ -414,10 +432,10 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 	}
 
 	// =========================================================
-	// PHASE 2: Execute pos_save script (if defined)
+	// PHASE 2: Execute pre_save script (if defined)
 	// =========================================================
-	if entityType.PosSave != "" {
-		modifiedValues, userError, execErr := db.ExecutePosSaveScript(entityType, parsedValues)
+	if entityType.PreSave != "" {
+		modifiedValues, userError, execErr := db.ExecutePreSaveScript(entityType, parsedValues)
 		if execErr != nil {
 			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Erro no script: "+execErr.Error(), http.StatusSeeOther)
 			return
@@ -590,6 +608,39 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordEdit(w http.ResponseWriter, r *ht
 		}
 	}
 
+	// Apply default values for missing fields
+	for _, attr := range attributes {
+		if _, exists := valueMap[attr.MachineName]; !exists {
+			if attr.DefaultVBool != nil {
+				valueMap[attr.MachineName] = *attr.DefaultVBool
+			} else if attr.DefaultVInt != nil {
+				valueMap[attr.MachineName] = *attr.DefaultVInt
+			} else if attr.DefaultVReal != nil {
+				valueMap[attr.MachineName] = *attr.DefaultVReal
+			} else if attr.DefaultVText != nil {
+				valueMap[attr.MachineName] = *attr.DefaultVText
+			} else if attr.DefaultVDatetime != nil {
+				valueMap[attr.MachineName] = *attr.DefaultVDatetime
+			}
+		}
+	}
+
+	// Execute pos_load script (last step before display)
+	var posLoadError string
+	if entityType.PosLoad != "" {
+		modifiedValues, userError, execErr := db.ExecutePosLoadScript(entityType, db.EAVRecordValues(valueMap))
+		if execErr != nil {
+			// Log error but continue with original values
+			// Script errors shouldn't block viewing
+		} else {
+			// Update valueMap with modified values
+			for k, v := range modifiedValues {
+				valueMap[k] = v
+			}
+			posLoadError = userError
+		}
+	}
+
 	// Get message from query
 	message := r.URL.Query().Get("message")
 	if len(message) > 200 {
@@ -597,25 +648,27 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordEdit(w http.ResponseWriter, r *ht
 	}
 
 	data := struct {
-		Authed      bool
-		User        db.User
-		Config      config.Config
-		CurrentPage string
-		EntityType  *db.EAVEntityType
-		Attributes  []db.EAVAttribute
-		Record      *db.EAVRecord
-		Values      map[string]interface{}
-		Message     string
+		Authed       bool
+		User         db.User
+		Config       config.Config
+		CurrentPage  string
+		EntityType   *db.EAVEntityType
+		Attributes   []db.EAVAttribute
+		Record       *db.EAVRecord
+		Values       map[string]interface{}
+		Message      string
+		PosLoadError string
 	}{
-		Authed:      true,
-		User:        *user,
-		Config:      *h.cfg,
-		CurrentPage: "database-schema",
-		EntityType:  entityType,
-		Attributes:  attributes,
-		Record:      record,
-		Values:      valueMap,
-		Message:     message,
+		Authed:       true,
+		User:         *user,
+		Config:       *h.cfg,
+		CurrentPage:  "database-schema",
+		EntityType:   entityType,
+		Attributes:   attributes,
+		Record:       record,
+		Values:       valueMap,
+		Message:      message,
+		PosLoadError: posLoadError,
 	}
 
 	err = h.templates(w, "tools_database_schema_eav_record_edit.go.tmpl", data)
@@ -718,10 +771,10 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 	}
 
 	// =========================================================
-	// PHASE 2: Execute pos_save script (if defined)
+	// PHASE 2: Execute pre_save script (if defined)
 	// =========================================================
-	if entityType.PosSave != "" {
-		modifiedValues, userError, execErr := db.ExecutePosSaveScript(entityType, parsedValues)
+	if entityType.PreSave != "" {
+		modifiedValues, userError, execErr := db.ExecutePreSaveScript(entityType, parsedValues)
 		if execErr != nil {
 			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Erro no script: "+execErr.Error(), http.StatusSeeOther)
 			return

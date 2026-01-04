@@ -14,6 +14,12 @@
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         {{end}}
+        {{if .PosLoadError}}
+            <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+                <strong>Aviso:</strong> {{.PosLoadError}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {{end}}
         
         <div class="row">
             <div class="col-md-3">

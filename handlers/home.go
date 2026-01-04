@@ -435,7 +435,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 		Name        string
 		MachineName string
 		Description string
-		PosSave     string
+		PreSave     string
+		PosLoad     string
 	}
 
 	// Handle POST - Create entity type
@@ -443,7 +444,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 		name := r.FormValue("name")
 		machineName := r.FormValue("machine_name")
 		description := r.FormValue("description")
-		posSave := r.FormValue("pos_save")
+		preSave := r.FormValue("pre_save")
+		posLoad := r.FormValue("pos_load")
 
 		// Validation
 		var errorMsg string
@@ -501,7 +503,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 					Name:        name,
 					MachineName: machineName,
 					Description: description,
-					PosSave:     posSave,
+					PreSave:     preSave,
+					PosLoad:     posLoad,
 				},
 			}
 			h.templates(w, "tools_database_schema_eav_new.go.tmpl", data)
@@ -509,7 +512,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 		}
 
 		// Create entity type
-		entityType, err := db.Storage.CreateEAVEntityType(name, machineName, description, posSave)
+		entityType, err := db.Storage.CreateEAVEntityType(name, machineName, description, preSave, posLoad)
 		if err != nil {
 			data := struct {
 				Authed      bool
@@ -528,7 +531,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 					Name:        name,
 					MachineName: machineName,
 					Description: description,
-					PosSave:     posSave,
+					PreSave:     preSave,
+					PosLoad:     posLoad,
 				},
 			}
 			h.templates(w, "tools_database_schema_eav_new.go.tmpl", data)
@@ -614,7 +618,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 	if r.Method == http.MethodPost {
 		name := r.FormValue("name")
 		description := r.FormValue("description")
-		posSave := r.FormValue("pos_save")
+		preSave := r.FormValue("pre_save")
+		posLoad := r.FormValue("pos_load")
 
 		// Validation
 		var errorMsg string
@@ -652,7 +657,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 		}
 
 		// Update entity type
-		updatedET, err := db.Storage.UpdateEAVEntityType(entityType.ID, name, description, posSave)
+		updatedET, err := db.Storage.UpdateEAVEntityType(entityType.ID, name, description, preSave, posLoad)
 		if err != nil {
 			data := struct {
 				Authed      bool
