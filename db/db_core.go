@@ -277,3 +277,21 @@ func (s *SQLite) Close() {
 	utils.Closer(s.ro)
 	utils.Closer(s.rw)
 }
+
+// RW returns the read-write database connection.
+// This is useful for external integrations that need direct access to sql.DB.
+func (s *SQLite) RW() *sql.DB {
+	if s == nil {
+		return nil
+	}
+	return s.rw
+}
+
+// RO returns the read-only database connection.
+// This is useful for external integrations that need direct access to sql.DB.
+func (s *SQLite) RO() *sql.DB {
+	if s == nil {
+		return nil
+	}
+	return s.ro
+}

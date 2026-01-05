@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -9,12 +10,36 @@ import (
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/filodb"
+	"github.com/crgimenes/devengine/utils"
+	"github.com/crgimenes/filo"
 )
 
 // RecordWithValues combines a record with its attribute values
 type RecordWithValues struct {
 	Record db.EAVRecord
 	Values map[string]interface{} // attribute machine_name -> value
+}
+
+// txAdapter adapts *db.Transaction to filodb.DBTransaction interface
+type txAdapter struct {
+	tx *db.Transaction
+}
+
+func (a *txAdapter) Query(query string, args ...any) (*sql.Rows, error) {
+	return a.tx.Query(query, args...)
+}
+
+func (a *txAdapter) Exec(query string, args ...any) error {
+	return a.tx.Exec(query, args...)
+}
+
+func (a *txAdapter) Commit() error {
+	return a.tx.Commit()
+}
+
+func (a *txAdapter) Rollback() error {
+	return a.tx.Rollback()
 }
 
 // ToolsDatabaseSchemaEAVRecords shows list of records with card-based UI
@@ -100,15 +125,16 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecords(w http.ResponseWriter, r *http.
 			}
 
 			// Get typed value
-			if val.VBool != nil {
+			switch {
+			case val.VBool != nil:
 				valueMap[attrName] = *val.VBool
-			} else if val.VInt != nil {
+			case val.VInt != nil:
 				valueMap[attrName] = *val.VInt
-			} else if val.VReal != nil {
+			case val.VReal != nil:
 				valueMap[attrName] = *val.VReal
-			} else if val.VText != nil {
+			case val.VText != nil:
 				valueMap[attrName] = *val.VText
-			} else if val.VDatetime != nil {
+			case val.VDatetime != nil:
 				valueMap[attrName] = *val.VDatetime
 			}
 		}
@@ -388,8 +414,10 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 	for _, attr := range attributes {
 		value := r.FormValue("attr_" + attr.MachineName)
 
-		// Skip empty non-required fields
+		// For empty non-required fields, still set the variable so scripts can check it
 		if value == "" && !attr.IsRequired {
+			// Add empty value so the variable exists in the script
+			parsedValues[attr.MachineName] = ""
 			continue
 		}
 
@@ -432,10 +460,33 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 	}
 
 	// =========================================================
-	// PHASE 2: Execute pre_save script (if defined)
+	// PHASE 2+3: Transaction-wrapped pre_save script + save
+	// pre_save script and EAV save share the same transaction
 	// =========================================================
+	tx, err := db.Storage.BeginTransaction()
+	if err != nil {
+		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Erro ao iniciar transação", http.StatusSeeOther)
+		return
+	}
+	// Ensure rollback on any error
+	committed := false
+	defer func() {
+		if !committed {
+			tx.Rollback()
+		}
+	}()
+
+	// Create filodb context with transaction for pre_save script
+	dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
+	dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
+
+	// Execute pre_save script with transaction context
 	if entityType.PreSave != "" {
-		modifiedValues, userError, execErr := db.ExecutePreSaveScript(entityType, parsedValues)
+		scriptSetup := func(eng *filo.Engine) {
+			filo.RegisterStringBuiltins(eng)
+			filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
+		}
+		modifiedValues, userError, execErr := db.ExecutePreSaveScriptWithSetup(entityType, parsedValues, scriptSetup)
 		if execErr != nil {
 			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Erro no script: "+execErr.Error(), http.StatusSeeOther)
 			return
@@ -444,20 +495,20 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message="+userError, http.StatusSeeOther)
 			return
 		}
-		// Apply modified values
 		parsedValues = modifiedValues
 	}
 
-	// =========================================================
-	// PHASE 3: Create record and save values
-	// =========================================================
-	record, err := db.Storage.CreateEAVRecord(entityType.ID)
+	// Create record using transaction
+	refID := utils.NewOpaqueID()
+	var recordID int64
+	var recordRefID string
+	err = tx.QueryRow(`INSERT INTO eav_records (reference_id, entity_type_id, status, rev) VALUES (?, ?, 'draft', 1) RETURNING id, reference_id`, refID, entityType.ID).Scan(&recordID, &recordRefID)
 	if err != nil {
 		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message=Erro ao criar registro", http.StatusSeeOther)
 		return
 	}
 
-	// Save each value
+	// Save each value using transaction
 	for machineName, rawValue := range parsedValues {
 		attr, ok := attrByMachine[machineName]
 		if !ok {
@@ -484,7 +535,6 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 			if v, ok := rawValue.(float64); ok {
 				vReal = &v
 			} else if v, ok := rawValue.(int64); ok {
-				// Handle case where script returned int instead of float
 				fv := float64(v)
 				vReal = &fv
 			}
@@ -498,7 +548,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 			}
 		}
 
-		// Validate unique constraint
+		// Validate unique constraint (using transaction)
 		var uniqueValue interface{}
 		switch attr.PrimitiveKind {
 		case "BOOL":
@@ -516,32 +566,46 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 		if attr.IsUnique && uniqueValue != nil {
 			isUnique, err := db.Storage.CheckEAVValueUnique(attr.ID, attr.PrimitiveKind, uniqueValue, 0)
 			if err != nil {
-				db.Storage.SoftDeleteEAVRecord(record.ID)
 				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Erro ao validar unicidade: "+err.Error(), http.StatusSeeOther)
 				return
 			}
 			if !isUnique {
-				db.Storage.SoftDeleteEAVRecord(record.ID)
 				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=O valor já existe para o campo "+attr.Label, http.StatusSeeOther)
 				return
 			}
 		}
 
-		err = db.Storage.UpsertEAVValue(record.ID, attr.ID, vBool, vInt, vReal, vText, vDatetime)
+		// Upsert value using transaction
+		err = tx.Exec(`
+			INSERT INTO eav_values (record_id, attribute_id, v_bool, v_int, v_real, v_text, v_datetime)
+			VALUES (?, ?, ?, ?, ?, ?, ?)
+			ON CONFLICT(record_id, attribute_id) DO UPDATE SET
+				v_bool = excluded.v_bool,
+				v_int = excluded.v_int,
+				v_real = excluded.v_real,
+				v_text = excluded.v_text,
+				v_datetime = excluded.v_datetime,
+				updated_at = datetime('now')
+		`, recordID, attr.ID, vBool, vInt, vReal, vText, vDatetime)
 		if err != nil {
-			db.Storage.SoftDeleteEAVRecord(record.ID)
 			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Erro ao salvar valor: "+err.Error(), http.StatusSeeOther)
 			return
 		}
 	}
 
-	// Set status to 'active' after all values saved successfully
-	err = db.Storage.UpdateEAVRecordStatus(record.ID, record.Rev, "active")
+	// Set status to 'active' using transaction (must increment rev per trigger constraint)
+	err = tx.Exec(`UPDATE eav_records SET status = 'active', rev = rev + 1 WHERE id = ?`, recordID)
 	if err != nil {
-		db.Storage.SoftDeleteEAVRecord(record.ID)
 		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Erro ao ativar registro: "+err.Error(), http.StatusSeeOther)
 		return
 	}
+
+	// Commit transaction
+	if err := tx.Commit(); err != nil {
+		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Erro ao salvar: "+err.Error(), http.StatusSeeOther)
+		return
+	}
+	committed = true
 
 	http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message=Registro criado com sucesso", http.StatusSeeOther)
 }
@@ -736,7 +800,9 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 			return
 		}
 
+		// For empty non-required fields, still set the variable so scripts can check it
 		if value == "" {
+			parsedValues[attr.MachineName] = ""
 			continue
 		}
 
@@ -771,10 +837,31 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 	}
 
 	// =========================================================
-	// PHASE 2: Execute pre_save script (if defined)
+	// PHASE 2: Execute pre_save script with transaction (if defined)
 	// =========================================================
 	if entityType.PreSave != "" {
-		modifiedValues, userError, execErr := db.ExecutePreSaveScript(entityType, parsedValues)
+		// Start transaction for pre_save script
+		tx, err := db.Storage.BeginTransaction()
+		if err != nil {
+			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Erro ao iniciar transação", http.StatusSeeOther)
+			return
+		}
+		committed := false
+		defer func() {
+			if !committed {
+				tx.Rollback()
+			}
+		}()
+
+		// Create filodb context with transaction for pre_save script
+		dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
+		dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
+
+		scriptSetup := func(eng *filo.Engine) {
+			filo.RegisterStringBuiltins(eng)
+			filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
+		}
+		modifiedValues, userError, execErr := db.ExecutePreSaveScriptWithSetup(entityType, parsedValues, scriptSetup)
 		if execErr != nil {
 			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Erro no script: "+execErr.Error(), http.StatusSeeOther)
 			return
@@ -783,6 +870,12 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message="+userError, http.StatusSeeOther)
 			return
 		}
+		// Commit pre_save transaction
+		if err := tx.Commit(); err != nil {
+			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Erro ao salvar script: "+err.Error(), http.StatusSeeOther)
+			return
+		}
+		committed = true
 		// Apply modified values
 		parsedValues = modifiedValues
 	}

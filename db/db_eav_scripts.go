@@ -13,6 +13,20 @@ import (
 // Values are typed as interface{} and must be one of: bool, int64, float64, string, nil.
 type EAVRecordValues map[string]interface{}
 
+// ScriptEngineSetupFunc is a function that configures a Filo engine before execution.
+// This allows callers to register additional builtins (like DB access) without
+// creating circular dependencies.
+type ScriptEngineSetupFunc func(*filo.Engine)
+
+// DefaultScriptSetup is the default setup that only registers string builtins.
+var DefaultScriptSetup ScriptEngineSetupFunc = func(eng *filo.Engine) {
+	filo.RegisterStringBuiltins(eng)
+}
+
+// CurrentScriptSetup is the active setup function. Set this at application startup
+// to register additional builtins like DB access.
+var CurrentScriptSetup ScriptEngineSetupFunc = DefaultScriptSetup
+
 // filoDefaultConfig returns safe default limits for Filo script execution.
 func filoDefaultConfig() filo.EvalConfig {
 	return filo.EvalConfig{
@@ -43,7 +57,32 @@ func ExecutePreSaveScript(
 		return values, "", nil
 	}
 
-	return executeFiloScript(entityType.PreSave, values, "pre_save")
+	return executeFiloScript(entityType.PreSave, values, "pre_save", CurrentScriptSetup)
+}
+
+// ExecutePreSaveScriptWithSetup runs the pre_save script with a custom engine setup.
+// This allows the caller to inject custom builtins (like DB access with a transaction).
+//
+// Parameters:
+//   - entityType: The entity type containing the pre_save script
+//   - values: Current field values keyed by attribute machine_name
+//   - setup: Custom function to configure the Filo engine (register builtins)
+//
+// Returns:
+//   - modifiedValues: Values after script execution (may be modified by script)
+//   - userError: User-facing error message if script set "error" variable
+//   - err: System error if script execution failed
+func ExecutePreSaveScriptWithSetup(
+	entityType *EAVEntityType,
+	values EAVRecordValues,
+	setup ScriptEngineSetupFunc,
+) (modifiedValues EAVRecordValues, userError string, err error) {
+	// If no script, return original values unchanged
+	if entityType.PreSave == "" {
+		return values, "", nil
+	}
+
+	return executeFiloScript(entityType.PreSave, values, "pre_save", setup)
 }
 
 // ExecutePosLoadScript runs the entity type's pos_load Filo script.
@@ -67,14 +106,16 @@ func ExecutePosLoadScript(
 		return values, "", nil
 	}
 
-	return executeFiloScript(entityType.PosLoad, values, "pos_load")
+	return executeFiloScript(entityType.PosLoad, values, "pos_load", CurrentScriptSetup)
 }
 
 // executeFiloScript is the shared implementation for pre_save and pos_load scripts.
-func executeFiloScript(script string, values EAVRecordValues, scriptName string) (EAVRecordValues, string, error) {
-	// Create Filo engine and register string builtins
+func executeFiloScript(script string, values EAVRecordValues, scriptName string, setup ScriptEngineSetupFunc) (EAVRecordValues, string, error) {
+	// Create Filo engine and apply provided setup
 	eng := filo.NewEngine()
-	filo.RegisterStringBuiltins(eng)
+	if setup != nil {
+		setup(eng)
+	}
 
 	// Build globals map from values
 	globals := make(map[string]filo.Value)

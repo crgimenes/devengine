@@ -45,8 +45,4 @@ WHERE
     AND et.deleted_at IS NULL
     AND a.deleted_at  IS NULL;
 
--- create index for faster lookups on entity type and attribute
-CREATE INDEX IF NOT EXISTS idx_v_eav_cells_entity_attr
-ON v_eav_cells (entity_type_id, attribute_id);
-
 
