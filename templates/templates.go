@@ -71,7 +71,9 @@ func loadTemplates() *template.Template {
 	}
 
 	base := template.New("").Funcs(funcMap)
-	t, err := parseWithPatterns(base, filesystem, "*.go.tmpl", "partials/*.go.tmpl")
+	t, err := parseWithPatterns(base, filesystem,
+		"*.go.tmpl",
+		"partials/*.go.tmpl")
 	if err != nil {
 		log.Fatalf("parse templates: %v", err)
 	}
