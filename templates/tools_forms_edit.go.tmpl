@@ -1,0 +1,168 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="dark">
+  <head>
+    {{template "head" .}}
+  </head>
+
+  <body>
+    {{template "navbar" .}}
+
+    <main class="container py-4 py-md-5">
+        {{if .Message}}
+            <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+                {{.Message}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {{end}}
+        
+        <div class="row">
+            <div class="col-md-3">
+                {{template "tools_sidebar" .}}
+            </div>
+            <div class="col-md-9">
+                <!-- Form Info Card -->
+                <div class="card p-4 mb-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h2 class="mb-1">{{.Form.Label}}</h2>
+                            <small class="text-muted">{{.Form.MachineName}}</small>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="/tools/forms/{{.Form.ReferenceID}}/test" class="btn btn-outline-info">
+                                <i class="bi bi-play"></i> Testar
+                            </a>
+                            <a href="/tools/forms" class="btn btn-secondary">Voltar</a>
+                        </div>
+                    </div>
+                    
+                    <form method="post" action="/tools/forms/{{.Form.ReferenceID}}/update">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="label" class="form-label">Label</label>
+                                <input type="text" class="form-control" id="label" name="label" 
+                                       value="{{.Form.Label}}" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label for="machine_name" class="form-label">Nome (machine_name)</label>
+                                <input type="text" class="form-control" id="machine_name" name="machine_name" 
+                                       value="{{.Form.MachineName}}" required pattern="[a-zA-Z][a-zA-Z0-9_]*">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="description" name="description" rows="2">{{.Form.Description}}</textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="entity_type_id" class="form-label">Tabela EAV</label>
+                            <select class="form-select" id="entity_type_id" name="entity_type_id">
+                                <option value="">-- Sem vínculo --</option>
+                                {{range .EntityTypes}}
+                                <option value="{{.ReferenceID}}" {{if $.EntityType}}{{if eq .ID $.EntityType.ID}}selected{{end}}{{end}}>
+                                    {{.Name}} ({{.MachineName}})
+                                </option>
+                                {{end}}
+                            </select>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                    </form>
+                </div>
+                
+                <!-- Elements Card -->
+                <div class="card p-4">
+                    <h4 class="mb-3">Elementos do Formulário</h4>
+                    
+                    {{if .Elements}}
+                    <div class="table-responsive mb-4">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Ordem</th>
+                                    <th>Nome</th>
+                                    <th>Tipo</th>
+                                    <th>Label</th>
+                                    <th>Campo EAV</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .Elements}}
+                                <tr>
+                                    <td><span class="badge bg-secondary">{{.ZOrder}}</span></td>
+                                    <td><code>{{.MachineName}}</code></td>
+                                    <td><span class="badge bg-info">{{.ElementKind}}</span></td>
+                                    <td>{{.Label}}</td>
+                                    <td>
+                                        {{if .EAVAttributeLabel}}
+                                            <span class="badge bg-success">{{.EAVAttributeLabel}}</span>
+                                        {{else}}
+                                            <span class="text-muted">-</span>
+                                        {{end}}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="/tools/forms/{{$.Form.ReferenceID}}/elements/{{.ReferenceID}}/edit" class="btn btn-sm btn-outline-secondary me-1">Editar</a>
+                                        <form method="post" action="/tools/forms/{{$.Form.ReferenceID}}/elements/{{.ReferenceID}}/delete" class="d-inline">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remover este elemento?')">Excluir</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{else}}
+                    <div class="alert alert-secondary mb-4">
+                        <i class="bi bi-info-circle"></i> Nenhum elemento adicionado ainda.
+                    </div>
+                    {{end}}
+                    
+                    <!-- Add Element Form -->
+                    <div class="border rounded p-3 bg-dark">
+                        <h6 class="mb-3">Adicionar Elemento</h6>
+                        <form method="post" action="/tools/forms/{{.Form.ReferenceID}}/elements/new" id="add-element-form">
+                            <div class="row g-2">
+                                <div class="col-md-2">
+                                    <label class="form-label">Tipo</label>
+                                    <select class="form-select form-select-sm" name="element_kind" id="element_kind">
+                                        <option value="field">Campo</option>
+                                        <option value="group">Grupo</option>
+                                        <option value="divider">Divisor</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-4">
+                                    <label class="form-label">Campo EAV (opcional)</label>
+                                    <select class="form-select form-select-sm" name="eav_attribute_id" id="eav_attribute_select">
+                                        <option value="" data-label="" data-machine="">-- Apenas UI --</option>
+                                        {{range .EAVAttributes}}
+                                        <option value="{{.ReferenceID}}" data-label="{{.Label}}" data-machine="{{.MachineName}}">{{.Label}} ({{.MachineName}})</option>
+                                        {{end}}
+                                    </select>
+                                </div>
+                                <div class="col-md-3">
+                                    <label class="form-label">Label</label>
+                                    <input type="text" class="form-control form-control-sm" name="label" id="element_label" placeholder="Nome visível">
+                                </div>
+                                <div class="col-md-2">
+                                    <label class="form-label">Nome</label>
+                                    <input type="text" class="form-control form-control-sm" name="machine_name" id="element_machine_name"
+                                           required placeholder="campo_nome">
+                                </div>
+                                <div class="col-md-1 d-flex align-items-end">
+                                    <button type="submit" class="btn btn-sm btn-primary w-100">+</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer>
+      {{template "footer" .}}
+    </footer>
+    {{template "scripts" .}}
+    <script src="/assets/forms-element-autofill.js"></script>
+  </body>
+</html>

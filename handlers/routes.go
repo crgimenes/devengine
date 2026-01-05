@@ -29,6 +29,15 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /tools/database-schema/eav/{id}/records/{record_id}/delete", h.ToolsDatabaseSchemaEAVRecordDelete)
 
 	mux.HandleFunc("/tools/forms", h.ToolsForms)
+	mux.HandleFunc("GET /tools/forms/new", h.ToolsFormsNew)
+	mux.HandleFunc("POST /tools/forms/new", h.ToolsFormsCreate)
+	mux.HandleFunc("GET /tools/forms/{id}/edit", h.ToolsFormsEdit)
+	mux.HandleFunc("POST /tools/forms/{id}/update", h.ToolsFormsUpdate)
+	mux.HandleFunc("POST /tools/forms/{id}/delete", h.ToolsFormsDelete)
+	mux.HandleFunc("GET /tools/forms/{id}/test", h.ToolsFormsTest)
+	mux.HandleFunc("POST /tools/forms/{id}/elements/new", h.ToolsFormsElementCreate)
+	mux.HandleFunc("POST /tools/forms/{id}/elements/{element_id}/delete", h.ToolsFormsElementDelete)
+
 	mux.HandleFunc("/tools/users", h.ToolsUsers)
 	mux.HandleFunc("/tools/menu-editor", h.ToolsMenuEditor)
 }

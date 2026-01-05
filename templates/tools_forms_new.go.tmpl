@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="dark">
+  <head>
+    {{template "head" .}}
+  </head>
+
+  <body>
+    {{template "navbar" .}}
+
+    <main class="container py-4 py-md-5">
+        {{if .Message}}
+            <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+                {{.Message}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {{end}}
+        
+        <div class="row">
+            <div class="col-md-3">
+                {{template "tools_sidebar" .}}
+            </div>
+            <div class="col-md-9">
+                <div class="card p-4">
+                    <h2 class="mb-4">Novo Formulário</h2>
+                    
+                    <form method="post" action="/tools/forms/new">
+                        <div class="mb-3">
+                            <label for="label" class="form-label">Label *</label>
+                            <input type="text" class="form-control" id="label" name="label" 
+                                   required placeholder="ex: Cadastro de Usuário">
+                            <div class="form-text">Nome visível para o usuário</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="machine_name" class="form-label">Nome (machine_name) *</label>
+                            <input type="text" class="form-control" id="machine_name" name="machine_name" 
+                                   required pattern="[a-zA-Z][a-zA-Z0-9_]*" 
+                                   placeholder="ex: cadastro_usuario">
+                            <div class="form-text">Preenchido automaticamente a partir do Label. Use letras, números e _</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descrição</label>
+                            <textarea class="form-control" id="description" name="description" rows="2"
+                                      placeholder="Descrição opcional do formulário"></textarea>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="entity_type_id" class="form-label">Tabela EAV (opcional)</label>
+                            <select class="form-select" id="entity_type_id" name="entity_type_id">
+                                <option value="">-- Selecione uma tabela EAV --</option>
+                                {{range .EntityTypes}}
+                                <option value="{{.ReferenceID}}">{{.Name}} ({{.MachineName}})</option>
+                                {{end}}
+                            </select>
+                            <div class="form-text">Vincular a uma tabela EAV para persistir dados</div>
+                        </div>
+                        
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Criar Formulário</button>
+                            <a href="/tools/forms" class="btn btn-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer>
+      {{template "footer" .}}
+    </footer>
+    {{template "scripts" .}}
+    <script src="/assets/forms-label-slug.js"></script>
+  </body>
+</html>
+

@@ -8,7 +8,7 @@ import (
 	"net/http"
 )
 
-//go:embed *.css *.min.js bootstrap/css/*.min.css bootstrap/js/*.min.js bootstrap/js/*.min.js.map bootstrap/css/*.min.css.map events.js eav-entity-form.js eav-attribute-form.js eav-attribute-form-page.js eav-records-list.js eav-record-form.js database-schema.js
+//go:embed *.css *.js bootstrap/css/*.css bootstrap/js/*.js bootstrap/js/*.js.map bootstrap/css/*.map
 var assets embed.FS
 
 var FS = http.FS(assets)

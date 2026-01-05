@@ -262,55 +262,6 @@ func (h *Handlers) ToolsDatabaseSchema(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (h *Handlers) ToolsForms(w http.ResponseWriter, r *http.Request) {
-	user, _, authed, err := auth.Prelude(w, r,
-		[]string{http.MethodGet},
-		true,  // check auth - must be logged in
-		false, // check ratelimit
-		true,  // prevent cache
-	)
-	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	if !authed {
-		return
-	}
-
-	// Sysop-only check
-	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
-		return
-	}
-
-	message := r.URL.Query().Get("message")
-	if len(message) > 200 {
-		http.Error(w, "message too long", http.StatusBadRequest)
-		return
-	}
-
-	data := struct {
-		Authed      bool
-		User        db.User
-		Error       string
-		Message     string
-		Config      config.Config
-		CurrentPage string
-	}{
-		Authed:      true,
-		User:        *user,
-		Message:     message,
-		Config:      *h.cfg,
-		CurrentPage: "forms",
-	}
-
-	err = h.templates(w, "tools_forms.go.tmpl", data)
-	if err != nil {
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
-}
-
 func (h *Handlers) ToolsUsers(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
