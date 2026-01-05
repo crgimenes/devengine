@@ -488,5 +488,118 @@ func (h *Handlers) ToolsFormsElementDelete(w http.ResponseWriter, r *http.Reques
 	http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Elemento removido", http.StatusSeeOther)
 }
 
+// ToolsFormsRecords shows the list of EAV records for the form's linked entity type.
+func (h *Handlers) ToolsFormsRecords(w http.ResponseWriter, r *http.Request) {
+	user, _, authed, err := auth.Prelude(w, r,
+		[]string{http.MethodGet},
+		true, false, true,
+	)
+	if err != nil || !authed || !user.Sysop {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	formRefID := r.PathValue("id")
+	form, err := db.Storage.GetFormByRefID(formRefID)
+	if err != nil {
+		http.Error(w, "Form not found", http.StatusNotFound)
+		return
+	}
+
+	if form.EAVEntityTypeID == nil {
+		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Formulário não possui tabela EAV vinculada", http.StatusSeeOther)
+		return
+	}
+
+	entityType, err := db.Storage.GetEAVEntityTypeByID(*form.EAVEntityTypeID)
+	if err != nil {
+		http.Error(w, "Entity type not found", http.StatusInternalServerError)
+		return
+	}
+
+	// Get records for this entity type
+	records, _, err := db.Storage.ListEAVRecordsByEntityTypeID(entityType.ID, 50, 0)
+	if err != nil {
+		http.Error(w, "Failed to list records", http.StatusInternalServerError)
+		return
+	}
+
+	// Get attributes for column display
+	attributes, _ := db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
+
+	// Get values for each record (first few attrs as preview)
+	type RecordPreview struct {
+		Record db.EAVRecord
+		Values map[string]interface{}
+	}
+	var recordPreviews []RecordPreview
+	for _, rec := range records {
+		vals, _ := db.Storage.GetEAVValuesByRecordID(rec.ID)
+		valMap := make(map[string]interface{})
+		for _, v := range vals {
+			for _, attr := range attributes {
+				if attr.ID == v.AttributeID {
+					switch attr.PrimitiveKind {
+					case "BOOL":
+						if v.VBool != nil {
+							valMap[attr.MachineName] = *v.VBool
+						}
+					case "INT":
+						if v.VInt != nil {
+							valMap[attr.MachineName] = *v.VInt
+						}
+					case "REAL":
+						if v.VReal != nil {
+							valMap[attr.MachineName] = *v.VReal
+						}
+					case "TEXT":
+						if v.VText != nil {
+							valMap[attr.MachineName] = *v.VText
+						}
+					default:
+						if v.VText != nil {
+							valMap[attr.MachineName] = *v.VText
+						}
+					}
+					break
+				}
+			}
+		}
+		recordPreviews = append(recordPreviews, RecordPreview{Record: rec, Values: valMap})
+	}
+
+	message := r.URL.Query().Get("message")
+	if len(message) > 200 {
+		message = ""
+	}
+
+	data := struct {
+		Authed      bool
+		User        db.User
+		Config      config.Config
+		CurrentPage string
+		Form        *db.Form
+		EntityType  *db.EAVEntityType
+		Records     []RecordPreview
+		Attributes  []db.EAVAttribute
+		Message     string
+	}{
+		Authed:      true,
+		User:        *user,
+		Config:      *h.cfg,
+		CurrentPage: "forms",
+		Form:        form,
+		EntityType:  entityType,
+		Records:     recordPreviews,
+		Attributes:  attributes,
+		Message:     message,
+	}
+
+	err = h.templates(w, "tools_forms_records.go.tmpl", data)
+	if err != nil {
+		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
+	}
+}
+
 // Removed unused import strconv by adding _ placeholder
 var _ = strconv.Atoi

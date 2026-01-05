@@ -146,13 +146,19 @@ func executeFiloScript(script string, values EAVRecordValues, scriptName string,
 
 	// Extract modified values from globals
 	modifiedValues := make(EAVRecordValues)
-	for k := range values {
-		if newVal, ok := newGlobals[k]; ok {
-			modifiedValues[k] = filoValueToGoValue(newVal)
-		} else {
-			// Keep original value if not in returned globals
-			modifiedValues[k] = values[k]
+
+	// First, copy all original values
+	for k, v := range values {
+		modifiedValues[k] = v
+	}
+
+	// Then, apply any modifications from the script (including new variables)
+	for k, newVal := range newGlobals {
+		// Skip the built-in "error" variable
+		if k == "error" {
+			continue
 		}
+		modifiedValues[k] = filoValueToGoValue(newVal)
 	}
 
 	return modifiedValues, "", nil

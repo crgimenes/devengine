@@ -35,9 +35,16 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /tools/forms/{id}/update", h.ToolsFormsUpdate)
 	mux.HandleFunc("POST /tools/forms/{id}/delete", h.ToolsFormsDelete)
 	mux.HandleFunc("GET /tools/forms/{id}/test", h.ToolsFormsTest)
+	mux.HandleFunc("GET /tools/forms/{id}/records", h.ToolsFormsRecords)
 	mux.HandleFunc("POST /tools/forms/{id}/elements/new", h.ToolsFormsElementCreate)
 	mux.HandleFunc("POST /tools/forms/{id}/elements/{element_id}/delete", h.ToolsFormsElementDelete)
 
 	mux.HandleFunc("/tools/users", h.ToolsUsers)
 	mux.HandleFunc("/tools/menu-editor", h.ToolsMenuEditor)
+
+	// Form Runtime (public access to forms)
+	mux.HandleFunc("GET /forms/{formRef}/new", h.FormsRuntimeNew)
+	mux.HandleFunc("POST /forms/{formRef}/new", h.FormsRuntimeCreate)
+	mux.HandleFunc("GET /forms/{formRef}/r/{recordRef}", h.FormsRuntimeEdit)
+	mux.HandleFunc("POST /forms/{formRef}/r/{recordRef}", h.FormsRuntimeUpdate)
 }

@@ -28,8 +28,14 @@
                             <small class="text-muted">{{.Form.MachineName}}</small>
                         </div>
                         <div class="d-flex gap-2">
+                            <a href="/forms/{{.Form.ReferenceID}}/new" class="btn btn-success{{if not .EntityType}} disabled{{end}}"{{if not .EntityType}} aria-disabled="true"{{end}}>
+                                Novo Registro
+                            </a>
+                            <a href="/tools/forms/{{.Form.ReferenceID}}/records" class="btn btn-outline-secondary{{if not .EntityType}} disabled{{end}}"{{if not .EntityType}} aria-disabled="true"{{end}}>
+                                Registros
+                            </a>
                             <a href="/tools/forms/{{.Form.ReferenceID}}/test" class="btn btn-outline-info">
-                                <i class="bi bi-play"></i> Testar
+                                Testar
                             </a>
                             <a href="/tools/forms" class="btn btn-secondary">Voltar</a>
                         </div>

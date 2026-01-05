@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="dark">
+  <head>
+    {{template "head" .}}
+  </head>
+
+  <body>
+    {{template "navbar" .}}
+
+    <main class="container py-4 py-md-5">
+        {{if .Message}}
+            <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+                {{.Message}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {{end}}
+        {{if .PosLoadError}}
+            <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
+                <strong>Aviso:</strong> {{.PosLoadError}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {{end}}
+        
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card p-4">
+                    <h2 class="mb-3">
+                        {{.Form.Label}}
+                        {{if .Record}}
+                            <small class="text-muted"> - Editar</small>
+                        {{else}}
+                            <small class="text-muted"> - Novo</small>
+                        {{end}}
+                    </h2>
+                    
+                    {{if .Form.Description}}
+                    <p class="text-muted mb-4">{{.Form.Description}}</p>
+                    {{end}}
+                    
+                    <form method="POST" 
+                          action="{{if .Record}}/forms/{{.Form.ReferenceID}}/r/{{.Record.ReferenceID}}{{else}}/forms/{{.Form.ReferenceID}}/new{{end}}"
+                          class="needs-validation"
+                          novalidate>
+                        
+                        {{if .Record}}
+                            <input type="hidden" name="rev" value="{{.Record.Rev}}">
+                            <div class="mb-3">
+                                <span class="badge bg-secondary font-monospace">{{.Record.ReferenceID}}</span>
+                                {{if eq .Record.Status "active"}}
+                                    <span class="badge bg-success">Ativo</span>
+                                {{else}}
+                                    <span class="badge bg-warning">Rascunho</span>
+                                {{end}}
+                            </div>
+                        {{end}}
+
+                        {{range .Elements}}
+                            {{if eq .Element.ElementKind "divider"}}
+                                <hr class="my-4">
+                            {{else if eq .Element.ElementKind "group"}}
+                                <fieldset class="border rounded p-3 mb-3">
+                                    <legend class="h6">{{.Element.Label}}</legend>
+                                    {{if .Element.HelpText}}<small class="text-muted d-block mb-2">{{.Element.HelpText}}</small>{{end}}
+                                </fieldset>
+                            {{else if .Attribute}}
+                                {{/* Field bound to EAV attribute */}}
+                                <div class="mb-3">
+                                    <label for="field_{{.Element.MachineName}}" class="form-label">
+                                        {{if .Element.Label}}{{.Element.Label}}{{else}}{{.Attribute.Label}}{{end}}
+                                        {{if .Attribute.IsRequired}}<span class="text-danger">*</span>{{end}}
+                                    </label>
+                                    
+                                    {{$value := index $.Values .Attribute.MachineName}}
+                                    
+                                    {{if eq .Attribute.PrimitiveKind "BOOL"}}
+                                        <select class="form-select" 
+                                                id="field_{{.Element.MachineName}}" 
+                                                name="field_{{.Element.MachineName}}"
+                                                {{if .Attribute.IsRequired}}required{{end}}>
+                                            <option value="">Selecione...</option>
+                                            <option value="true" {{if eq $value true}}selected{{end}}>Sim</option>
+                                            <option value="false" {{if eq $value false}}selected{{end}}>Não</option>
+                                        </select>
+                                    {{else if eq .Attribute.PrimitiveKind "INT"}}
+                                        <input type="number" 
+                                               class="form-control" 
+                                               id="field_{{.Element.MachineName}}" 
+                                               name="field_{{.Element.MachineName}}"
+                                               value="{{$value}}"
+                                               {{if .Attribute.IsRequired}}required{{end}}>
+                                    {{else if eq .Attribute.PrimitiveKind "REAL"}}
+                                        <input type="number" 
+                                               step="any"
+                                               class="form-control" 
+                                               id="field_{{.Element.MachineName}}" 
+                                               name="field_{{.Element.MachineName}}"
+                                               value="{{$value}}"
+                                               {{if .Attribute.IsRequired}}required{{end}}>
+                                    {{else if eq .Attribute.PrimitiveKind "DATETIME"}}
+                                        <input type="datetime-local" 
+                                               class="form-control" 
+                                               id="field_{{.Element.MachineName}}" 
+                                               name="field_{{.Element.MachineName}}"
+                                               value="{{$value}}"
+                                               {{if .Attribute.IsRequired}}required{{end}}>
+                                    {{else}}
+                                        {{/* TEXT and others - use text input */}}
+                                        <input type="text" 
+                                               class="form-control" 
+                                               id="field_{{.Element.MachineName}}" 
+                                               name="field_{{.Element.MachineName}}"
+                                               value="{{$value}}"
+                                               {{if .Attribute.MaxLength}}maxlength="{{.Attribute.MaxLength}}"{{end}}
+                                               {{if .Attribute.IsRequired}}required{{end}}>
+                                    {{end}}
+                                    
+                                    {{if .Element.HelpText}}
+                                        <div class="form-text">{{.Element.HelpText}}</div>
+                                    {{else if .Attribute.HelpText}}
+                                        <div class="form-text">{{.Attribute.HelpText}}</div>
+                                    {{end}}
+                                </div>
+                            {{else}}
+                                {{/* UI-only field without EAV binding */}}
+                                <div class="mb-3">
+                                    <label class="form-label">{{.Element.Label}}</label>
+                                    <input type="text" class="form-control" disabled placeholder="Campo UI apenas">
+                                    {{if .Element.HelpText}}
+                                        <div class="form-text">{{.Element.HelpText}}</div>
+                                    {{end}}
+                                </div>
+                            {{end}}
+                        {{end}}
+
+                        <hr>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                {{if .Record}}Salvar Alterações{{else}}Criar Registro{{end}}
+                            </button>
+                            <a href="/tools/forms/{{.Form.ReferenceID}}/records" class="btn btn-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer>
+      {{template "footer" .}}
+    </footer>
+    {{template "scripts" .}}
+  </body>
+</html>
