@@ -1,0 +1,113 @@
+{{define "plugin_options_panel"}}
+{{/* Panel for plugin-specific options. Requires JS to show/hide based on element_kind */}}
+{{$meta := .Meta}}
+{{$kind := .ElementKind}}
+
+<div id="plugin-options-container" class="mb-4">
+    <!-- Group (fieldset) options -->
+    <div id="options-group" class="plugin-options-panel d-none">
+        <h6 class="text-muted mb-3">Opções do Grupo</h6>
+        <div class="form-check mb-2">
+            <input class="form-check-input plugin-option" type="checkbox" id="opt_show_legend" 
+                   data-key="show_legend" {{if index $meta "show_legend"}}checked{{end}}>
+            <label class="form-check-label" for="opt_show_legend">
+                Mostrar título (legend)
+            </label>
+        </div>
+    </div>
+
+    <!-- Accordion options -->
+    <div id="options-accordion" class="plugin-options-panel d-none">
+        <h6 class="text-muted mb-3">Opções do Accordion</h6>
+        <div class="form-check mb-2">
+            <input class="form-check-input plugin-option" type="checkbox" id="opt_expanded_by_default" 
+                   data-key="expanded_by_default" {{if index $meta "expanded_by_default"}}checked{{end}}>
+            <label class="form-check-label" for="opt_expanded_by_default">
+                Expandido por padrão
+            </label>
+        </div>
+        <div class="form-check mb-2">
+            <input class="form-check-input plugin-option" type="checkbox" id="opt_show_header" 
+                   data-key="show_header" {{if index $meta "show_header"}}checked{{end}}>
+            <label class="form-check-label" for="opt_show_header">
+                Mostrar cabeçalho
+            </label>
+        </div>
+    </div>
+
+    <!-- Card options -->
+    <div id="options-card" class="plugin-options-panel d-none">
+        <h6 class="text-muted mb-3">Opções do Card</h6>
+        <div class="form-check mb-2">
+            <input class="form-check-input plugin-option" type="checkbox" id="opt_card_show_header" 
+                   data-key="show_header" {{if index $meta "show_header"}}checked{{end}}>
+            <label class="form-check-label" for="opt_card_show_header">
+                Mostrar cabeçalho
+            </label>
+        </div>
+        <div class="mb-3">
+            <label for="opt_header_bg" class="form-label">Cor de fundo do cabeçalho</label>
+            <select class="form-select form-select-sm plugin-option" id="opt_header_bg" data-key="header_bg">
+                <option value="default" {{if eq (index $meta "header_bg") "default"}}selected{{end}}>Padrão</option>
+                <option value="primary" {{if eq (index $meta "header_bg") "primary"}}selected{{end}}>Primária</option>
+                <option value="dark" {{if eq (index $meta "header_bg") "dark"}}selected{{end}}>Escura</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Tabs options -->
+    <div id="options-tabs" class="plugin-options-panel d-none">
+        <h6 class="text-muted mb-3">Opções de Tabs</h6>
+        <div class="mb-3">
+            <label for="opt_active_tab" class="form-label">Tab ativa por padrão (índice, começa em 0)</label>
+            <input type="number" class="form-control form-control-sm plugin-option" id="opt_active_tab" 
+                   data-key="active_tab" value="{{index $meta "active_tab"}}" min="0">
+        </div>
+    </div>
+
+    <!-- Carousel options -->
+    <div id="options-carousel" class="plugin-options-panel d-none">
+        <h6 class="text-muted mb-3">Opções do Carousel</h6>
+        <div class="row">
+            <div class="col-md-6">
+                <div class="form-check mb-2">
+                    <input class="form-check-input plugin-option" type="checkbox" id="opt_show_controls" 
+                           data-key="show_controls" {{if index $meta "show_controls"}}checked{{end}}>
+                    <label class="form-check-label" for="opt_show_controls">
+                        Mostrar controles (setas)
+                    </label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input plugin-option" type="checkbox" id="opt_show_indicators" 
+                           data-key="show_indicators" {{if index $meta "show_indicators"}}checked{{end}}>
+                    <label class="form-check-label" for="opt_show_indicators">
+                        Mostrar indicadores
+                    </label>
+                </div>
+                <div class="form-check mb-2">
+                    <input class="form-check-input plugin-option" type="checkbox" id="opt_fade" 
+                           data-key="fade" {{if index $meta "fade"}}checked{{end}}>
+                    <label class="form-check-label" for="opt_fade">
+                        Transição fade (em vez de slide)
+                    </label>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <label for="opt_interval" class="form-label">Intervalo (ms, 0 = manual)</label>
+                <input type="number" class="form-control form-control-sm plugin-option" id="opt_interval" 
+                       data-key="interval" value="{{index $meta "interval"}}" min="0" step="500">
+            </div>
+        </div>
+    </div>
+
+    <!-- Field type - no group options, just show info -->
+    <div id="options-field" class="plugin-options-panel d-none">
+        <p class="text-muted small">Campos não possuem opções de grupo. Use o plugin de UI e os metadados JSON para configurar.</p>
+    </div>
+
+    <!-- Divider - no options -->
+    <div id="options-divider" class="plugin-options-panel d-none">
+        <p class="text-muted small">Divisores não possuem opções adicionais.</p>
+    </div>
+</div>
+{{end}}

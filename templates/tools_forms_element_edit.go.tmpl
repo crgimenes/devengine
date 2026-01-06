@@ -154,13 +154,17 @@
                             </div>
                         </div>
 
+                        <!-- Plugin Options Panel -->
+                        <h5 class="mb-3 border-bottom pb-2">Opções do Plugin</h5>
+                        {{template "plugin_options_panel" (dict "Meta" (parseGroupMeta .Element.UIMetaJSON .Element.ElementKind) "ElementKind" .Element.ElementKind)}}
+
                         <!-- UI Meta JSON -->
                         <h5 class="mb-3 border-bottom pb-2">Configurações Avançadas (JSON)</h5>
                         <div class="mb-4">
                             <label for="ui_meta_json" class="form-label">Metadados do Plugin</label>
                             <textarea class="form-control font-monospace" id="ui_meta_json" name="ui_meta_json" 
                                       rows="4" placeholder='{"placeholder": "Digite aqui...", "maxLength": 100}'>{{.Element.UIMetaJSON}}</textarea>
-                            <div class="form-text">Configurações específicas do plugin em formato JSON</div>
+                            <div class="form-text">Este campo é atualizado automaticamente pelas opções acima</div>
                         </div>
 
                         <hr>
@@ -177,5 +181,6 @@
       {{template "footer" .}}
     </footer>
     {{template "scripts" .}}
+    <script src="/assets/plugin-options.js"></script>
   </body>
 </html>
