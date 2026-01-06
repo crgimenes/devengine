@@ -149,7 +149,7 @@
     {{else if $node.Attribute}}
         {{/* Field bound to EAV attribute */}}
         <div class="col-12 col-md-{{$node.Element.ColSpan}} mb-3">
-            <label for="field_{{$node.Element.MachineName}}" class="form-label">
+            <label for="{{$node.Element.MachineName}}" class="form-label">
                 {{if $node.Element.Label}}{{$node.Element.Label}}{{else}}{{$node.Attribute.Label}}{{end}}
                 {{if $node.Attribute.IsRequired}}<span class="text-danger">*</span>{{end}}
             </label>
@@ -158,8 +158,8 @@
             
             {{if eq $node.Attribute.PrimitiveKind "BOOL"}}
                 <select class="form-select" 
-                        id="field_{{$node.Element.MachineName}}" 
-                        name="field_{{$node.Element.MachineName}}"
+                        id="{{$node.Element.MachineName}}" 
+                        name="{{$node.Element.MachineName}}"
                         {{if $node.Attribute.IsRequired}}required{{end}}>
                     <option value="">Selecione...</option>
                     <option value="true" {{if eq $value true}}selected{{end}}>Sim</option>
@@ -168,31 +168,31 @@
             {{else if eq $node.Attribute.PrimitiveKind "INT"}}
                 <input type="number" 
                        class="form-control" 
-                       id="field_{{$node.Element.MachineName}}" 
-                       name="field_{{$node.Element.MachineName}}"
+                       id="{{$node.Element.MachineName}}" 
+                       name="{{$node.Element.MachineName}}"
                        value="{{$value}}"
                        {{if $node.Attribute.IsRequired}}required{{end}}>
             {{else if eq $node.Attribute.PrimitiveKind "REAL"}}
                 <input type="number" 
                        step="any"
                        class="form-control" 
-                       id="field_{{$node.Element.MachineName}}" 
-                       name="field_{{$node.Element.MachineName}}"
+                       id="{{$node.Element.MachineName}}" 
+                       name="{{$node.Element.MachineName}}"
                        value="{{$value}}"
                        {{if $node.Attribute.IsRequired}}required{{end}}>
             {{else if eq $node.Attribute.PrimitiveKind "DATETIME"}}
                 <input type="datetime-local" 
                        class="form-control" 
-                       id="field_{{$node.Element.MachineName}}" 
-                       name="field_{{$node.Element.MachineName}}"
+                       id="{{$node.Element.MachineName}}" 
+                       name="{{$node.Element.MachineName}}"
                        value="{{$value}}"
                        {{if $node.Attribute.IsRequired}}required{{end}}>
             {{else}}
                 {{/* TEXT and others - use text input */}}
                 <input type="text" 
                        class="form-control" 
-                       id="field_{{$node.Element.MachineName}}" 
-                       name="field_{{$node.Element.MachineName}}"
+                       id="{{$node.Element.MachineName}}" 
+                       name="{{$node.Element.MachineName}}"
                        value="{{$value}}"
                        {{if $node.Attribute.MaxLength}}maxlength="{{$node.Attribute.MaxLength}}"{{end}}
                        {{if $node.Attribute.IsRequired}}required{{end}}>
@@ -206,10 +206,44 @@
         </div>
     
     {{else}}
-        {{/* UI-only field without EAV binding */}}
+        {{/* UI-only field without EAV binding - still editable for script processing */}}
         <div class="col-12 col-md-{{$node.Element.ColSpan}} mb-3">
-            <label class="form-label">{{$node.Element.Label}}</label>
-            <input type="text" class="form-control" disabled placeholder="Campo UI apenas">
+            <label for="{{$node.Element.MachineName}}" class="form-label">
+                {{$node.Element.Label}}
+            </label>
+            
+            {{if eq $node.Element.UIKind "textarea"}}
+                <textarea class="form-control" 
+                          id="{{$node.Element.MachineName}}" 
+                          name="{{$node.Element.MachineName}}"
+                          rows="3"></textarea>
+            {{else if eq $node.Element.UIKind "bool"}}
+                <select class="form-select" 
+                        id="{{$node.Element.MachineName}}" 
+                        name="{{$node.Element.MachineName}}">
+                    <option value="">Selecione...</option>
+                    <option value="true">Sim</option>
+                    <option value="false">Não</option>
+                </select>
+            {{else if eq $node.Element.UIKind "int"}}
+                <input type="number" 
+                       class="form-control" 
+                       id="{{$node.Element.MachineName}}" 
+                       name="{{$node.Element.MachineName}}">
+            {{else if eq $node.Element.UIKind "decimal"}}
+                <input type="number" 
+                       step="any"
+                       class="form-control" 
+                       id="{{$node.Element.MachineName}}" 
+                       name="{{$node.Element.MachineName}}">
+            {{else}}
+                {{/* Default: text input */}}
+                <input type="text" 
+                       class="form-control" 
+                       id="{{$node.Element.MachineName}}" 
+                       name="{{$node.Element.MachineName}}">
+            {{end}}
+            
             {{if $node.Element.HelpText}}
                 <div class="form-text">{{$node.Element.HelpText}}</div>
             {{end}}

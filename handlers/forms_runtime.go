@@ -254,7 +254,7 @@ func (h *Handlers) FormsRuntimeCreate(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		fieldName := "field_" + el.MachineName
+		fieldName := el.MachineName
 		rawValue := r.FormValue(fieldName)
 
 		// Handle empty values for non-required fields
@@ -627,7 +627,7 @@ func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
-		fieldName := "field_" + el.MachineName
+		fieldName := el.MachineName
 		rawValue := r.FormValue(fieldName)
 
 		if rawValue == "" {
