@@ -92,51 +92,8 @@
                                     <th class="text-end text-nowrap" style="width: 160px">Ações</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                {{range .Elements}}
-                                <tr>
-                                    <td><span class="badge bg-secondary">{{.ZOrder}}</span></td>
-                                    <td>
-                                        {{if .ParentID}}<span class="text-muted">└─</span> {{end}}
-                                        <code>{{.MachineName}}</code>
-                                    </td>
-                                    <td>
-                                        {{if eq .ElementKind "group"}}
-                                            <span class="badge bg-primary">grupo</span>
-                                        {{else if eq .ElementKind "accordion"}}
-                                            <span class="badge bg-primary">accordion</span>
-                                        {{else if eq .ElementKind "card"}}
-                                            <span class="badge bg-primary">card</span>
-                                        {{else if eq .ElementKind "divider"}}
-                                            <span class="badge bg-dark">divisor</span>
-                                        {{else}}
-                                            <span class="badge bg-info">campo</span>
-                                        {{end}}
-                                    </td>
-                                    <td>{{.Label}}</td>
-                                    <td><span class="badge bg-dark" title="{{.ColSpan}} colunas">{{.ColSpan}}</span></td>
-                                    <td>
-                                        {{if .ParentLabel}}
-                                            <small class="text-muted">{{.ParentLabel}}</small>
-                                        {{else}}
-                                            <small class="text-muted">-</small>
-                                        {{end}}
-                                    </td>
-                                    <td>
-                                        {{if .EAVAttributeLabel}}
-                                            <span class="badge bg-success">{{.EAVAttributeLabel}}</span>
-                                        {{else}}
-                                            <span class="text-muted">-</span>
-                                        {{end}}
-                                    </td>
-                                    <td class="text-end text-nowrap">
-                                        <a href="/tools/forms/{{$.Form.ReferenceID}}/elements/{{.ReferenceID}}/edit" class="btn btn-sm btn-outline-secondary me-1">Editar</a>
-                                        <form method="post" action="/tools/forms/{{$.Form.ReferenceID}}/elements/{{.ReferenceID}}/delete" class="d-inline">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remover este elemento?')">Excluir</button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                {{end}}
+                            <tbody id="elements-tbody">
+                                {{template "elements_table_rows" .}}
                             </tbody>
                         </table>
                     </div>

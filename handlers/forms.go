@@ -208,8 +208,9 @@ func (h *Handlers) ToolsFormsEdit(w http.ResponseWriter, r *http.Request) {
 	// Get entity types for dropdown
 	entityTypes, _ := db.Storage.ListEAVEntityTypes()
 
-	// Get form elements
+	// Get form elements and sort hierarchically
 	elements, _ := db.Storage.ListFormElements(form.ID)
+	elements = db.SortElementsHierarchically(elements)
 
 	// Get EAV attributes if linked to entity type
 	var eavAttributes []db.EAVAttribute
@@ -432,17 +433,146 @@ func (h *Handlers) ToolsFormsElementDelete(w http.ResponseWriter, r *http.Reques
 
 	element, err := db.Storage.GetFormElementByRefID(elementRefID)
 	if err != nil {
-		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Elemento não encontrado", http.StatusSeeOther)
+		http.Error(w, "Elemento não encontrado", http.StatusNotFound)
 		return
 	}
 
 	err = db.Storage.DeleteFormElement(element.ID)
 	if err != nil {
-		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Erro ao excluir: "+err.Error(), http.StatusSeeOther)
+		http.Error(w, "Erro ao excluir: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Check if HTMX request
+	if r.Header.Get("HX-Request") == "true" {
+		h.renderElementsTableRows(w, formRefID)
 		return
 	}
 
 	http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Elemento removido", http.StatusSeeOther)
+}
+
+// ToolsFormsElementMoveUp moves an element up in the z_order within its parent.
+func (h *Handlers) ToolsFormsElementMoveUp(w http.ResponseWriter, r *http.Request) {
+	user, _, authed, err := auth.Prelude(w, r,
+		[]string{http.MethodPost},
+		true, false, true,
+	)
+	if err != nil || !authed || !user.Sysop {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	formRefID := r.PathValue("id")
+	elementRefID := r.PathValue("element_id")
+
+	element, err := db.Storage.GetFormElementByRefID(elementRefID)
+	if err != nil {
+		http.Error(w, "Elemento não encontrado", http.StatusNotFound)
+		return
+	}
+
+	if err := db.Storage.MoveElementUp(element.ID); err != nil {
+		http.Error(w, "Erro ao mover: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Check if HTMX request
+	if r.Header.Get("HX-Request") == "true" {
+		h.renderElementsTableRows(w, formRefID)
+		return
+	}
+
+	http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit", http.StatusSeeOther)
+}
+
+// ToolsFormsElementMoveDown moves an element down in the z_order within its parent.
+func (h *Handlers) ToolsFormsElementMoveDown(w http.ResponseWriter, r *http.Request) {
+	user, _, authed, err := auth.Prelude(w, r,
+		[]string{http.MethodPost},
+		true, false, true,
+	)
+	if err != nil || !authed || !user.Sysop {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	formRefID := r.PathValue("id")
+	elementRefID := r.PathValue("element_id")
+
+	element, err := db.Storage.GetFormElementByRefID(elementRefID)
+	if err != nil {
+		http.Error(w, "Elemento não encontrado", http.StatusNotFound)
+		return
+	}
+
+	if err := db.Storage.MoveElementDown(element.ID); err != nil {
+		http.Error(w, "Erro ao mover: "+err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	// Check if HTMX request
+	if r.Header.Get("HX-Request") == "true" {
+		h.renderElementsTableRows(w, formRefID)
+		return
+	}
+
+	http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit", http.StatusSeeOther)
+}
+
+// renderElementsTableRows renders just the table rows for HTMX partial updates.
+func (h *Handlers) renderElementsTableRows(w http.ResponseWriter, formRefID string) {
+	form, err := db.Storage.GetFormByRefID(formRefID)
+	if err != nil {
+		http.Error(w, "Form not found", http.StatusNotFound)
+		return
+	}
+
+	elements, _ := db.Storage.ListFormElements(form.ID)
+	elements = db.SortElementsHierarchically(elements)
+
+	// Get parent labels and EAV attribute labels
+	parentMap := make(map[int64]string)
+	for _, el := range elements {
+		parentMap[el.ID] = el.Label
+	}
+
+	var eavAttributes []db.EAVAttribute
+	attrMap := make(map[int64]string)
+	if form.EAVEntityTypeID != nil {
+		eavAttributes, _ = db.Storage.ListEAVAttributesByEntityTypeID(*form.EAVEntityTypeID)
+		for _, attr := range eavAttributes {
+			attrMap[attr.ID] = attr.Label
+		}
+	}
+
+	type ElementView struct {
+		db.FormElement
+		ParentLabel       string
+		EAVAttributeLabel string
+	}
+
+	var elementViews []ElementView
+	for _, el := range elements {
+		ev := ElementView{FormElement: el}
+		if el.ParentID != nil {
+			ev.ParentLabel = parentMap[*el.ParentID]
+		}
+		if el.EAVAttributeID != nil {
+			ev.EAVAttributeLabel = attrMap[*el.EAVAttributeID]
+		}
+		elementViews = append(elementViews, ev)
+	}
+
+	data := struct {
+		Form     *db.Form
+		Elements []ElementView
+	}{
+		Form:     form,
+		Elements: elementViews,
+	}
+
+	_ = h.templates(w, "elements_table_rows", data)
 }
 
 // ToolsFormsElementEdit shows the form element edit page.

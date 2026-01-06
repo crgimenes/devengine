@@ -1,0 +1,57 @@
+{{define "elements_table_rows"}}
+{{range .Elements}}
+<tr>
+    <td class="text-nowrap">
+        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" title="Mover para cima"
+                hx-post="/tools/forms/{{$.Form.ReferenceID}}/elements/{{.ReferenceID}}/up"
+                hx-target="#elements-tbody"
+                hx-swap="innerHTML">▲</button>
+        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" title="Mover para baixo"
+                hx-post="/tools/forms/{{$.Form.ReferenceID}}/elements/{{.ReferenceID}}/down"
+                hx-target="#elements-tbody"
+                hx-swap="innerHTML">▼</button>
+    </td>
+    <td>
+        {{if .ParentID}}<span class="text-muted">└─</span> {{end}}
+        <code>{{.MachineName}}</code>
+    </td>
+    <td>
+        {{if eq .ElementKind "group"}}
+            <span class="badge bg-primary">grupo</span>
+        {{else if eq .ElementKind "accordion"}}
+            <span class="badge bg-primary">accordion</span>
+        {{else if eq .ElementKind "card"}}
+            <span class="badge bg-primary">card</span>
+        {{else if eq .ElementKind "divider"}}
+            <span class="badge bg-dark">divisor</span>
+        {{else}}
+            <span class="badge bg-info">campo</span>
+        {{end}}
+    </td>
+    <td>{{.Label}}</td>
+    <td><span class="badge bg-dark" title="{{.ColSpan}} colunas">{{.ColSpan}}</span></td>
+    <td>
+        {{if .ParentLabel}}
+            <small class="text-muted">{{.ParentLabel}}</small>
+        {{else}}
+            <small class="text-muted">-</small>
+        {{end}}
+    </td>
+    <td>
+        {{if .EAVAttributeLabel}}
+            <span class="badge bg-success">{{.EAVAttributeLabel}}</span>
+        {{else}}
+            <span class="text-muted">-</span>
+        {{end}}
+    </td>
+    <td class="text-end text-nowrap">
+        <a href="/tools/forms/{{$.Form.ReferenceID}}/elements/{{.ReferenceID}}/edit" class="btn btn-sm btn-outline-secondary me-1">Editar</a>
+        <button type="button" class="btn btn-sm btn-outline-danger" 
+                hx-post="/tools/forms/{{$.Form.ReferenceID}}/elements/{{.ReferenceID}}/delete"
+                hx-target="#elements-tbody"
+                hx-swap="innerHTML"
+                hx-confirm="Remover este elemento?">Excluir</button>
+    </td>
+</tr>
+{{end}}
+{{end}}
