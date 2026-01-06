@@ -357,63 +357,6 @@ func (h *Handlers) ToolsFormsDelete(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/tools/forms?message=Formulário excluído com sucesso", http.StatusSeeOther)
 }
 
-// ToolsFormsTest opens the form in test mode (preview).
-func (h *Handlers) ToolsFormsTest(w http.ResponseWriter, r *http.Request) {
-	user, _, authed, err := auth.Prelude(w, r,
-		[]string{http.MethodGet},
-		true, false, true,
-	)
-	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
-		return
-	}
-
-	formRefID := r.PathValue("id")
-	form, err := db.Storage.GetFormByRefID(formRefID)
-	if err != nil {
-		http.Error(w, "Form not found", http.StatusNotFound)
-		return
-	}
-
-	// Get form elements
-	elements, _ := db.Storage.ListFormElements(form.ID)
-
-	// Get linked entity type and attributes
-	var entityType *db.EAVEntityType
-	var eavAttributes []db.EAVAttribute
-	if form.EAVEntityTypeID != nil {
-		entityType, _ = db.Storage.GetEAVEntityTypeByID(*form.EAVEntityTypeID)
-		eavAttributes, _ = db.Storage.ListEAVAttributesByEntityTypeID(*form.EAVEntityTypeID)
-	}
-
-	data := struct {
-		Authed        bool
-		User          db.User
-		Config        config.Config
-		CurrentPage   string
-		Form          *db.Form
-		EntityType    *db.EAVEntityType
-		Elements      []db.FormElement
-		EAVAttributes []db.EAVAttribute
-		IsTestMode    bool
-	}{
-		Authed:        true,
-		User:          *user,
-		Config:        *h.cfg,
-		CurrentPage:   "forms",
-		Form:          form,
-		EntityType:    entityType,
-		Elements:      elements,
-		EAVAttributes: eavAttributes,
-		IsTestMode:    true,
-	}
-
-	err = h.templates(w, "tools_forms_test.go.tmpl", data)
-	if err != nil {
-		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
-	}
-}
-
 // ToolsFormsElementCreate handles creating a new form element.
 func (h *Handlers) ToolsFormsElementCreate(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,

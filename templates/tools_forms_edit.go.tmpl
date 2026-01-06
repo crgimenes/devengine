@@ -7,7 +7,7 @@
   <body>
     {{template "navbar" .}}
 
-    <main class="container py-4 py-md-5">
+    <main class="container-fluid py-4 py-md-5">
         {{if .Message}}
             <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
                 {{.Message}}
@@ -33,9 +33,6 @@
                             </a>
                             <a href="/tools/forms/{{.Form.ReferenceID}}/records" class="btn btn-outline-secondary{{if not .EntityType}} disabled{{end}}"{{if not .EntityType}} aria-disabled="true"{{end}}>
                                 Registros
-                            </a>
-                            <a href="/tools/forms/{{.Form.ReferenceID}}/test" class="btn btn-outline-info">
-                                Testar
                             </a>
                             <a href="/tools/forms" class="btn btn-secondary">Voltar</a>
                         </div>
@@ -92,12 +89,12 @@
                                     <th style="width: 60px" title="Largura em colunas Bootstrap (1-12)">Col</th>
                                     <th>Pai</th>
                                     <th>Campo EAV</th>
-                                    <th class="text-end" style="width: 130px">Ações</th>
+                                    <th class="text-end text-nowrap" style="width: 160px">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {{range .Elements}}
-                                <tr{{if .ParentID}} class="table-secondary"{{end}}>
+                                <tr>
                                     <td><span class="badge bg-secondary">{{.ZOrder}}</span></td>
                                     <td>
                                         {{if .ParentID}}<span class="text-muted">└─</span> {{end}}
@@ -132,7 +129,7 @@
                                             <span class="text-muted">-</span>
                                         {{end}}
                                     </td>
-                                    <td class="text-end">
+                                    <td class="text-end text-nowrap">
                                         <a href="/tools/forms/{{$.Form.ReferenceID}}/elements/{{.ReferenceID}}/edit" class="btn btn-sm btn-outline-secondary me-1">Editar</a>
                                         <form method="post" action="/tools/forms/{{$.Form.ReferenceID}}/elements/{{.ReferenceID}}/delete" class="d-inline">
                                             <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Remover este elemento?')">Excluir</button>

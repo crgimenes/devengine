@@ -34,7 +34,6 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /tools/forms/{id}/edit", h.ToolsFormsEdit)
 	mux.HandleFunc("POST /tools/forms/{id}/update", h.ToolsFormsUpdate)
 	mux.HandleFunc("POST /tools/forms/{id}/delete", h.ToolsFormsDelete)
-	mux.HandleFunc("GET /tools/forms/{id}/test", h.ToolsFormsTest)
 	mux.HandleFunc("GET /tools/forms/{id}/records", h.ToolsFormsRecords)
 	mux.HandleFunc("POST /tools/forms/{id}/elements/new", h.ToolsFormsElementCreate)
 	mux.HandleFunc("GET /tools/forms/{id}/elements/{element_id}/edit", h.ToolsFormsElementEdit)
