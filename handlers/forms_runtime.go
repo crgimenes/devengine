@@ -27,8 +27,13 @@ type FormRuntimeNode struct {
 }
 
 // BuildElementTree constructs a hierarchical tree from a flat list of elements.
+// Uses pointers throughout and only converts to value when building final result.
 func BuildElementTree(elements []db.FormElement, attrMap map[int64]*db.EAVAttribute) []FormRuntimeNode {
-	// Build node lookup map (using pointers to allow modification)
+	if len(elements) == 0 {
+		return nil
+	}
+
+	// Build node lookup map with pointers
 	nodeMap := make(map[int64]*FormRuntimeNode)
 	for i := range elements {
 		el := &elements[i]
@@ -39,26 +44,39 @@ func BuildElementTree(elements []db.FormElement, attrMap map[int64]*db.EAVAttrib
 		nodeMap[el.ID] = node
 	}
 
-	// First pass: build parent-child relationships
+	// Build parent-child relationships using pointers
+	// Children are stored as pointers for now
+	childrenOf := make(map[int64][]*FormRuntimeNode)
+	var rootNodes []*FormRuntimeNode
+
 	for i := range elements {
 		el := &elements[i]
-		if el.ParentID != nil {
-			parentNode, ok := nodeMap[*el.ParentID]
-			if ok {
-				childNode := nodeMap[el.ID]
-				parentNode.Children = append(parentNode.Children, *childNode)
-			}
+		node := nodeMap[el.ID]
+		if el.ParentID == nil {
+			rootNodes = append(rootNodes, node)
+		} else {
+			childrenOf[*el.ParentID] = append(childrenOf[*el.ParentID], node)
 		}
 	}
 
-	// Second pass: collect root elements (those without parent)
-	var roots []FormRuntimeNode
-	for i := range elements {
-		el := &elements[i]
-		if el.ParentID == nil {
-			node := nodeMap[el.ID]
-			roots = append(roots, *node)
+	// Recursive function to build node with all descendants
+	var buildNode func(n *FormRuntimeNode) FormRuntimeNode
+	buildNode = func(n *FormRuntimeNode) FormRuntimeNode {
+		result := FormRuntimeNode{
+			Element:   n.Element,
+			Attribute: n.Attribute,
 		}
+		// Recursively build children
+		for _, childPtr := range childrenOf[n.Element.ID] {
+			result.Children = append(result.Children, buildNode(childPtr))
+		}
+		return result
+	}
+
+	// Build roots with all their descendants
+	var roots []FormRuntimeNode
+	for _, rootPtr := range rootNodes {
+		roots = append(roots, buildNode(rootPtr))
 	}
 
 	return roots

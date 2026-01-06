@@ -90,6 +90,10 @@ func loadTemplates() *template.Template {
 		"add": func(a, b int) int {
 			return a + b
 		},
+		// mul multiplies two integers
+		"mul": func(a, b int) int {
+			return a * b
+		},
 		// dict creates a map from key-value pairs for passing to templates
 		"dict": func(values ...interface{}) map[string]interface{} {
 			if len(values)%2 != 0 {

@@ -223,24 +223,37 @@ func (h *Handlers) ToolsFormsEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Build element ID -> Label map for parent labels
-	elementMap := make(map[int64]string) // ID -> Label or MachineName
+	elementMap := make(map[int64]string)  // ID -> Label or MachineName
+	parentIDMap := make(map[int64]*int64) // ID -> ParentID
 	for _, el := range elements {
 		label := el.Label
 		if label == "" {
 			label = el.MachineName
 		}
 		elementMap[el.ID] = label
+		parentIDMap[el.ID] = el.ParentID
 	}
 
-	// Build enriched elements with attribute labels and parent info
+	// Calculate depth for each element
+	var getDepth func(id int64) int
+	getDepth = func(id int64) int {
+		parentID := parentIDMap[id]
+		if parentID == nil {
+			return 0
+		}
+		return 1 + getDepth(*parentID)
+	}
+
+	// Build enriched elements with attribute labels, parent info, and depth
 	type ElementWithAttr struct {
 		db.FormElement
 		EAVAttributeLabel string
 		ParentLabel       string
+		Depth             int
 	}
 	var enrichedElements []ElementWithAttr
 	for _, el := range elements {
-		e := ElementWithAttr{FormElement: el}
+		e := ElementWithAttr{FormElement: el, Depth: getDepth(el.ID)}
 		if el.EAVAttributeID != nil {
 			e.EAVAttributeLabel = attrMap[*el.EAVAttributeID]
 		}
@@ -531,10 +544,26 @@ func (h *Handlers) renderElementsTableRows(w http.ResponseWriter, formRefID stri
 	elements, _ := db.Storage.ListFormElements(form.ID)
 	elements = db.SortElementsHierarchically(elements)
 
-	// Get parent labels and EAV attribute labels
+	// Get parent labels and parent ID map for depth calculation
 	parentMap := make(map[int64]string)
+	parentIDMap := make(map[int64]*int64)
 	for _, el := range elements {
-		parentMap[el.ID] = el.Label
+		label := el.Label
+		if label == "" {
+			label = el.MachineName
+		}
+		parentMap[el.ID] = label
+		parentIDMap[el.ID] = el.ParentID
+	}
+
+	// Calculate depth for each element
+	var getDepth func(id int64) int
+	getDepth = func(id int64) int {
+		parentID := parentIDMap[id]
+		if parentID == nil {
+			return 0
+		}
+		return 1 + getDepth(*parentID)
 	}
 
 	var eavAttributes []db.EAVAttribute
@@ -550,11 +579,12 @@ func (h *Handlers) renderElementsTableRows(w http.ResponseWriter, formRefID stri
 		db.FormElement
 		ParentLabel       string
 		EAVAttributeLabel string
+		Depth             int
 	}
 
 	var elementViews []ElementView
 	for _, el := range elements {
-		ev := ElementView{FormElement: el}
+		ev := ElementView{FormElement: el, Depth: getDepth(el.ID)}
 		if el.ParentID != nil {
 			ev.ParentLabel = parentMap[*el.ParentID]
 		}

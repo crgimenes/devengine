@@ -12,8 +12,9 @@
                 hx-swap="innerHTML">▼</button>
     </td>
     <td>
-        {{if .ParentID}}<span class="text-muted">└─</span> {{end}}
-        <code>{{.MachineName}}</code>
+        <span style="padding-left: {{mul .Depth 20}}px">
+            {{if gt .Depth 0}}<span class="text-muted">↳</span> {{end}}<code>{{.MachineName}}</code>
+        </span>
     </td>
     <td>
         {{if eq .ElementKind "group"}}
