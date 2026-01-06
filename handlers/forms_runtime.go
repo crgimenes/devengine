@@ -19,6 +19,51 @@ type FormRuntimeElement struct {
 	Attribute *db.EAVAttribute // nil if UI-only
 }
 
+// FormRuntimeNode represents a node in the hierarchical element tree.
+type FormRuntimeNode struct {
+	Element   db.FormElement
+	Attribute *db.EAVAttribute
+	Children  []FormRuntimeNode
+}
+
+// BuildElementTree constructs a hierarchical tree from a flat list of elements.
+func BuildElementTree(elements []db.FormElement, attrMap map[int64]*db.EAVAttribute) []FormRuntimeNode {
+	// Build node lookup map (using pointers to allow modification)
+	nodeMap := make(map[int64]*FormRuntimeNode)
+	for i := range elements {
+		el := &elements[i]
+		node := &FormRuntimeNode{Element: *el}
+		if el.EAVAttributeID != nil {
+			node.Attribute = attrMap[*el.EAVAttributeID]
+		}
+		nodeMap[el.ID] = node
+	}
+
+	// First pass: build parent-child relationships
+	for i := range elements {
+		el := &elements[i]
+		if el.ParentID != nil {
+			parentNode, ok := nodeMap[*el.ParentID]
+			if ok {
+				childNode := nodeMap[el.ID]
+				parentNode.Children = append(parentNode.Children, *childNode)
+			}
+		}
+	}
+
+	// Second pass: collect root elements (those without parent)
+	var roots []FormRuntimeNode
+	for i := range elements {
+		el := &elements[i]
+		if el.ParentID == nil {
+			node := nodeMap[el.ID]
+			roots = append(roots, *node)
+		}
+	}
+
+	return roots
+}
+
 // FormsRuntimeNew shows a form for creating a new record.
 func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
@@ -82,6 +127,9 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		runtimeElements = append(runtimeElements, re)
 	}
 
+	// Build hierarchical element tree
+	elementTree := BuildElementTree(elements, attrMap)
+
 	// Prepare initial values with defaults from attributes
 	values := make(map[string]interface{})
 	for _, attr := range attributes {
@@ -122,6 +170,7 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		Form         *db.Form
 		EntityType   *db.EAVEntityType
 		Elements     []FormRuntimeElement
+		ElementsTree []FormRuntimeNode
 		Record       *db.EAVRecord
 		Values       map[string]interface{}
 		Message      string
@@ -133,6 +182,7 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		Form:         form,
 		EntityType:   entityType,
 		Elements:     runtimeElements,
+		ElementsTree: elementTree,
 		Record:       nil, // New record
 		Values:       values,
 		Message:      message,
@@ -415,6 +465,9 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 		runtimeElements = append(runtimeElements, re)
 	}
 
+	// Build hierarchical element tree
+	elementTree := BuildElementTree(elements, attrMap)
+
 	// Get record values
 	eavValues, err := db.Storage.GetEAVValuesByRecordID(record.ID)
 	if err != nil {
@@ -484,6 +537,7 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 		Form         *db.Form
 		EntityType   *db.EAVEntityType
 		Elements     []FormRuntimeElement
+		ElementsTree []FormRuntimeNode
 		Record       *db.EAVRecord
 		Values       map[string]interface{}
 		Message      string
@@ -495,6 +549,7 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 		Form:         form,
 		EntityType:   entityType,
 		Elements:     runtimeElements,
+		ElementsTree: elementTree,
 		Record:       record,
 		Values:       values,
 		Message:      message,

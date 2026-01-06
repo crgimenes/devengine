@@ -54,83 +54,12 @@
                             </div>
                         {{end}}
 
-                        {{range .Elements}}
-                            {{if eq .Element.ElementKind "divider"}}
-                                <hr class="my-4">
-                            {{else if eq .Element.ElementKind "group"}}
-                                <fieldset class="border rounded p-3 mb-3">
-                                    <legend class="h6">{{.Element.Label}}</legend>
-                                    {{if .Element.HelpText}}<small class="text-muted d-block mb-2">{{.Element.HelpText}}</small>{{end}}
-                                </fieldset>
-                            {{else if .Attribute}}
-                                {{/* Field bound to EAV attribute */}}
-                                <div class="mb-3">
-                                    <label for="field_{{.Element.MachineName}}" class="form-label">
-                                        {{if .Element.Label}}{{.Element.Label}}{{else}}{{.Attribute.Label}}{{end}}
-                                        {{if .Attribute.IsRequired}}<span class="text-danger">*</span>{{end}}
-                                    </label>
-                                    
-                                    {{$value := index $.Values .Attribute.MachineName}}
-                                    
-                                    {{if eq .Attribute.PrimitiveKind "BOOL"}}
-                                        <select class="form-select" 
-                                                id="field_{{.Element.MachineName}}" 
-                                                name="field_{{.Element.MachineName}}"
-                                                {{if .Attribute.IsRequired}}required{{end}}>
-                                            <option value="">Selecione...</option>
-                                            <option value="true" {{if eq $value true}}selected{{end}}>Sim</option>
-                                            <option value="false" {{if eq $value false}}selected{{end}}>Não</option>
-                                        </select>
-                                    {{else if eq .Attribute.PrimitiveKind "INT"}}
-                                        <input type="number" 
-                                               class="form-control" 
-                                               id="field_{{.Element.MachineName}}" 
-                                               name="field_{{.Element.MachineName}}"
-                                               value="{{$value}}"
-                                               {{if .Attribute.IsRequired}}required{{end}}>
-                                    {{else if eq .Attribute.PrimitiveKind "REAL"}}
-                                        <input type="number" 
-                                               step="any"
-                                               class="form-control" 
-                                               id="field_{{.Element.MachineName}}" 
-                                               name="field_{{.Element.MachineName}}"
-                                               value="{{$value}}"
-                                               {{if .Attribute.IsRequired}}required{{end}}>
-                                    {{else if eq .Attribute.PrimitiveKind "DATETIME"}}
-                                        <input type="datetime-local" 
-                                               class="form-control" 
-                                               id="field_{{.Element.MachineName}}" 
-                                               name="field_{{.Element.MachineName}}"
-                                               value="{{$value}}"
-                                               {{if .Attribute.IsRequired}}required{{end}}>
-                                    {{else}}
-                                        {{/* TEXT and others - use text input */}}
-                                        <input type="text" 
-                                               class="form-control" 
-                                               id="field_{{.Element.MachineName}}" 
-                                               name="field_{{.Element.MachineName}}"
-                                               value="{{$value}}"
-                                               {{if .Attribute.MaxLength}}maxlength="{{.Attribute.MaxLength}}"{{end}}
-                                               {{if .Attribute.IsRequired}}required{{end}}>
-                                    {{end}}
-                                    
-                                    {{if .Element.HelpText}}
-                                        <div class="form-text">{{.Element.HelpText}}</div>
-                                    {{else if .Attribute.HelpText}}
-                                        <div class="form-text">{{.Attribute.HelpText}}</div>
-                                    {{end}}
-                                </div>
-                            {{else}}
-                                {{/* UI-only field without EAV binding */}}
-                                <div class="mb-3">
-                                    <label class="form-label">{{.Element.Label}}</label>
-                                    <input type="text" class="form-control" disabled placeholder="Campo UI apenas">
-                                    {{if .Element.HelpText}}
-                                        <div class="form-text">{{.Element.HelpText}}</div>
-                                    {{end}}
-                                </div>
+                        {{/* Render hierarchical elements using ElementsTree */}}
+                        <div class="row">
+                            {{range .ElementsTree}}
+                                {{template "render_element" (dict "Node" . "Values" $.Values "Depth" 0)}}
                             {{end}}
-                        {{end}}
+                        </div>
 
                         <hr>
                         <div class="d-flex gap-2">
@@ -150,3 +79,140 @@
     {{template "scripts" .}}
   </body>
 </html>
+
+{{/* Template for rendering a single element node with its children */}}
+{{define "render_element"}}
+    {{$node := .Node}}
+    {{$values := .Values}}
+    {{$depth := .Depth}}
+    
+    {{if eq $node.Element.ElementKind "divider"}}
+        <div class="col-12"><hr class="my-4"></div>
+    
+    {{else if eq $node.Element.ElementKind "group"}}
+        <div class="col-12 col-md-{{$node.Element.ColSpan}}">
+            <fieldset class="border rounded p-3 mb-3">
+                <legend class="h6">{{$node.Element.Label}}</legend>
+                {{if $node.Element.HelpText}}<small class="text-muted d-block mb-2">{{$node.Element.HelpText}}</small>{{end}}
+                {{/* Render children inside the group */}}
+                <div class="row">
+                    {{range $node.Children}}
+                        {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 1))}}
+                    {{end}}
+                </div>
+            </fieldset>
+        </div>
+    
+    {{else if eq $node.Element.ElementKind "accordion"}}
+        <div class="col-12 col-md-{{$node.Element.ColSpan}}">
+            <div class="accordion mb-3" id="accordion_{{$node.Element.MachineName}}">
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button" type="button" data-bs-toggle="collapse" 
+                                data-bs-target="#collapse_{{$node.Element.MachineName}}" aria-expanded="true">
+                            {{$node.Element.Label}}
+                        </button>
+                    </h2>
+                    <div id="collapse_{{$node.Element.MachineName}}" class="accordion-collapse collapse show">
+                        <div class="accordion-body">
+                            {{if $node.Element.HelpText}}<p class="text-muted">{{$node.Element.HelpText}}</p>{{end}}
+                            {{/* Render children inside accordion */}}
+                            <div class="row">
+                                {{range $node.Children}}
+                                    {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 1))}}
+                                {{end}}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+    {{else if eq $node.Element.ElementKind "card"}}
+        <div class="col-12 col-md-{{$node.Element.ColSpan}}">
+            <div class="card mb-3">
+                {{if $node.Element.Label}}
+                <div class="card-header">{{$node.Element.Label}}</div>
+                {{end}}
+                <div class="card-body">
+                    {{if $node.Element.HelpText}}<p class="card-text text-muted">{{$node.Element.HelpText}}</p>{{end}}
+                    {{/* Render children inside card */}}
+                    <div class="row">
+                        {{range $node.Children}}
+                            {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 1))}}
+                        {{end}}
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+    {{else if $node.Attribute}}
+        {{/* Field bound to EAV attribute */}}
+        <div class="col-12 col-md-{{$node.Element.ColSpan}} mb-3">
+            <label for="field_{{$node.Element.MachineName}}" class="form-label">
+                {{if $node.Element.Label}}{{$node.Element.Label}}{{else}}{{$node.Attribute.Label}}{{end}}
+                {{if $node.Attribute.IsRequired}}<span class="text-danger">*</span>{{end}}
+            </label>
+            
+            {{$value := index $values $node.Attribute.MachineName}}
+            
+            {{if eq $node.Attribute.PrimitiveKind "BOOL"}}
+                <select class="form-select" 
+                        id="field_{{$node.Element.MachineName}}" 
+                        name="field_{{$node.Element.MachineName}}"
+                        {{if $node.Attribute.IsRequired}}required{{end}}>
+                    <option value="">Selecione...</option>
+                    <option value="true" {{if eq $value true}}selected{{end}}>Sim</option>
+                    <option value="false" {{if eq $value false}}selected{{end}}>Não</option>
+                </select>
+            {{else if eq $node.Attribute.PrimitiveKind "INT"}}
+                <input type="number" 
+                       class="form-control" 
+                       id="field_{{$node.Element.MachineName}}" 
+                       name="field_{{$node.Element.MachineName}}"
+                       value="{{$value}}"
+                       {{if $node.Attribute.IsRequired}}required{{end}}>
+            {{else if eq $node.Attribute.PrimitiveKind "REAL"}}
+                <input type="number" 
+                       step="any"
+                       class="form-control" 
+                       id="field_{{$node.Element.MachineName}}" 
+                       name="field_{{$node.Element.MachineName}}"
+                       value="{{$value}}"
+                       {{if $node.Attribute.IsRequired}}required{{end}}>
+            {{else if eq $node.Attribute.PrimitiveKind "DATETIME"}}
+                <input type="datetime-local" 
+                       class="form-control" 
+                       id="field_{{$node.Element.MachineName}}" 
+                       name="field_{{$node.Element.MachineName}}"
+                       value="{{$value}}"
+                       {{if $node.Attribute.IsRequired}}required{{end}}>
+            {{else}}
+                {{/* TEXT and others - use text input */}}
+                <input type="text" 
+                       class="form-control" 
+                       id="field_{{$node.Element.MachineName}}" 
+                       name="field_{{$node.Element.MachineName}}"
+                       value="{{$value}}"
+                       {{if $node.Attribute.MaxLength}}maxlength="{{$node.Attribute.MaxLength}}"{{end}}
+                       {{if $node.Attribute.IsRequired}}required{{end}}>
+            {{end}}
+            
+            {{if $node.Element.HelpText}}
+                <div class="form-text">{{$node.Element.HelpText}}</div>
+            {{else if $node.Attribute.HelpText}}
+                <div class="form-text">{{$node.Attribute.HelpText}}</div>
+            {{end}}
+        </div>
+    
+    {{else}}
+        {{/* UI-only field without EAV binding */}}
+        <div class="col-12 col-md-{{$node.Element.ColSpan}} mb-3">
+            <label class="form-label">{{$node.Element.Label}}</label>
+            <input type="text" class="form-control" disabled placeholder="Campo UI apenas">
+            {{if $node.Element.HelpText}}
+                <div class="form-text">{{$node.Element.HelpText}}</div>
+            {{end}}
+        </div>
+    {{end}}
+{{end}}

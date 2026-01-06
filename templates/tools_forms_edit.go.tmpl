@@ -82,24 +82,49 @@
                     
                     {{if .Elements}}
                     <div class="table-responsive mb-4">
-                        <table class="table table-sm">
+                        <table class="table table-sm table-hover">
                             <thead>
                                 <tr>
-                                    <th>Ordem</th>
+                                    <th style="width: 60px">Ordem</th>
                                     <th>Nome</th>
-                                    <th>Tipo</th>
+                                    <th style="width: 90px">Tipo</th>
                                     <th>Label</th>
+                                    <th style="width: 60px" title="Largura em colunas Bootstrap (1-12)">Col</th>
+                                    <th>Pai</th>
                                     <th>Campo EAV</th>
-                                    <th class="text-end">Ações</th>
+                                    <th class="text-end" style="width: 130px">Ações</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 {{range .Elements}}
-                                <tr>
+                                <tr{{if .ParentID}} class="table-secondary"{{end}}>
                                     <td><span class="badge bg-secondary">{{.ZOrder}}</span></td>
-                                    <td><code>{{.MachineName}}</code></td>
-                                    <td><span class="badge bg-info">{{.ElementKind}}</span></td>
+                                    <td>
+                                        {{if .ParentID}}<span class="text-muted">└─</span> {{end}}
+                                        <code>{{.MachineName}}</code>
+                                    </td>
+                                    <td>
+                                        {{if eq .ElementKind "group"}}
+                                            <span class="badge bg-primary">grupo</span>
+                                        {{else if eq .ElementKind "accordion"}}
+                                            <span class="badge bg-primary">accordion</span>
+                                        {{else if eq .ElementKind "card"}}
+                                            <span class="badge bg-primary">card</span>
+                                        {{else if eq .ElementKind "divider"}}
+                                            <span class="badge bg-dark">divisor</span>
+                                        {{else}}
+                                            <span class="badge bg-info">campo</span>
+                                        {{end}}
+                                    </td>
                                     <td>{{.Label}}</td>
+                                    <td><span class="badge bg-dark" title="{{.ColSpan}} colunas">{{.ColSpan}}</span></td>
+                                    <td>
+                                        {{if .ParentLabel}}
+                                            <small class="text-muted">{{.ParentLabel}}</small>
+                                        {{else}}
+                                            <small class="text-muted">-</small>
+                                        {{end}}
+                                    </td>
                                     <td>
                                         {{if .EAVAttributeLabel}}
                                             <span class="badge bg-success">{{.EAVAttributeLabel}}</span>

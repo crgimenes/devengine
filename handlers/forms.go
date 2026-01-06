@@ -221,16 +221,30 @@ func (h *Handlers) ToolsFormsEdit(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Build enriched elements with attribute labels
+	// Build element ID -> Label map for parent labels
+	elementMap := make(map[int64]string) // ID -> Label or MachineName
+	for _, el := range elements {
+		label := el.Label
+		if label == "" {
+			label = el.MachineName
+		}
+		elementMap[el.ID] = label
+	}
+
+	// Build enriched elements with attribute labels and parent info
 	type ElementWithAttr struct {
 		db.FormElement
 		EAVAttributeLabel string
+		ParentLabel       string
 	}
 	var enrichedElements []ElementWithAttr
 	for _, el := range elements {
 		e := ElementWithAttr{FormElement: el}
 		if el.EAVAttributeID != nil {
 			e.EAVAttributeLabel = attrMap[*el.EAVAttributeID]
+		}
+		if el.ParentID != nil {
+			e.ParentLabel = elementMap[*el.ParentID]
 		}
 		enrichedElements = append(enrichedElements, e)
 	}
@@ -449,7 +463,7 @@ func (h *Handlers) ToolsFormsElementCreate(w http.ResponseWriter, r *http.Reques
 
 	_, err = db.Storage.CreateFormElement(
 		form.ID, nil, machineName, elementKind, label, helpText,
-		zOrder, uiKind, "", eavAttrID, isUIOnly, false,
+		zOrder, 12, uiKind, "", eavAttrID, isUIOnly, false,
 	)
 	if err != nil {
 		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Erro ao criar elemento: "+err.Error(), http.StatusSeeOther)
@@ -486,6 +500,221 @@ func (h *Handlers) ToolsFormsElementDelete(w http.ResponseWriter, r *http.Reques
 	}
 
 	http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Elemento removido", http.StatusSeeOther)
+}
+
+// ToolsFormsElementEdit shows the form element edit page.
+func (h *Handlers) ToolsFormsElementEdit(w http.ResponseWriter, r *http.Request) {
+	user, _, authed, err := auth.Prelude(w, r,
+		[]string{http.MethodGet},
+		true, false, true,
+	)
+	if err != nil || !authed || !user.Sysop {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	formRefID := r.PathValue("id")
+	elementRefID := r.PathValue("element_id")
+
+	form, err := db.Storage.GetFormByRefID(formRefID)
+	if err != nil {
+		http.Error(w, "Form not found", http.StatusNotFound)
+		return
+	}
+
+	element, err := db.Storage.GetFormElementByRefID(elementRefID)
+	if err != nil {
+		http.Error(w, "Element not found", http.StatusNotFound)
+		return
+	}
+
+	// Verify element belongs to this form
+	if element.FormID != form.ID {
+		http.Error(w, "Element does not belong to this form", http.StatusBadRequest)
+		return
+	}
+
+	message := r.URL.Query().Get("message")
+	if len(message) > 200 {
+		message = ""
+	}
+
+	// Get entity type info
+	var entityType *db.EAVEntityType
+	var eavAttributes []db.EAVAttribute
+	if form.EAVEntityTypeID != nil {
+		entityType, _ = db.Storage.GetEAVEntityTypeByID(*form.EAVEntityTypeID)
+		eavAttributes, _ = db.Storage.ListEAVAttributesByEntityTypeID(*form.EAVEntityTypeID)
+	}
+
+	// Get group elements for parent dropdown (exclude self)
+	groupElements, _ := db.Storage.ListGroupElements(form.ID)
+	var filteredGroups []db.FormElement
+	for _, g := range groupElements {
+		if g.ID != element.ID {
+			filteredGroups = append(filteredGroups, g)
+		}
+	}
+
+	// Get all elements for counting (for z_order suggestion)
+	allElements, _ := db.Storage.ListFormElements(form.ID)
+
+	// Find parent element label
+	var parentLabel string
+	if element.ParentID != nil {
+		for _, el := range allElements {
+			if el.ID == *element.ParentID {
+				parentLabel = el.Label
+				if parentLabel == "" {
+					parentLabel = el.MachineName
+				}
+				break
+			}
+		}
+	}
+
+	// Find EAV attribute label
+	var eavAttributeLabel string
+	if element.EAVAttributeID != nil {
+		for _, attr := range eavAttributes {
+			if attr.ID == *element.EAVAttributeID {
+				eavAttributeLabel = attr.Label
+				break
+			}
+		}
+	}
+
+	data := struct {
+		Authed            bool
+		User              db.User
+		Error             string
+		Message           string
+		Config            config.Config
+		CurrentPage       string
+		Form              *db.Form
+		Element           *db.FormElement
+		EntityType        *db.EAVEntityType
+		EAVAttributes     []db.EAVAttribute
+		GroupElements     []db.FormElement
+		AllElements       []db.FormElement
+		ParentLabel       string
+		EAVAttributeLabel string
+	}{
+		Authed:            true,
+		User:              *user,
+		Message:           message,
+		Config:            *h.cfg,
+		CurrentPage:       "forms",
+		Form:              form,
+		Element:           element,
+		EntityType:        entityType,
+		EAVAttributes:     eavAttributes,
+		GroupElements:     filteredGroups,
+		AllElements:       allElements,
+		ParentLabel:       parentLabel,
+		EAVAttributeLabel: eavAttributeLabel,
+	}
+
+	err = h.templates(w, "tools_forms_element_edit.go.tmpl", data)
+	if err != nil {
+		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
+	}
+}
+
+// ToolsFormsElementUpdate handles form element update.
+func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Request) {
+	user, _, authed, err := auth.Prelude(w, r,
+		[]string{http.MethodPost},
+		true, false, true,
+	)
+	if err != nil || !authed || !user.Sysop {
+		http.Error(w, "Forbidden", http.StatusForbidden)
+		return
+	}
+
+	formRefID := r.PathValue("id")
+	elementRefID := r.PathValue("element_id")
+
+	form, err := db.Storage.GetFormByRefID(formRefID)
+	if err != nil {
+		http.Error(w, "Form not found", http.StatusNotFound)
+		return
+	}
+
+	element, err := db.Storage.GetFormElementByRefID(elementRefID)
+	if err != nil {
+		http.Error(w, "Element not found", http.StatusNotFound)
+		return
+	}
+
+	// Parse form values
+	machineName := r.FormValue("machine_name")
+	elementKind := r.FormValue("element_kind")
+	label := r.FormValue("label")
+	helpText := r.FormValue("help_text")
+	parentRefID := r.FormValue("parent_id")
+	zOrderStr := r.FormValue("z_order")
+	colSpanStr := r.FormValue("col_span")
+	uiKind := r.FormValue("ui_kind")
+	uiMetaJSON := r.FormValue("ui_meta_json")
+	eavAttrRefID := r.FormValue("eav_attribute_id")
+	isUIOnlyStr := r.FormValue("is_ui_only")
+	isReadonlyStr := r.FormValue("is_readonly")
+
+	// Validate required fields
+	if machineName == "" {
+		http.Redirect(w, r, "/tools/forms/"+formRefID+"/elements/"+elementRefID+"/edit?message=Nome é obrigatório", http.StatusSeeOther)
+		return
+	}
+
+	// Parse z_order
+	zOrder, _ := strconv.Atoi(zOrderStr)
+	if zOrder < 0 {
+		zOrder = 0
+	}
+
+	// Parse col_span
+	colSpan, _ := strconv.Atoi(colSpanStr)
+	if colSpan < 1 || colSpan > 12 {
+		colSpan = 12
+	}
+
+	// Get parent element ID
+	var parentID *int64
+	if parentRefID != "" {
+		parentEl, err := db.Storage.GetFormElementByRefID(parentRefID)
+		if err == nil && parentEl.FormID == form.ID {
+			parentID = &parentEl.ID
+		}
+	}
+
+	// Get EAV attribute ID
+	var eavAttrID *int64
+	if eavAttrRefID != "" {
+		attr, err := db.Storage.GetEAVAttributeByRefID(eavAttrRefID)
+		if err == nil {
+			eavAttrID = &attr.ID
+		}
+	}
+
+	isUIOnly := isUIOnlyStr == "1" || isUIOnlyStr == "on"
+	isReadonly := isReadonlyStr == "1" || isReadonlyStr == "on"
+
+	err = db.Storage.UpdateFormElement(
+		element.ID,
+		parentID,
+		machineName, elementKind, label, helpText,
+		zOrder, colSpan,
+		uiKind, uiMetaJSON,
+		eavAttrID,
+		isUIOnly, isReadonly,
+	)
+	if err != nil {
+		http.Redirect(w, r, "/tools/forms/"+formRefID+"/elements/"+elementRefID+"/edit?message=Erro ao atualizar: "+err.Error(), http.StatusSeeOther)
+		return
+	}
+
+	http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Elemento atualizado", http.StatusSeeOther)
 }
 
 // ToolsFormsRecords shows the list of EAV records for the form's linked entity type.

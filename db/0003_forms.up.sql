@@ -79,6 +79,9 @@ CREATE TABLE IF NOT EXISTS form_elements (
     -- Ordering within parent
     z_order       INTEGER NOT NULL DEFAULT 0,
 
+    -- Bootstrap grid column span (1-12, default 12 = full width)
+    col_span      INTEGER NOT NULL DEFAULT 12 CHECK (col_span >= 1 AND col_span <= 12),
+
     -- UI plugin ID for rendering (e.g., 'text', 'textarea', 'date_picker')
     -- For groups this might be 'group', 'accordion', 'tabs', etc.
     ui_kind       TEXT,

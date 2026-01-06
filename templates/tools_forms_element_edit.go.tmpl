@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="dark">
+  <head>
+    {{template "head" .}}
+  </head>
+
+  <body>
+    {{template "navbar" .}}
+
+    <main class="container py-4 py-md-5">
+        {{if .Message}}
+            <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+                {{.Message}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {{end}}
+        
+        <div class="row">
+            <div class="col-md-3">
+                {{template "tools_sidebar" .}}
+            </div>
+            <div class="col-md-9">
+                <!-- Breadcrumb -->
+                <nav aria-label="breadcrumb" class="mb-3">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item"><a href="/tools/forms">Formulários</a></li>
+                        <li class="breadcrumb-item"><a href="/tools/forms/{{.Form.ReferenceID}}/edit">{{.Form.Label}}</a></li>
+                        <li class="breadcrumb-item active" aria-current="page">{{.Element.MachineName}}</li>
+                    </ol>
+                </nav>
+
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h2 class="mb-1">Editar Elemento</h2>
+                            <small class="text-muted">{{.Element.MachineName}}</small>
+                        </div>
+                        <a href="/tools/forms/{{.Form.ReferenceID}}/edit" class="btn btn-secondary">Voltar</a>
+                    </div>
+                    
+                    <form method="post" action="/tools/forms/{{.Form.ReferenceID}}/elements/{{.Element.ReferenceID}}/update">
+                        <!-- Basic Info -->
+                        <h5 class="mb-3 border-bottom pb-2">Informações Básicas</h5>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="machine_name" class="form-label">Nome (machine_name) <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="machine_name" name="machine_name" 
+                                       value="{{.Element.MachineName}}" required pattern="[a-zA-Z][a-zA-Z0-9_]*">
+                                <div class="form-text">Identificador único no formulário</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="label" class="form-label">Label</label>
+                                <input type="text" class="form-control" id="label" name="label" 
+                                       value="{{.Element.Label}}" placeholder="Título visível">
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="help_text" class="form-label">Texto de Ajuda</label>
+                            <textarea class="form-control" id="help_text" name="help_text" rows="2">{{.Element.HelpText}}</textarea>
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <label for="element_kind" class="form-label">Tipo de Elemento</label>
+                                <select class="form-select" id="element_kind" name="element_kind">
+                                    <option value="field" {{if eq .Element.ElementKind "field"}}selected{{end}}>Campo</option>
+                                    <option value="group" {{if eq .Element.ElementKind "group"}}selected{{end}}>Grupo</option>
+                                    <option value="accordion" {{if eq .Element.ElementKind "accordion"}}selected{{end}}>Accordion</option>
+                                    <option value="card" {{if eq .Element.ElementKind "card"}}selected{{end}}>Card</option>
+                                    <option value="tabs" {{if eq .Element.ElementKind "tabs"}}selected{{end}}>Tabs</option>
+                                    <option value="divider" {{if eq .Element.ElementKind "divider"}}selected{{end}}>Divisor</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="ui_kind" class="form-label">Plugin de UI</label>
+                                <select class="form-select" id="ui_kind" name="ui_kind">
+                                    <option value="" {{if eq .Element.UIKind ""}}selected{{end}}>-- Padrão --</option>
+                                    <option value="text" {{if eq .Element.UIKind "text"}}selected{{end}}>Texto</option>
+                                    <option value="textarea" {{if eq .Element.UIKind "textarea"}}selected{{end}}>Área de Texto</option>
+                                    <option value="int" {{if eq .Element.UIKind "int"}}selected{{end}}>Número Inteiro</option>
+                                    <option value="decimal" {{if eq .Element.UIKind "decimal"}}selected{{end}}>Decimal</option>
+                                    <option value="bool" {{if eq .Element.UIKind "bool"}}selected{{end}}>Booleano</option>
+                                    <option value="datetime" {{if eq .Element.UIKind "datetime"}}selected{{end}}>Data/Hora</option>
+                                    <option value="select" {{if eq .Element.UIKind "select"}}selected{{end}}>Seleção</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="eav_attribute_id" class="form-label">Atributo EAV</label>
+                                <select class="form-select" id="eav_attribute_id" name="eav_attribute_id">
+                                    <option value="">-- Apenas UI --</option>
+                                    {{range .EAVAttributes}}
+                                    <option value="{{.ReferenceID}}" {{if $.Element.EAVAttributeID}}{{if eq .ID (deref $.Element.EAVAttributeID)}}selected{{end}}{{end}}>
+                                        {{.Label}} ({{.MachineName}})
+                                    </option>
+                                    {{end}}
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Layout -->
+                        <h5 class="mb-3 border-bottom pb-2">Layout e Hierarquia</h5>
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <label for="parent_id" class="form-label">Grupo Pai</label>
+                                <select class="form-select" id="parent_id" name="parent_id">
+                                    <option value="">-- Raiz do formulário --</option>
+                                    {{range .GroupElements}}
+                                    <option value="{{.ReferenceID}}" {{if $.Element.ParentID}}{{if eq .ID (deref $.Element.ParentID)}}selected{{end}}{{end}}>
+                                        {{if .Label}}{{.Label}}{{else}}{{.MachineName}}{{end}} ({{.ElementKind}})
+                                    </option>
+                                    {{end}}
+                                </select>
+                                <div class="form-text">Coloque este elemento dentro de um grupo</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="z_order" class="form-label">Ordem (Z-Order)</label>
+                                <input type="number" class="form-control" id="z_order" name="z_order" 
+                                       value="{{.Element.ZOrder}}" min="0">
+                                <div class="form-text">Menor = primeiro. Desambiguação por data.</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="col_span" class="form-label">Largura (Colunas)</label>
+                                <select class="form-select" id="col_span" name="col_span">
+                                    {{range $i := (seq 1 12)}}
+                                    <option value="{{$i}}" {{if eq $i $.Element.ColSpan}}selected{{end}}>
+                                        {{$i}} {{if eq $i 12}}(Largura total){{else if eq $i 6}}(Metade){{else if eq $i 4}}(1/3){{else if eq $i 3}}(1/4){{end}}
+                                    </option>
+                                    {{end}}
+                                </select>
+                                <div class="form-text">Sistema de 12 colunas Bootstrap</div>
+                            </div>
+                        </div>
+
+                        <!-- Options -->
+                        <h5 class="mb-3 border-bottom pb-2">Opções</h5>
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="is_ui_only" name="is_ui_only" 
+                                           {{if .Element.IsUIOnly}}checked{{end}}>
+                                    <label class="form-check-label" for="is_ui_only">
+                                        Apenas UI (não persiste dados)
+                                    </label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="checkbox" id="is_readonly" name="is_readonly"
+                                           {{if .Element.IsReadonly}}checked{{end}}>
+                                    <label class="form-check-label" for="is_readonly">
+                                        Somente Leitura
+                                    </label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- UI Meta JSON -->
+                        <h5 class="mb-3 border-bottom pb-2">Configurações Avançadas (JSON)</h5>
+                        <div class="mb-4">
+                            <label for="ui_meta_json" class="form-label">Metadados do Plugin</label>
+                            <textarea class="form-control font-monospace" id="ui_meta_json" name="ui_meta_json" 
+                                      rows="4" placeholder='{"placeholder": "Digite aqui...", "maxLength": 100}'>{{.Element.UIMetaJSON}}</textarea>
+                            <div class="form-text">Configurações específicas do plugin em formato JSON</div>
+                        </div>
+
+                        <hr>
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                            <a href="/tools/forms/{{.Form.ReferenceID}}/edit" class="btn btn-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer>
+      {{template "footer" .}}
+    </footer>
+    {{template "scripts" .}}
+  </body>
+</html>

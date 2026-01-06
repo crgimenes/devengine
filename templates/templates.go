@@ -68,6 +68,43 @@ func loadTemplates() *template.Template {
 		"safeHTML": func(s string) template.HTML {
 			return template.HTML(s)
 		},
+		// seq generates a slice of integers from start to end (inclusive)
+		"seq": func(start, end int) []int {
+			if start > end {
+				return nil
+			}
+			result := make([]int, 0, end-start+1)
+			for i := start; i <= end; i++ {
+				result = append(result, i)
+			}
+			return result
+		},
+		// deref dereferences a pointer to int64, returns 0 if nil
+		"deref": func(p *int64) int64 {
+			if p == nil {
+				return 0
+			}
+			return *p
+		},
+		// add adds two integers
+		"add": func(a, b int) int {
+			return a + b
+		},
+		// dict creates a map from key-value pairs for passing to templates
+		"dict": func(values ...interface{}) map[string]interface{} {
+			if len(values)%2 != 0 {
+				return nil
+			}
+			dict := make(map[string]interface{}, len(values)/2)
+			for i := 0; i < len(values); i += 2 {
+				key, ok := values[i].(string)
+				if !ok {
+					continue
+				}
+				dict[key] = values[i+1]
+			}
+			return dict
+		},
 	}
 
 	base := template.New("").Funcs(funcMap)

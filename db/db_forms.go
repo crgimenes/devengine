@@ -33,6 +33,7 @@ type FormElement struct {
 	Label          string
 	HelpText       string
 	ZOrder         int
+	ColSpan        int    // Bootstrap column span (1-12, default 12)
 	UIKind         string // Plugin ID
 	UIMetaJSON     string
 	EAVAttributeID *int64 // NULL for UI-only elements
@@ -140,20 +141,24 @@ func (s *SQLite) CreateFormElement(
 	formID int64,
 	parentID *int64,
 	machineName, elementKind, label, helpText string,
-	zOrder int,
+	zOrder, colSpan int,
 	uiKind, uiMetaJSON string,
 	eavAttributeID *int64,
 	isUIOnly, isReadonly bool,
 ) (*FormElement, error) {
 	refID := utils.NewOpaqueID()
+	// Default col_span to 12 if not set
+	if colSpan < 1 || colSpan > 12 {
+		colSpan = 12
+	}
 	const sqlInsert = `
 		INSERT INTO form_elements (
 			reference_id, form_id, parent_id, machine_name, element_kind,
-			label, help_text, z_order, ui_kind, ui_meta_json,
+			label, help_text, z_order, col_span, ui_kind, ui_meta_json,
 			eav_attribute_id, is_ui_only, is_readonly
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 		RETURNING id, reference_id, form_id, parent_id, machine_name, element_kind,
-		          label, help_text, z_order, ui_kind, ui_meta_json,
+		          label, help_text, z_order, col_span, ui_kind, ui_meta_json,
 		          eav_attribute_id, is_ui_only, is_readonly, created_at, updated_at
 	`
 
@@ -171,11 +176,11 @@ func (s *SQLite) CreateFormElement(
 	var scanEAVAttrID sql.NullInt64
 
 	err := s.QueryRowRW(sqlInsert,
-		refID, formID, parentIDVal, machineName, elementKind, label, helpText, zOrder,
+		refID, formID, parentIDVal, machineName, elementKind, label, helpText, zOrder, colSpan,
 		uiKind, uiMetaJSON, eavAttrIDVal, boolToInt(isUIOnly), boolToInt(isReadonly),
 	).Scan(
 		&e.ID, &e.ReferenceID, &e.FormID, &scanParentID, &e.MachineName, &e.ElementKind,
-		&e.Label, &e.HelpText, &e.ZOrder, &e.UIKind, &e.UIMetaJSON,
+		&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.UIKind, &e.UIMetaJSON,
 		&scanEAVAttrID, &e.IsUIOnly, &e.IsReadonly, &e.CreatedAt, &e.UpdatedAt,
 	)
 	if err != nil {
@@ -196,7 +201,7 @@ func (s *SQLite) CreateFormElement(
 func (s *SQLite) ListFormElements(formID int64) ([]FormElement, error) {
 	const q = `
 		SELECT id, reference_id, form_id, parent_id, machine_name, element_kind,
-		       label, help_text, z_order, ui_kind, ui_meta_json,
+		       label, help_text, z_order, col_span, ui_kind, ui_meta_json,
 		       eav_attribute_id, is_ui_only, is_readonly, created_at, updated_at
 		FROM form_elements
 		WHERE form_id = ? AND deleted_at IS NULL
@@ -217,7 +222,7 @@ func (s *SQLite) ListFormElements(formID int64) ([]FormElement, error) {
 
 		if err := rows.Scan(
 			&e.ID, &e.ReferenceID, &e.FormID, &parentID, &e.MachineName, &e.ElementKind,
-			&e.Label, &e.HelpText, &e.ZOrder, &e.UIKind, &e.UIMetaJSON,
+			&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.UIKind, &e.UIMetaJSON,
 			&eavAttrID, &e.IsUIOnly, &e.IsReadonly, &e.CreatedAt, &e.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan form element: %w", err)
@@ -239,7 +244,7 @@ func (s *SQLite) ListFormElements(formID int64) ([]FormElement, error) {
 func (s *SQLite) GetFormElementByRefID(refID string) (*FormElement, error) {
 	const q = `
 		SELECT id, reference_id, form_id, parent_id, machine_name, element_kind,
-		       label, help_text, z_order, ui_kind, ui_meta_json,
+		       label, help_text, z_order, col_span, ui_kind, ui_meta_json,
 		       eav_attribute_id, is_ui_only, is_readonly, created_at, updated_at
 		FROM form_elements
 		WHERE reference_id = ? AND deleted_at IS NULL
@@ -251,7 +256,7 @@ func (s *SQLite) GetFormElementByRefID(refID string) (*FormElement, error) {
 
 	err := s.QueryRow(q, refID).Scan(
 		&e.ID, &e.ReferenceID, &e.FormID, &parentID, &e.MachineName, &e.ElementKind,
-		&e.Label, &e.HelpText, &e.ZOrder, &e.UIKind, &e.UIMetaJSON,
+		&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.UIKind, &e.UIMetaJSON,
 		&eavAttrID, &e.IsUIOnly, &e.IsReadonly, &e.CreatedAt, &e.UpdatedAt,
 	)
 	if err != nil {
@@ -275,6 +280,98 @@ func (s *SQLite) GetFormElementByRefID(refID string) (*FormElement, error) {
 func (s *SQLite) DeleteFormElement(id int64) error {
 	const q = `DELETE FROM form_elements WHERE id = ?`
 	return s.Exec(q, id)
+}
+
+// UpdateFormElement updates an existing form element.
+func (s *SQLite) UpdateFormElement(
+	id int64,
+	parentID *int64,
+	machineName, elementKind, label, helpText string,
+	zOrder, colSpan int,
+	uiKind, uiMetaJSON string,
+	eavAttributeID *int64,
+	isUIOnly, isReadonly bool,
+) error {
+	// Default col_span to 12 if not set
+	if colSpan < 1 || colSpan > 12 {
+		colSpan = 12
+	}
+	const q = `
+		UPDATE form_elements SET
+			parent_id = ?,
+			machine_name = ?,
+			element_kind = ?,
+			label = ?,
+			help_text = ?,
+			z_order = ?,
+			col_span = ?,
+			ui_kind = ?,
+			ui_meta_json = ?,
+			eav_attribute_id = ?,
+			is_ui_only = ?,
+			is_readonly = ?,
+			updated_at = CURRENT_TIMESTAMP
+		WHERE id = ? AND deleted_at IS NULL
+	`
+
+	var parentIDVal sql.NullInt64
+	if parentID != nil {
+		parentIDVal = sql.NullInt64{Int64: *parentID, Valid: true}
+	}
+	var eavAttrIDVal sql.NullInt64
+	if eavAttributeID != nil {
+		eavAttrIDVal = sql.NullInt64{Int64: *eavAttributeID, Valid: true}
+	}
+
+	return s.Exec(q,
+		parentIDVal, machineName, elementKind, label, helpText,
+		zOrder, colSpan, uiKind, uiMetaJSON, eavAttrIDVal,
+		boolToInt(isUIOnly), boolToInt(isReadonly), id,
+	)
+}
+
+// ListGroupElements returns elements that can be parents (groups, accordions, cards, tabs).
+func (s *SQLite) ListGroupElements(formID int64) ([]FormElement, error) {
+	const q = `
+		SELECT id, reference_id, form_id, parent_id, machine_name, element_kind,
+		       label, help_text, z_order, col_span, ui_kind, ui_meta_json,
+		       eav_attribute_id, is_ui_only, is_readonly, created_at, updated_at
+		FROM form_elements
+		WHERE form_id = ? AND deleted_at IS NULL
+		  AND element_kind IN ('group', 'accordion', 'card', 'tabs')
+		ORDER BY z_order, id
+	`
+
+	rows, err := s.Query(q, formID)
+	if err != nil {
+		return nil, fmt.Errorf("list group elements: %w", err)
+	}
+	defer rows.Close()
+
+	var elements []FormElement
+	for rows.Next() {
+		var e FormElement
+		var parentID sql.NullInt64
+		var eavAttrID sql.NullInt64
+
+		if err := rows.Scan(
+			&e.ID, &e.ReferenceID, &e.FormID, &parentID, &e.MachineName, &e.ElementKind,
+			&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.UIKind, &e.UIMetaJSON,
+			&eavAttrID, &e.IsUIOnly, &e.IsReadonly, &e.CreatedAt, &e.UpdatedAt,
+		); err != nil {
+			return nil, fmt.Errorf("scan group element: %w", err)
+		}
+
+		if parentID.Valid {
+			e.ParentID = &parentID.Int64
+		}
+		if eavAttrID.Valid {
+			e.EAVAttributeID = &eavAttrID.Int64
+		}
+
+		elements = append(elements, e)
+	}
+	return elements, rows.Err()
 }
 
 // boolToInt converts bool to SQLite integer.
