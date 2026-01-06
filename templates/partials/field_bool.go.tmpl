@@ -1,0 +1,44 @@
+{{define "field_bool"}}
+{{$meta := .Meta}}
+{{$name := .Name}}
+{{$value := .Value}}
+{{$required := .Required}}
+{{$readonly := .Readonly}}
+{{$style := index $meta "style"}}
+{{if not $style}}{{$style = "select"}}{{end}}
+
+{{if eq $style "checkbox"}}
+<div class="form-check">
+    <input class="form-check-input" type="checkbox" 
+           id="{{$name}}" 
+           name="{{$name}}" 
+           value="true"
+           {{if eq $value true}}checked{{end}}
+           {{if $readonly}}disabled{{end}}>
+    <label class="form-check-label" for="{{$name}}">Sim</label>
+</div>
+
+{{else if eq $style "switch"}}
+<div class="form-check form-switch">
+    <input class="form-check-input" type="checkbox" role="switch"
+           id="{{$name}}" 
+           name="{{$name}}" 
+           value="true"
+           {{if eq $value true}}checked{{end}}
+           {{if $readonly}}disabled{{end}}>
+    <label class="form-check-label" for="{{$name}}">Sim</label>
+</div>
+
+{{else}}
+{{/* Default: select dropdown */}}
+<select class="form-select" 
+        id="{{$name}}" 
+        name="{{$name}}"
+        {{if $required}}required{{end}}
+        {{if $readonly}}disabled{{end}}>
+    <option value="">Selecione...</option>
+    <option value="true" {{if eq $value true}}selected{{end}}>Sim</option>
+    <option value="false" {{if eq $value false}}selected{{end}}>Não</option>
+</select>
+{{end}}
+{{end}}

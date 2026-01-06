@@ -1,0 +1,18 @@
+{{define "field_datetime"}}
+{{$meta := .Meta}}
+{{$name := .Name}}
+{{$value := .Value}}
+{{$required := .Required}}
+{{$readonly := .Readonly}}
+{{$includeTime := index $meta "includeTime"}}
+{{if eq $includeTime nil}}{{$includeTime = true}}{{end}}
+<input type="{{if $includeTime}}datetime-local{{else}}date{{end}}" 
+       class="form-control" 
+       id="{{$name}}" 
+       name="{{$name}}"
+       value="{{$value}}"
+       {{if index $meta "minDate"}}min="{{index $meta "minDate"}}"{{end}}
+       {{if index $meta "maxDate"}}max="{{index $meta "maxDate"}}"{{end}}
+       {{if $required}}required{{end}}
+       {{if $readonly}}readonly{{end}}>
+{{end}}

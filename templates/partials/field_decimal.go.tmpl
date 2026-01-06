@@ -1,0 +1,20 @@
+{{define "field_decimal"}}
+{{$meta := .Meta}}
+{{$name := .Name}}
+{{$value := .Value}}
+{{$required := .Required}}
+{{$readonly := .Readonly}}
+{{$step := index $meta "step"}}
+{{if not $step}}{{$step = "any"}}{{end}}
+<input type="number" 
+       class="form-control" 
+       id="{{$name}}" 
+       name="{{$name}}"
+       value="{{$value}}"
+       step="{{$step}}"
+       {{if index $meta "min"}}min="{{index $meta "min"}}"{{end}}
+       {{if index $meta "max"}}max="{{index $meta "max"}}"{{end}}
+       {{if index $meta "placeholder"}}placeholder="{{index $meta "placeholder"}}"{{end}}
+       {{if $required}}required{{end}}
+       {{if $readonly}}readonly{{end}}>
+{{end}}

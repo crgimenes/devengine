@@ -156,3 +156,85 @@ func TestParseGroupMetaIntegration(t *testing.T) {
 		})
 	}
 }
+
+func TestGetFieldDefaults(t *testing.T) {
+	tests := []struct {
+		name        string
+		uiKind      string
+		expectedLen int
+		checkKey    string
+	}{
+		{"text defaults", "text", 4, "placeholder"},
+		{"textarea defaults", "textarea", 3, "rows"},
+		{"int defaults", "int", 4, "step"},
+		{"decimal defaults", "decimal", 5, "decimalPlaces"},
+		{"bool defaults", "bool", 1, "style"},
+		{"datetime defaults", "datetime", 3, "includeTime"},
+		{"select defaults", "select", 3, "options"},
+		{"unknown returns empty", "unknown", 0, ""},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			defaults := getFieldDefaults(tc.uiKind)
+
+			if len(defaults) != tc.expectedLen {
+				t.Errorf("expected %d keys, got %d", tc.expectedLen, len(defaults))
+			}
+
+			if tc.checkKey != "" {
+				if _, ok := defaults[tc.checkKey]; !ok {
+					t.Errorf("expected key %q not found", tc.checkKey)
+				}
+			}
+		})
+	}
+}
+
+func TestParseFieldMetaIntegration(t *testing.T) {
+	parseFieldMeta := func(jsonStr string, uiKind string) map[string]interface{} {
+		defaults := getFieldDefaults(uiKind)
+		if jsonStr == "" {
+			return defaults
+		}
+		var meta map[string]interface{}
+		if err := json.Unmarshal([]byte(jsonStr), &meta); err != nil {
+			return defaults
+		}
+		for k, v := range meta {
+			defaults[k] = v
+		}
+		return defaults
+	}
+
+	tests := []struct {
+		name     string
+		jsonStr  string
+		uiKind   string
+		checkKey string
+		expected interface{}
+	}{
+		{"empty JSON uses defaults", "", "text", "inputMode", "text"},
+		{"invalid JSON uses defaults", "{bad}", "textarea", "rows", 3},
+		{"override placeholder", `{"placeholder": "Nome"}`, "text", "placeholder", "Nome"},
+		{"override rows", `{"rows": 10}`, "textarea", "rows", float64(10)},
+		{"bool style checkbox", `{"style": "checkbox"}`, "bool", "style", "checkbox"},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			result := parseFieldMeta(tc.jsonStr, tc.uiKind)
+
+			val, ok := result[tc.checkKey]
+			if !ok {
+				t.Errorf("expected key %q not found", tc.checkKey)
+				return
+			}
+
+			if val != tc.expected {
+				t.Errorf("expected %q = %v (%T), got %v (%T)",
+					tc.checkKey, tc.expected, tc.expected, val, val)
+			}
+		})
+	}
+}

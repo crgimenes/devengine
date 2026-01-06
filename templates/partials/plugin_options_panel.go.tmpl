@@ -100,9 +100,157 @@
         </div>
     </div>
 
-    <!-- Field type - no group options, just show info -->
+    <!-- Field type options - organized by ui_kind -->
     <div id="options-field" class="plugin-options-panel d-none">
-        <p class="text-muted small">Campos não possuem opções de grupo. Use o plugin de UI e os metadados JSON para configurar.</p>
+        <h6 class="text-muted mb-3">Opções do Campo</h6>
+        <p class="small text-muted">Configure opções específicas baseadas no Plugin de UI selecionado acima.</p>
+        
+        <!-- Text field options -->
+        <div id="field-options-text" class="field-ui-options">
+            <div class="mb-2">
+                <label for="opt_text_placeholder" class="form-label small">Placeholder</label>
+                <input type="text" class="form-control form-control-sm plugin-option" id="opt_text_placeholder" 
+                       data-key="placeholder" value="{{index $meta "placeholder"}}">
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <label for="opt_text_maxLength" class="form-label small">Tamanho máximo</label>
+                    <input type="number" class="form-control form-control-sm plugin-option" id="opt_text_maxLength" 
+                           data-key="maxLength" value="{{index $meta "maxLength"}}" min="0">
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label for="opt_text_inputMode" class="form-label small">Modo de entrada</label>
+                    <select class="form-select form-select-sm plugin-option" id="opt_text_inputMode" data-key="inputMode">
+                        <option value="text" {{if eq (index $meta "inputMode") "text"}}selected{{end}}>Texto</option>
+                        <option value="email" {{if eq (index $meta "inputMode") "email"}}selected{{end}}>Email</option>
+                        <option value="tel" {{if eq (index $meta "inputMode") "tel"}}selected{{end}}>Telefone</option>
+                        <option value="url" {{if eq (index $meta "inputMode") "url"}}selected{{end}}>URL</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Textarea options -->
+        <div id="field-options-textarea" class="field-ui-options d-none">
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <label for="opt_textarea_rows" class="form-label small">Linhas</label>
+                    <input type="number" class="form-control form-control-sm plugin-option" id="opt_textarea_rows" 
+                           data-key="rows" value="{{index $meta "rows"}}" min="1" max="20">
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label for="opt_textarea_maxLength" class="form-label small">Tamanho máximo</label>
+                    <input type="number" class="form-control form-control-sm plugin-option" id="opt_textarea_maxLength" 
+                           data-key="maxLength" value="{{index $meta "maxLength"}}" min="0">
+                </div>
+            </div>
+            <div class="mb-2">
+                <label for="opt_textarea_placeholder" class="form-label small">Placeholder</label>
+                <input type="text" class="form-control form-control-sm plugin-option" id="opt_textarea_placeholder" 
+                       data-key="placeholder" value="{{index $meta "placeholder"}}">
+            </div>
+        </div>
+        
+        <!-- Int options -->
+        <div id="field-options-int" class="field-ui-options d-none">
+            <div class="row">
+                <div class="col-md-4 mb-2">
+                    <label for="opt_int_min" class="form-label small">Mínimo</label>
+                    <input type="number" class="form-control form-control-sm plugin-option" id="opt_int_min" 
+                           data-key="min" value="{{index $meta "min"}}">
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label for="opt_int_max" class="form-label small">Máximo</label>
+                    <input type="number" class="form-control form-control-sm plugin-option" id="opt_int_max" 
+                           data-key="max" value="{{index $meta "max"}}">
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label for="opt_int_step" class="form-label small">Passo</label>
+                    <input type="number" class="form-control form-control-sm plugin-option" id="opt_int_step" 
+                           data-key="step" value="{{index $meta "step"}}" min="1">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Decimal options -->
+        <div id="field-options-decimal" class="field-ui-options d-none">
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <label for="opt_decimal_min" class="form-label small">Mínimo</label>
+                    <input type="number" step="any" class="form-control form-control-sm plugin-option" id="opt_decimal_min" 
+                           data-key="min" value="{{index $meta "min"}}">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="opt_decimal_max" class="form-label small">Máximo</label>
+                    <input type="number" step="any" class="form-control form-control-sm plugin-option" id="opt_decimal_max" 
+                           data-key="max" value="{{index $meta "max"}}">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="opt_decimal_step" class="form-label small">Passo</label>
+                    <input type="text" class="form-control form-control-sm plugin-option" id="opt_decimal_step" 
+                           data-key="step" value="{{index $meta "step"}}" placeholder="any">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="opt_decimal_places" class="form-label small">Casas decimais</label>
+                    <input type="number" class="form-control form-control-sm plugin-option" id="opt_decimal_places" 
+                           data-key="decimalPlaces" value="{{index $meta "decimalPlaces"}}" min="0" max="10">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Bool options -->
+        <div id="field-options-bool" class="field-ui-options d-none">
+            <div class="mb-2">
+                <label for="opt_bool_style" class="form-label small">Estilo de exibição</label>
+                <select class="form-select form-select-sm plugin-option" id="opt_bool_style" data-key="style">
+                    <option value="select" {{if eq (index $meta "style") "select"}}selected{{end}}>Dropdown (Sim/Não)</option>
+                    <option value="checkbox" {{if eq (index $meta "style") "checkbox"}}selected{{end}}>Checkbox</option>
+                    <option value="switch" {{if eq (index $meta "style") "switch"}}selected{{end}}>Switch</option>
+                </select>
+            </div>
+        </div>
+        
+        <!-- Datetime options -->
+        <div id="field-options-datetime" class="field-ui-options d-none">
+            <div class="form-check mb-2">
+                <input class="form-check-input plugin-option" type="checkbox" id="opt_datetime_includeTime" 
+                       data-key="includeTime" {{if index $meta "includeTime"}}checked{{end}}>
+                <label class="form-check-label" for="opt_datetime_includeTime">
+                    Incluir hora
+                </label>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <label for="opt_datetime_minDate" class="form-label small">Data mínima</label>
+                    <input type="date" class="form-control form-control-sm plugin-option" id="opt_datetime_minDate" 
+                           data-key="minDate" value="{{index $meta "minDate"}}">
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label for="opt_datetime_maxDate" class="form-label small">Data máxima</label>
+                    <input type="date" class="form-control form-control-sm plugin-option" id="opt_datetime_maxDate" 
+                           data-key="maxDate" value="{{index $meta "maxDate"}}">
+                </div>
+            </div>
+        </div>
+        
+        <!-- Select options -->
+        <div id="field-options-select" class="field-ui-options d-none">
+            <div class="form-check mb-2">
+                <input class="form-check-input plugin-option" type="checkbox" id="opt_select_allowEmpty" 
+                       data-key="allowEmpty" {{if index $meta "allowEmpty"}}checked{{end}}>
+                <label class="form-check-label" for="opt_select_allowEmpty">
+                    Permitir opção vazia
+                </label>
+            </div>
+            <div class="form-check mb-2">
+                <input class="form-check-input plugin-option" type="checkbox" id="opt_select_multiple" 
+                       data-key="multiple" {{if index $meta "multiple"}}checked{{end}}>
+                <label class="form-check-label" for="opt_select_multiple">
+                    Seleção múltipla
+                </label>
+            </div>
+            <p class="small text-muted">Opções devem ser configuradas diretamente no JSON abaixo.</p>
+        </div>
     </div>
 
     <!-- Divider - no options -->

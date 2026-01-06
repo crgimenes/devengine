@@ -65,6 +65,59 @@ func getGroupDefaults(elementKind string) map[string]interface{} {
 	}
 }
 
+// getFieldDefaults returns default metadata values for field plugin types.
+// These are used when ui_meta_json is empty or missing fields.
+func getFieldDefaults(uiKind string) map[string]interface{} {
+	switch uiKind {
+	case "text":
+		return map[string]interface{}{
+			"placeholder": "",
+			"maxLength":   0,
+			"pattern":     "",
+			"inputMode":   "text",
+		}
+	case "textarea":
+		return map[string]interface{}{
+			"placeholder": "",
+			"rows":        3,
+			"maxLength":   0,
+		}
+	case "int":
+		return map[string]interface{}{
+			"min":         nil,
+			"max":         nil,
+			"step":        1,
+			"placeholder": "",
+		}
+	case "decimal":
+		return map[string]interface{}{
+			"min":           nil,
+			"max":           nil,
+			"step":          "any",
+			"decimalPlaces": 2,
+			"placeholder":   "",
+		}
+	case "bool":
+		return map[string]interface{}{
+			"style": "select", // select, checkbox, switch
+		}
+	case "datetime":
+		return map[string]interface{}{
+			"includeTime": true,
+			"minDate":     "",
+			"maxDate":     "",
+		}
+	case "select":
+		return map[string]interface{}{
+			"options":    []interface{}{},
+			"allowEmpty": true,
+			"multiple":   false,
+		}
+	default:
+		return map[string]interface{}{}
+	}
+}
+
 // parseWithPatterns parses all matched files from fsys using the provided
 // patterns. Patterns that match no files are ignored gracefully.
 func parseWithPatterns(t *template.Template, fsys fs.FS, patterns ...string) (*template.Template, error) {
@@ -149,6 +202,22 @@ func loadTemplates() *template.Template {
 		// parseGroupMeta parses ui_meta_json with defaults for group plugins
 		"parseGroupMeta": func(jsonStr string, elementKind string) map[string]interface{} {
 			defaults := getGroupDefaults(elementKind)
+			if jsonStr == "" {
+				return defaults
+			}
+			var meta map[string]interface{}
+			if err := json.Unmarshal([]byte(jsonStr), &meta); err != nil {
+				return defaults
+			}
+			// Merge: meta values override defaults
+			for k, v := range meta {
+				defaults[k] = v
+			}
+			return defaults
+		},
+		// parseFieldMeta parses ui_meta_json with defaults for field plugins
+		"parseFieldMeta": func(jsonStr string, uiKind string) map[string]interface{} {
+			defaults := getFieldDefaults(uiKind)
 			if jsonStr == "" {
 				return defaults
 			}
