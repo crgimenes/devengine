@@ -316,6 +316,8 @@ func (h *Handlers) ToolsFormsUpdate(w http.ResponseWriter, r *http.Request) {
 	label := r.FormValue("label")
 	description := r.FormValue("description")
 	entityTypeRefID := r.FormValue("entity_type_id")
+	hideSubmitButton := r.FormValue("hide_submit_button") == "on"
+	hideCancelButton := r.FormValue("hide_cancel_button") == "on"
 
 	// Validate required fields
 	if machineName == "" || label == "" {
@@ -335,7 +337,7 @@ func (h *Handlers) ToolsFormsUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update form
-	err = db.Storage.UpdateForm(form.ID, machineName, label, description, eavEntityTypeID)
+	err = db.Storage.UpdateForm(form.ID, machineName, label, description, eavEntityTypeID, hideSubmitButton, hideCancelButton)
 	if err != nil {
 		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Erro ao atualizar: "+err.Error(), http.StatusSeeOther)
 		return

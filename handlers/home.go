@@ -84,6 +84,16 @@ func (h *Handlers) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// For authenticated users, check for "init" form
+	if authed {
+		initForm, err := db.Storage.GetFormByMachineName("init")
+		if err == nil && initForm != nil {
+			// Redirect to form new entry for "init" form
+			http.Redirect(w, r, "/forms/"+initForm.ReferenceID+"/new", http.StatusSeeOther)
+			return
+		}
+	}
+
 	data := struct {
 		Authed  bool
 		User    db.User

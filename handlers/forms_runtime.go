@@ -103,16 +103,29 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Form must be linked to an EAV entity type
-	if form.EAVEntityTypeID == nil {
-		http.Error(w, "Form is not linked to any EAV table", http.StatusBadRequest)
-		return
-	}
+	// Entity type is optional - form may not be linked to EAV
+	var entityType *db.EAVEntityType
+	var attributes []db.EAVAttribute
+	attrMap := make(map[int64]*db.EAVAttribute)
 
-	entityType, err := db.Storage.GetEAVEntityTypeByID(*form.EAVEntityTypeID)
-	if err != nil {
-		http.Error(w, "EAV entity type not found", http.StatusInternalServerError)
-		return
+	if form.EAVEntityTypeID != nil {
+		entityType, err = db.Storage.GetEAVEntityTypeByID(*form.EAVEntityTypeID)
+		if err != nil {
+			http.Error(w, "EAV entity type not found", http.StatusInternalServerError)
+			return
+		}
+
+		// Get all attributes for this entity type
+		attributes, err = db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
+		if err != nil {
+			http.Error(w, "failed to list attributes", http.StatusInternalServerError)
+			return
+		}
+
+		// Build attribute map for lookup
+		for i := range attributes {
+			attrMap[attributes[i].ID] = &attributes[i]
+		}
 	}
 
 	// Get form elements
@@ -120,19 +133,6 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "failed to list form elements", http.StatusInternalServerError)
 		return
-	}
-
-	// Get all attributes for this entity type
-	attributes, err := db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
-	if err != nil {
-		http.Error(w, "failed to list attributes", http.StatusInternalServerError)
-		return
-	}
-
-	// Build attribute map for lookup
-	attrMap := make(map[int64]*db.EAVAttribute)
-	for i := range attributes {
-		attrMap[attributes[i].ID] = &attributes[i]
 	}
 
 	// Build runtime elements with attribute info
@@ -164,9 +164,9 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	// Execute pos_load script (before display)
+	// Execute pos_load script (before display) - only if entity type exists
 	var posLoadError string
-	if entityType.PosLoad != "" {
+	if entityType != nil && entityType.PosLoad != "" {
 		modifiedValues, userError, execErr := db.ExecutePosLoadScript(entityType, db.EAVRecordValues(values))
 		if execErr == nil {
 			for k, v := range modifiedValues {

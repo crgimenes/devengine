@@ -61,13 +61,24 @@
                             {{end}}
                         </div>
 
+                        {{/* Show buttons only if form has EAV entity linked and buttons are not hidden */}}
+                        {{if .Form.EAVEntityTypeID}}
+                        {{$showSubmit := not .Form.HideSubmitButton}}
+                        {{$showCancel := not .Form.HideCancelButton}}
+                        {{if or $showSubmit $showCancel}}
                         <hr>
                         <div class="d-flex gap-2">
+                            {{if $showSubmit}}
                             <button type="submit" class="btn btn-primary">
                                 {{if .Record}}Salvar Alterações{{else}}Criar Registro{{end}}
                             </button>
+                            {{end}}
+                            {{if $showCancel}}
                             <a href="/tools/forms/{{.Form.ReferenceID}}/records" class="btn btn-secondary">Cancelar</a>
+                            {{end}}
                         </div>
+                        {{end}}
+                        {{end}}
                     </form>
                 </div>
             </div>
