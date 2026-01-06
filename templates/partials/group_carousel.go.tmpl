@@ -1,0 +1,65 @@
+{{define "group_carousel"}}
+{{$node := .Node}}
+{{$values := .Values}}
+{{$depth := .Depth}}
+{{$meta := .Meta}}
+{{$showControls := index $meta "show_controls"}}
+{{$showIndicators := index $meta "show_indicators"}}
+{{$interval := index $meta "interval"}}
+{{$fade := index $meta "fade"}}
+<div class="col-12 col-md-{{$node.Element.ColSpan}}">
+    <div class="mb-3">
+        {{if $node.Element.Label}}<h6 class="mb-2">{{$node.Element.Label}}</h6>{{end}}
+        {{if $node.Element.HelpText}}<small class="text-muted d-block mb-2">{{$node.Element.HelpText}}</small>{{end}}
+        
+        <div id="carousel_{{$node.Element.MachineName}}" 
+             class="carousel slide {{if $fade}}carousel-fade{{end}}" 
+             {{if gt $interval 0}}data-bs-ride="carousel" data-bs-interval="{{$interval}}"{{end}}>
+            
+            {{/* Indicators */}}
+            {{if $showIndicators}}
+            <div class="carousel-indicators">
+                {{range $idx, $child := $node.Children}}
+                <button type="button" 
+                        data-bs-target="#carousel_{{$node.Element.MachineName}}" 
+                        data-bs-slide-to="{{$idx}}" 
+                        {{if eq $idx 0}}class="active" aria-current="true"{{end}}
+                        aria-label="Slide {{add $idx 1}}"></button>
+                {{end}}
+            </div>
+            {{end}}
+            
+            {{/* Slides */}}
+            <div class="carousel-inner">
+                {{range $idx, $child := $node.Children}}
+                <div class="carousel-item {{if eq $idx 0}}active{{end}}">
+                    <div class="p-4 bg-dark rounded">
+                        {{if $child.Element.Label}}<h5 class="mb-3">{{$child.Element.Label}}</h5>{{end}}
+                        {{if $child.Element.HelpText}}<p class="text-muted">{{$child.Element.HelpText}}</p>{{end}}
+                        <div class="row">
+                            {{range $child.Children}}
+                                {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 2))}}
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+            
+            {{/* Controls */}}
+            {{if $showControls}}
+            <button class="carousel-control-prev" type="button" 
+                    data-bs-target="#carousel_{{$node.Element.MachineName}}" data-bs-slide="prev">
+                <span class="carousel-control-prev-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Anterior</span>
+            </button>
+            <button class="carousel-control-next" type="button" 
+                    data-bs-target="#carousel_{{$node.Element.MachineName}}" data-bs-slide="next">
+                <span class="carousel-control-next-icon" aria-hidden="true"></span>
+                <span class="visually-hidden">Próximo</span>
+            </button>
+            {{end}}
+        </div>
+    </div>
+</div>
+{{end}}

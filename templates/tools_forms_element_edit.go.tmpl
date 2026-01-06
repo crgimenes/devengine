@@ -65,10 +65,11 @@
                                 <label for="element_kind" class="form-label">Tipo de Elemento</label>
                                 <select class="form-select" id="element_kind" name="element_kind">
                                     <option value="field" {{if eq .Element.ElementKind "field"}}selected{{end}}>Campo</option>
-                                    <option value="group" {{if eq .Element.ElementKind "group"}}selected{{end}}>Grupo</option>
+                                    <option value="group" {{if eq .Element.ElementKind "group"}}selected{{end}}>Grupo (fieldset)</option>
                                     <option value="accordion" {{if eq .Element.ElementKind "accordion"}}selected{{end}}>Accordion</option>
                                     <option value="card" {{if eq .Element.ElementKind "card"}}selected{{end}}>Card</option>
                                     <option value="tabs" {{if eq .Element.ElementKind "tabs"}}selected{{end}}>Tabs</option>
+                                    <option value="carousel" {{if eq .Element.ElementKind "carousel"}}selected{{end}}>Carousel</option>
                                     <option value="divider" {{if eq .Element.ElementKind "divider"}}selected{{end}}>Divisor</option>
                                 </select>
                             </div>

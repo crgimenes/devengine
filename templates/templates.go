@@ -1,6 +1,7 @@
 package templates
 
 import (
+	"encoding/json"
 	"html/template"
 	"io/fs"
 	"log"
@@ -26,6 +27,42 @@ func RegisterFS(fsys fs.FS) {
 // templates are parsed together with the engine ones.
 func SetAppTemplatesFS(fsys fs.FS) {
 	appTemplatesFS = fsys
+}
+
+// getGroupDefaults returns default metadata values for group plugin types.
+// These are used when ui_meta_json is empty or missing fields.
+func getGroupDefaults(elementKind string) map[string]interface{} {
+	switch elementKind {
+	case "group":
+		return map[string]interface{}{
+			"show_legend":  true,
+			"border_style": "default",
+		}
+	case "accordion":
+		return map[string]interface{}{
+			"expanded_by_default": true,
+			"show_header":         true,
+		}
+	case "card":
+		return map[string]interface{}{
+			"show_header": true,
+			"header_bg":   "default",
+		}
+	case "tabs":
+		return map[string]interface{}{
+			"tab_position": "top",
+			"active_tab":   0,
+		}
+	case "carousel":
+		return map[string]interface{}{
+			"show_controls":   true,
+			"show_indicators": true,
+			"interval":        5000,
+			"fade":            false,
+		}
+	default:
+		return map[string]interface{}{}
+	}
 }
 
 // parseWithPatterns parses all matched files from fsys using the provided
@@ -108,6 +145,22 @@ func loadTemplates() *template.Template {
 				dict[key] = values[i+1]
 			}
 			return dict
+		},
+		// parseGroupMeta parses ui_meta_json with defaults for group plugins
+		"parseGroupMeta": func(jsonStr string, elementKind string) map[string]interface{} {
+			defaults := getGroupDefaults(elementKind)
+			if jsonStr == "" {
+				return defaults
+			}
+			var meta map[string]interface{}
+			if err := json.Unmarshal([]byte(jsonStr), &meta); err != nil {
+				return defaults
+			}
+			// Merge: meta values override defaults
+			for k, v := range meta {
+				defaults[k] = v
+			}
+			return defaults
 		},
 	}
 

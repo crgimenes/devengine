@@ -90,61 +90,19 @@
         <div class="col-12"><hr class="my-4"></div>
     
     {{else if eq $node.Element.ElementKind "group"}}
-        <div class="col-12 col-md-{{$node.Element.ColSpan}}">
-            <fieldset class="border rounded p-3 mb-3">
-                <legend class="h6">{{$node.Element.Label}}</legend>
-                {{if $node.Element.HelpText}}<small class="text-muted d-block mb-2">{{$node.Element.HelpText}}</small>{{end}}
-                {{/* Render children inside the group */}}
-                <div class="row">
-                    {{range $node.Children}}
-                        {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 1))}}
-                    {{end}}
-                </div>
-            </fieldset>
-        </div>
+        {{template "group_fieldset" (dict "Node" $node "Values" $values "Depth" $depth "Meta" (parseGroupMeta $node.Element.UIMetaJSON "group"))}}
     
     {{else if eq $node.Element.ElementKind "accordion"}}
-        <div class="col-12 col-md-{{$node.Element.ColSpan}}">
-            <div class="accordion mb-3" id="accordion_{{$node.Element.MachineName}}">
-                <div class="accordion-item">
-                    <h2 class="accordion-header">
-                        <button class="accordion-button" type="button" data-bs-toggle="collapse" 
-                                data-bs-target="#collapse_{{$node.Element.MachineName}}" aria-expanded="true">
-                            {{$node.Element.Label}}
-                        </button>
-                    </h2>
-                    <div id="collapse_{{$node.Element.MachineName}}" class="accordion-collapse collapse show">
-                        <div class="accordion-body">
-                            {{if $node.Element.HelpText}}<p class="text-muted">{{$node.Element.HelpText}}</p>{{end}}
-                            {{/* Render children inside accordion */}}
-                            <div class="row">
-                                {{range $node.Children}}
-                                    {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 1))}}
-                                {{end}}
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
+        {{template "group_accordion" (dict "Node" $node "Values" $values "Depth" $depth "Meta" (parseGroupMeta $node.Element.UIMetaJSON "accordion"))}}
     
     {{else if eq $node.Element.ElementKind "card"}}
-        <div class="col-12 col-md-{{$node.Element.ColSpan}}">
-            <div class="card mb-3">
-                {{if $node.Element.Label}}
-                <div class="card-header">{{$node.Element.Label}}</div>
-                {{end}}
-                <div class="card-body">
-                    {{if $node.Element.HelpText}}<p class="card-text text-muted">{{$node.Element.HelpText}}</p>{{end}}
-                    {{/* Render children inside card */}}
-                    <div class="row">
-                        {{range $node.Children}}
-                            {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 1))}}
-                        {{end}}
-                    </div>
-                </div>
-            </div>
-        </div>
+        {{template "group_card" (dict "Node" $node "Values" $values "Depth" $depth "Meta" (parseGroupMeta $node.Element.UIMetaJSON "card"))}}
+    
+    {{else if eq $node.Element.ElementKind "tabs"}}
+        {{template "group_tabs" (dict "Node" $node "Values" $values "Depth" $depth "Meta" (parseGroupMeta $node.Element.UIMetaJSON "tabs"))}}
+    
+    {{else if eq $node.Element.ElementKind "carousel"}}
+        {{template "group_carousel" (dict "Node" $node "Values" $values "Depth" $depth "Meta" (parseGroupMeta $node.Element.UIMetaJSON "carousel"))}}
     
     {{else if $node.Attribute}}
         {{/* Field bound to EAV attribute */}}
