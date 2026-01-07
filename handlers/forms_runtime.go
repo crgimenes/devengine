@@ -13,6 +13,7 @@ import (
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
 	"github.com/crgimenes/devengine/filodb"
+	"github.com/crgimenes/devengine/filolog"
 	"github.com/crgimenes/devengine/utils"
 	"github.com/crgimenes/filo"
 )
@@ -762,6 +763,7 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 		// Register builtins (including DB ops attached to this TX)
 		filo.RegisterStringBuiltins(eng)
 		filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
+		filolog.RegisterLogBuiltins(eng, filolog.NewContext(globals))
 
 		ctx := r.Context()
 		cfg := filo.EvalConfig{

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/crgimenes/devengine/filolog"
 	"github.com/crgimenes/filo"
 )
 
@@ -126,6 +127,9 @@ func executeFiloScript(script string, values EAVRecordValues, scriptName string,
 
 	// Inject empty error variable
 	globals["error"] = filo.VString("")
+
+	// Register log builtins (always available for debugging)
+	filolog.RegisterLogBuiltins(eng, filolog.NewContext(globals))
 
 	// Execute script
 	ctx := context.Background()
