@@ -31,7 +31,7 @@ type FormElement struct {
 	FormID         int64
 	ParentID       *int64 // NULL for root-level elements
 	MachineName    string
-	ElementKind    string // 'group', 'field', 'divider', etc.
+	ElementKind    string // 'group', 'field', 'divider', 'button', etc.
 	Label          string
 	HelpText       string
 	ZOrder         int
@@ -43,9 +43,15 @@ type FormElement struct {
 	IsReadonly     bool
 	ValidateExpr   string
 	ComputedExpr   string
-	CreatedAt      time.Time
-	UpdatedAt      time.Time
-	DeletedAt      *time.Time
+	// Button-specific properties (only used when ElementKind = 'button')
+	ButtonFiloCode   string // Server-side Filo script (never sent to client)
+	ButtonRunSave    bool   // Execute save action in same transaction
+	ButtonJSCode     string // Client-side JavaScript
+	ButtonStyle      string // Bootstrap button style (primary, secondary, etc.)
+	ButtonConfirmMsg string // Confirmation dialog text
+	CreatedAt        time.Time
+	UpdatedAt        time.Time
+	DeletedAt        *time.Time
 }
 
 // SortElementsHierarchically sorts elements so that children appear immediately
@@ -238,11 +244,14 @@ func (s *SQLite) CreateFormElement(
 		INSERT INTO form_elements (
 			reference_id, form_id, parent_id, machine_name, element_kind,
 			label, help_text, z_order, col_span, ui_kind, ui_meta_json,
-			eav_attribute_id, is_ui_only, is_readonly
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+			eav_attribute_id, is_ui_only, is_readonly,
+			button_filo_code, button_run_save, button_js_code, button_style, button_confirm_msg
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', 0, '', 'primary', '')
 		RETURNING id, reference_id, form_id, parent_id, machine_name, element_kind,
 		          label, help_text, z_order, col_span, ui_kind, ui_meta_json,
-		          eav_attribute_id, is_ui_only, is_readonly, created_at, updated_at
+		          eav_attribute_id, is_ui_only, is_readonly,
+		          button_filo_code, button_run_save, button_js_code, button_style, button_confirm_msg,
+		          created_at, updated_at
 	`
 
 	var e FormElement
@@ -264,7 +273,9 @@ func (s *SQLite) CreateFormElement(
 	).Scan(
 		&e.ID, &e.ReferenceID, &e.FormID, &scanParentID, &e.MachineName, &e.ElementKind,
 		&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.UIKind, &e.UIMetaJSON,
-		&scanEAVAttrID, &e.IsUIOnly, &e.IsReadonly, &e.CreatedAt, &e.UpdatedAt,
+		&scanEAVAttrID, &e.IsUIOnly, &e.IsReadonly,
+		&e.ButtonFiloCode, &e.ButtonRunSave, &e.ButtonJSCode, &e.ButtonStyle, &e.ButtonConfirmMsg,
+		&e.CreatedAt, &e.UpdatedAt,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create form element: %w", err)
@@ -285,7 +296,9 @@ func (s *SQLite) ListFormElements(formID int64) ([]FormElement, error) {
 	const q = `
 		SELECT id, reference_id, form_id, parent_id, machine_name, element_kind,
 		       label, help_text, z_order, col_span, ui_kind, ui_meta_json,
-		       eav_attribute_id, is_ui_only, is_readonly, created_at, updated_at
+		       eav_attribute_id, is_ui_only, is_readonly,
+		       button_filo_code, button_run_save, button_js_code, button_style, button_confirm_msg,
+		       created_at, updated_at
 		FROM form_elements
 		WHERE form_id = ? AND deleted_at IS NULL
 		ORDER BY COALESCE(parent_id, 0), z_order, id
@@ -306,7 +319,9 @@ func (s *SQLite) ListFormElements(formID int64) ([]FormElement, error) {
 		if err := rows.Scan(
 			&e.ID, &e.ReferenceID, &e.FormID, &parentID, &e.MachineName, &e.ElementKind,
 			&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.UIKind, &e.UIMetaJSON,
-			&eavAttrID, &e.IsUIOnly, &e.IsReadonly, &e.CreatedAt, &e.UpdatedAt,
+			&eavAttrID, &e.IsUIOnly, &e.IsReadonly,
+			&e.ButtonFiloCode, &e.ButtonRunSave, &e.ButtonJSCode, &e.ButtonStyle, &e.ButtonConfirmMsg,
+			&e.CreatedAt, &e.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan form element: %w", err)
 		}
@@ -328,7 +343,9 @@ func (s *SQLite) GetFormElementByRefID(refID string) (*FormElement, error) {
 	const q = `
 		SELECT id, reference_id, form_id, parent_id, machine_name, element_kind,
 		       label, help_text, z_order, col_span, ui_kind, ui_meta_json,
-		       eav_attribute_id, is_ui_only, is_readonly, created_at, updated_at
+		       eav_attribute_id, is_ui_only, is_readonly,
+		       button_filo_code, button_run_save, button_js_code, button_style, button_confirm_msg,
+		       created_at, updated_at
 		FROM form_elements
 		WHERE reference_id = ? AND deleted_at IS NULL
 	`
@@ -340,7 +357,9 @@ func (s *SQLite) GetFormElementByRefID(refID string) (*FormElement, error) {
 	err := s.QueryRow(q, refID).Scan(
 		&e.ID, &e.ReferenceID, &e.FormID, &parentID, &e.MachineName, &e.ElementKind,
 		&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.UIKind, &e.UIMetaJSON,
-		&eavAttrID, &e.IsUIOnly, &e.IsReadonly, &e.CreatedAt, &e.UpdatedAt,
+		&eavAttrID, &e.IsUIOnly, &e.IsReadonly,
+		&e.ButtonFiloCode, &e.ButtonRunSave, &e.ButtonJSCode, &e.ButtonStyle, &e.ButtonConfirmMsg,
+		&e.CreatedAt, &e.UpdatedAt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -374,10 +393,15 @@ func (s *SQLite) UpdateFormElement(
 	uiKind, uiMetaJSON string,
 	eavAttributeID *int64,
 	isUIOnly, isReadonly bool,
+	buttonFiloCode string, buttonRunSave bool, buttonJSCode, buttonStyle, buttonConfirmMsg string,
 ) error {
 	// Default col_span to 12 if not set
 	if colSpan < 1 || colSpan > 12 {
 		colSpan = 12
+	}
+	// Default button style
+	if buttonStyle == "" {
+		buttonStyle = "primary"
 	}
 	const q = `
 		UPDATE form_elements SET
@@ -393,6 +417,11 @@ func (s *SQLite) UpdateFormElement(
 			eav_attribute_id = ?,
 			is_ui_only = ?,
 			is_readonly = ?,
+			button_filo_code = ?,
+			button_run_save = ?,
+			button_js_code = ?,
+			button_style = ?,
+			button_confirm_msg = ?,
 			updated_at = CURRENT_TIMESTAMP
 		WHERE id = ? AND deleted_at IS NULL
 	`
@@ -409,7 +438,9 @@ func (s *SQLite) UpdateFormElement(
 	return s.Exec(q,
 		parentIDVal, machineName, elementKind, label, helpText,
 		zOrder, colSpan, uiKind, uiMetaJSON, eavAttrIDVal,
-		boolToInt(isUIOnly), boolToInt(isReadonly), id,
+		boolToInt(isUIOnly), boolToInt(isReadonly),
+		buttonFiloCode, boolToInt(buttonRunSave), buttonJSCode, buttonStyle, buttonConfirmMsg,
+		id,
 	)
 }
 

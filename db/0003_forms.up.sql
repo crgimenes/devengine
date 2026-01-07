@@ -106,6 +106,13 @@ CREATE TABLE IF NOT EXISTS form_elements (
     validate_expr  TEXT,
     computed_expr  TEXT,
 
+    -- Button-specific properties (only used when element_kind = 'button')
+    button_filo_code   TEXT,      -- Server-side Filo script (never sent to client)
+    button_run_save    INTEGER NOT NULL DEFAULT 0 CHECK (button_run_save IN (0, 1)),
+    button_js_code     TEXT,      -- Client-side JavaScript
+    button_style       TEXT DEFAULT 'primary',  -- Bootstrap button style
+    button_confirm_msg TEXT,      -- Confirmation dialog text
+
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at    DATETIME,

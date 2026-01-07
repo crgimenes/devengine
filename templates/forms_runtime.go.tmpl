@@ -88,6 +88,78 @@
       {{template "footer" .}}
     </footer>
     {{template "scripts" .}}
+    
+    {{/* Generate JavaScript handlers for button elements */}}
+    {{$hasButtons := false}}
+    {{range .ElementsTree}}{{if eq .Element.ElementKind "button"}}{{$hasButtons = true}}{{end}}{{end}}
+    {{if $hasButtons}}
+    <script>
+    (function() {
+        const FormButtonActions = {
+            {{range .ElementsTree}}
+            {{if eq .Element.ElementKind "button"}}
+            {{if .Element.ButtonJSCode}}
+            '{{.Element.MachineName}}': function(formData, button) {
+                {{.Element.ButtonJSCode}}
+            },
+            {{end}}
+            {{end}}
+            {{end}}
+        };
+
+        document.querySelectorAll('[data-form-action]').forEach(function(btn) {
+            btn.addEventListener('click', function(e) {
+                e.preventDefault();
+                const actionName = this.dataset.formAction;
+                const hasServerAction = this.dataset.hasServerAction === 'true';
+                const confirmMsg = this.dataset.confirmMessage;
+                const actionUrl = this.dataset.actionUrl;
+                
+                if (confirmMsg && !confirm(confirmMsg)) return;
+                
+                const form = this.closest('form');
+                const formData = new FormData(form);
+                
+                // Run client JS first (if exists)
+                if (FormButtonActions[actionName]) {
+                    const result = FormButtonActions[actionName](formData, this);
+                    if (result === false) return; // abort if returns false
+                }
+                
+                // Then POST to server (if has server action)
+                if (hasServerAction && actionUrl) {
+                    this.disabled = true;
+                    const originalContent = this.innerHTML;
+                    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ...';
+                    
+                    fetch(actionUrl, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(function(response) { return response.json(); })
+                    .then(function(data) {
+                        if (data.error) {
+                            alert(data.error);
+                        } else if (data.message) {
+                            alert(data.message);
+                        }
+                        if (data.redirect_to) {
+                            window.location.href = data.redirect_to;
+                        } else {
+                            window.location.reload();
+                        }
+                    })
+                    .catch(function(err) {
+                        alert('Erro: ' + err.message);
+                        btn.disabled = false;
+                        btn.innerHTML = originalContent;
+                    });
+                }
+            });
+        });
+    })();
+    </script>
+    {{end}}
   </body>
 </html>
 
@@ -114,6 +186,15 @@
     
     {{else if eq $node.Element.ElementKind "carousel"}}
         {{template "group_carousel" (dict "Node" $node "Values" $values "Depth" $depth "Meta" (parseGroupMeta $node.Element.UIMetaJSON "carousel"))}}
+    
+    {{else if eq $node.Element.ElementKind "button"}}
+        {{/* Button element */}}
+        <div class="col-12 col-md-{{$node.Element.ColSpan}} mb-3">
+            {{template "field_button" (dict "Element" $node.Element "FormRef" $.Form.ReferenceID)}}
+            {{if $node.Element.HelpText}}
+                <div class="form-text">{{$node.Element.HelpText}}</div>
+            {{end}}
+        </div>
     
     {{else if $node.Attribute}}
         {{/* Field bound to EAV attribute */}}

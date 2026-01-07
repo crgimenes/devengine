@@ -766,6 +766,13 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 	isUIOnlyStr := r.FormValue("is_ui_only")
 	isReadonlyStr := r.FormValue("is_readonly")
 
+	// Button-specific fields
+	buttonFiloCode := r.FormValue("button_filo_code")
+	buttonRunSaveStr := r.FormValue("button_run_save")
+	buttonJSCode := r.FormValue("button_js_code")
+	buttonStyle := r.FormValue("button_style")
+	buttonConfirmMsg := r.FormValue("button_confirm_msg")
+
 	// Validate required fields
 	if machineName == "" {
 		http.Redirect(w, r, "/tools/forms/"+formRefID+"/elements/"+elementRefID+"/edit?message=Nome é obrigatório", http.StatusSeeOther)
@@ -804,6 +811,7 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 
 	isUIOnly := isUIOnlyStr == "1" || isUIOnlyStr == "on"
 	isReadonly := isReadonlyStr == "1" || isReadonlyStr == "on"
+	buttonRunSave := buttonRunSaveStr == "1" || buttonRunSaveStr == "on"
 
 	err = db.Storage.UpdateFormElement(
 		element.ID,
@@ -813,6 +821,7 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 		uiKind, uiMetaJSON,
 		eavAttrID,
 		isUIOnly, isReadonly,
+		buttonFiloCode, buttonRunSave, buttonJSCode, buttonStyle, buttonConfirmMsg,
 	)
 	if err != nil {
 		http.Redirect(w, r, "/tools/forms/"+formRefID+"/elements/"+elementRefID+"/edit?message=Erro ao atualizar: "+err.Error(), http.StatusSeeOther)

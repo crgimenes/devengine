@@ -70,6 +70,7 @@
                                     <option value="card" {{if eq .Element.ElementKind "card"}}selected{{end}}>Card</option>
                                     <option value="tabs" {{if eq .Element.ElementKind "tabs"}}selected{{end}}>Tabs</option>
                                     <option value="carousel" {{if eq .Element.ElementKind "carousel"}}selected{{end}}>Carousel</option>
+                                    <option value="button" {{if eq .Element.ElementKind "button"}}selected{{end}}>Botão de Ação</option>
                                     <option value="divider" {{if eq .Element.ElementKind "divider"}}selected{{end}}>Divisor</option>
                                 </select>
                             </div>
@@ -167,6 +168,59 @@
                             <div class="form-text">Este campo é atualizado automaticamente pelas opções acima</div>
                         </div>
 
+                        <!-- Button-specific Options (only shown when element_kind = button) -->
+                        <div id="button_options" class="{{if ne .Element.ElementKind "button"}}d-none{{end}}">
+                            <h5 class="mb-3 border-bottom pb-2">Configurações do Botão</h5>
+                            
+                            <div class="row mb-3">
+                                <div class="col-md-6">
+                                    <label for="button_style" class="form-label">Estilo</label>
+                                    <select class="form-select" id="button_style" name="button_style">
+                                        <option value="primary" {{if eq .Element.ButtonStyle "primary"}}selected{{end}}>Primary (Azul)</option>
+                                        <option value="secondary" {{if eq .Element.ButtonStyle "secondary"}}selected{{end}}>Secondary (Cinza)</option>
+                                        <option value="success" {{if eq .Element.ButtonStyle "success"}}selected{{end}}>Success (Verde)</option>
+                                        <option value="danger" {{if eq .Element.ButtonStyle "danger"}}selected{{end}}>Danger (Vermelho)</option>
+                                        <option value="warning" {{if eq .Element.ButtonStyle "warning"}}selected{{end}}>Warning (Amarelo)</option>
+                                        <option value="info" {{if eq .Element.ButtonStyle "info"}}selected{{end}}>Info (Ciano)</option>
+                                        <option value="outline-primary" {{if eq .Element.ButtonStyle "outline-primary"}}selected{{end}}>Outline Primary</option>
+                                        <option value="outline-secondary" {{if eq .Element.ButtonStyle "outline-secondary"}}selected{{end}}>Outline Secondary</option>
+                                    </select>
+                                </div>
+                                <div class="col-md-6">
+                                    <label for="button_confirm_msg" class="form-label">Mensagem de Confirmação</label>
+                                    <input type="text" class="form-control" id="button_confirm_msg" name="button_confirm_msg"
+                                           value="{{.Element.ButtonConfirmMsg}}"
+                                           placeholder="Tem certeza que deseja continuar?">
+                                    <div class="form-text">Deixe vazio para não pedir confirmação</div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-check mb-3">
+                                <input class="form-check-input" type="checkbox" id="button_run_save" name="button_run_save"
+                                       {{if .Element.ButtonRunSave}}checked{{end}}>
+                                <label class="form-check-label" for="button_run_save">
+                                    Executar ação de salvar (mesma transação)
+                                </label>
+                                <div class="form-text">Salva o registro antes de executar o código Filo</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="button_filo_code" class="form-label">Código Filo (servidor)</label>
+                                <textarea class="form-control font-monospace" id="button_filo_code" name="button_filo_code" 
+                                          rows="6" placeholder=";; Variáveis disponíveis: form_*, user_*, campos do formulário
+;; Variáveis de controle: error, message, redirect_to">{{.Element.ButtonFiloCode}}</textarea>
+                                <div class="form-text">Executado no servidor. Nunca visível para o usuário.</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="button_js_code" class="form-label">JavaScript (cliente)</label>
+                                <textarea class="form-control font-monospace" id="button_js_code" name="button_js_code" 
+                                          rows="4" placeholder="// formData contém os dados do formulário
+// return false para cancelar a ação">{{.Element.ButtonJSCode}}</textarea>
+                                <div class="form-text">Executado no navegador antes de enviar ao servidor. Retorne false para cancelar.</div>
+                            </div>
+                        </div>
+
                         <hr>
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">Salvar Alterações</button>
@@ -182,5 +236,16 @@
     </footer>
     {{template "scripts" .}}
     <script src="/assets/plugin-options.js"></script>
+    <script>
+    // Toggle button options visibility based on element_kind
+    document.getElementById('element_kind').addEventListener('change', function() {
+        const buttonOpts = document.getElementById('button_options');
+        if (this.value === 'button') {
+            buttonOpts.classList.remove('d-none');
+        } else {
+            buttonOpts.classList.add('d-none');
+        }
+    });
+    </script>
   </body>
 </html>

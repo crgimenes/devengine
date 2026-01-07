@@ -1,0 +1,19 @@
+{{define "field_button"}}
+{{/* Button element template
+     Context: .Meta (parsed button metadata), .Element (FormElement), .FormRef (form reference_id)
+*/}}
+{{$meta := .Meta}}
+{{$el := .Element}}
+{{$formRef := .FormRef}}
+{{$hasServerAction := or $el.ButtonFiloCode $el.ButtonRunSave}}
+
+<button type="button" 
+        class="btn btn-{{if $el.ButtonStyle}}{{$el.ButtonStyle}}{{else}}primary{{end}}"
+        id="btn_{{$el.MachineName}}"
+        data-form-action="{{$el.MachineName}}"
+        data-has-server-action="{{$hasServerAction}}"
+        {{if $el.ButtonConfirmMsg}}data-confirm-message="{{$el.ButtonConfirmMsg}}"{{end}}
+        {{if $hasServerAction}}data-action-url="/forms/{{$formRef}}/action/{{$el.MachineName}}"{{end}}>
+    {{$el.Label}}
+</button>
+{{end}}

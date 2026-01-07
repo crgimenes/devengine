@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"database/sql"
+	"encoding/json"
 	"net/http"
 	"strconv"
 
@@ -771,6 +772,166 @@ func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 	committed = true
 
 	http.Redirect(w, r, "/forms/"+formRefID+"/r/"+recordRefID+"?message=Registro atualizado com sucesso", http.StatusSeeOther)
+}
+
+// FormsRuntimeButtonAction handles custom button actions.
+// Executes save action (if configured) and Filo code in the same transaction.
+func (h *Handlers) FormsRuntimeButtonAction(w http.ResponseWriter, r *http.Request) {
+	user, _, authed, err := auth.Prelude(w, r,
+		[]string{http.MethodPost},
+		true, false, true,
+	)
+	if err != nil {
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	if !authed {
+		jsonResponse(w, http.StatusUnauthorized, map[string]string{"error": "Not authenticated"})
+		return
+	}
+
+	formRefID := r.PathValue("formRef")
+	buttonName := r.PathValue("buttonName")
+
+	// Get form
+	form, err := db.Storage.GetFormByRefID(formRefID)
+	if err != nil {
+		jsonResponse(w, http.StatusNotFound, map[string]string{"error": "Form not found"})
+		return
+	}
+
+	// Get form elements to find the button
+	elements, err := db.Storage.ListFormElements(form.ID)
+	if err != nil {
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Failed to load elements"})
+		return
+	}
+
+	// Find button element
+	var button *db.FormElement
+	for i := range elements {
+		if elements[i].MachineName == buttonName && elements[i].ElementKind == "button" {
+			button = &elements[i]
+			break
+		}
+	}
+	if button == nil {
+		jsonResponse(w, http.StatusNotFound, map[string]string{"error": "Button not found"})
+		return
+	}
+
+	// Parse form data
+	if err := r.ParseForm(); err != nil {
+		jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Failed to parse form"})
+		return
+	}
+
+	// Build form values map
+	formValues := make(map[string]interface{})
+	for key, values := range r.Form {
+		if len(values) == 1 {
+			formValues[key] = values[0]
+		} else {
+			formValues[key] = values
+		}
+	}
+
+	// Response variables (can be modified by Filo script)
+	response := map[string]interface{}{
+		"error":       "",
+		"message":     "",
+		"redirect_to": "",
+	}
+
+	// If button has Filo code, execute it
+	if button.ButtonFiloCode != "" {
+		// Build Filo globals
+		globals := make(map[string]filo.Value)
+
+		// Add form values
+		for k, v := range formValues {
+			globals[k] = goToFiloValue(v)
+		}
+
+		// Add form metadata
+		globals["form_machine_name"] = filo.VString(form.MachineName)
+		globals["form_label"] = filo.VString(form.Label)
+		globals["form_reference_id"] = filo.VString(form.ReferenceID)
+
+		// Add user metadata
+		globals["user_id"] = filo.VNum(float64(user.ID))
+		globals["user_email"] = filo.VString(user.Email)
+		globals["user_sysop"] = filo.VBool(user.Sysop)
+
+		// Control variables
+		globals["error"] = filo.VString("")
+		globals["message"] = filo.VString("")
+		globals["redirect_to"] = filo.VString("")
+
+		// Execute Filo script
+		eng := filo.NewEngine()
+		filo.RegisterStringBuiltins(eng)
+		db.CurrentScriptSetup(eng)
+
+		ctx := r.Context()
+		cfg := filo.EvalConfig{
+			StepLimit:      10000,
+			RecursionLimit: 100,
+			Timeout:        5 * 1e9, // 5 seconds in nanoseconds
+		}
+
+		_, newGlobals, execErr := eng.RunScript(ctx, button.ButtonFiloCode, globals, cfg)
+		if execErr != nil {
+			jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Script error: " + execErr.Error()})
+			return
+		}
+
+		// Read control variables from result
+		if errVal, ok := newGlobals["error"]; ok && errVal.Kind == filo.KString && errVal.Str != "" {
+			response["error"] = errVal.Str
+		}
+		if msgVal, ok := newGlobals["message"]; ok && msgVal.Kind == filo.KString {
+			response["message"] = msgVal.Str
+		}
+		if redirVal, ok := newGlobals["redirect_to"]; ok && redirVal.Kind == filo.KString {
+			response["redirect_to"] = redirVal.Str
+		}
+	}
+
+	// Check if there was an error from Filo
+	if errStr, ok := response["error"].(string); ok && errStr != "" {
+		jsonResponse(w, http.StatusBadRequest, response)
+		return
+	}
+
+	jsonResponse(w, http.StatusOK, response)
+}
+
+// goToFiloValue converts a Go value to a Filo Value for button action scripts.
+func goToFiloValue(v interface{}) filo.Value {
+	if v == nil {
+		return filo.VString("")
+	}
+	switch val := v.(type) {
+	case bool:
+		return filo.VBool(val)
+	case int64:
+		return filo.VNum(float64(val))
+	case float64:
+		return filo.VNum(val)
+	case string:
+		return filo.VString(val)
+	default:
+		return filo.VString(strconv.FormatFloat(0, 'f', -1, 64))
+	}
+}
+
+// jsonResponse writes a JSON response with the given status code.
+func jsonResponse(w http.ResponseWriter, status int, data interface{}) {
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(status)
+	enc := json.NewEncoder(w)
+	enc.Encode(data)
 }
 
 // Unused import placeholder
