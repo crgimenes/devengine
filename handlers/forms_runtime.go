@@ -722,29 +722,29 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 
 		// Add Form/EAV values (Strict Types)
 		for k, v := range parsedValues {
-			globals[k] = goToFiloValue(v)
+			globals["field:"+k] = goToFiloValue(v)
 		}
 
 		// Add form metadata
-		globals["form_machine_name"] = filo.VString(form.MachineName)
-		globals["form_label"] = filo.VString(form.Label)
-		globals["form_reference_id"] = filo.VString(form.ReferenceID)
+		globals["form:machine_name"] = filo.VString(form.MachineName)
+		globals["form:label"] = filo.VString(form.Label)
+		globals["form:reference_id"] = filo.VString(form.ReferenceID)
 
 		// Add user metadata
 		if user != nil {
-			globals["user_id"] = filo.VNum(float64(user.ID))
-			globals["user_email"] = filo.VString(user.Email)
-			globals["user_sysop"] = filo.VBool(user.Sysop)
+			globals["user:id"] = filo.VNum(float64(user.ID))
+			globals["user:email"] = filo.VString(user.Email)
+			globals["user:sysop"] = filo.VBool(user.Sysop)
 		}
 
 		// Add Record metadata (if available)
-		globals["record_id"] = filo.VNum(0)
-		globals["record_ref_id"] = filo.VString("")
+		globals["record:id"] = filo.VNum(0)
+		globals["record:ref_id"] = filo.VString("")
 
 		if currentRecord != nil {
-			globals["record_id"] = filo.VNum(float64(currentRecord.ID))
-			globals["record_ref_id"] = filo.VString(currentRecord.ReferenceID)
-			globals["record_status"] = filo.VString(currentRecord.Status)
+			globals["record:id"] = filo.VNum(float64(currentRecord.ID))
+			globals["record:ref_id"] = filo.VString(currentRecord.ReferenceID)
+			globals["record:status"] = filo.VString(currentRecord.Status)
 		}
 
 		// Control variables
@@ -778,7 +778,7 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 		}
 
 		// Read back changes to inputs from Filo
-		for k, val := range newGlobals {
+		for kRaw, val := range newGlobals {
 			var goVal interface{}
 			switch val.Kind {
 			case filo.KNumber:
@@ -794,6 +794,23 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 				continue
 			}
 
+			// Handle field: prefix
+			k := kRaw
+			if strings.HasPrefix(k, "field:") {
+				k = strings.TrimPrefix(k, "field:")
+			} else {
+				// Ignore non-field globals (like error, message, etc unless they match field names explicitly without prefix which is deprecated but supported for non-colliding legacy if any)
+				// Actually, per strict rules, we only save "field:" variables or variables that match attribute names directly IF we supported legacy.
+				// But to be safe and avoid collision with "error", "message", we ONLY map back if it matches a known attribute.
+				// However, if we only inject "field:", scripts MUST write to "field:".
+				// IF a script writes to "idade" (no prefix), it ends up in globals["idade"].
+				// If we have a field "idade", should we accept it?
+				// Risk: collision with "error".
+				// Decision: Only accept "field:" prefixed variables OR variables that match attribute names BUT are not reserved words.
+				// For now, let's accept both but prioritize field:?
+				// To enforce the standard, let's rely on matching attribute names, but prioritize mapped Key.
+			}
+
 			if _, exists := parsedValues[k]; exists {
 				parsedValues[k] = goVal
 			} else {
@@ -806,13 +823,13 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 			}
 
 			// Read control variables
-			if k == "error" && val.Kind == filo.KString && val.Str != "" {
+			if kRaw == "error" && val.Kind == filo.KString && val.Str != "" {
 				response["error"] = val.Str
 			}
-			if k == "message" && val.Kind == filo.KString && val.Str != "" {
+			if kRaw == "message" && val.Kind == filo.KString && val.Str != "" {
 				response["message"] = val.Str
 			}
-			if k == "redirect_to" && val.Kind == filo.KString && val.Str != "" {
+			if kRaw == "redirect_to" && val.Kind == filo.KString && val.Str != "" {
 				response["redirect_to"] = val.Str
 			}
 		}

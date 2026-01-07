@@ -41,7 +41,7 @@ func TestExecutePosSaveModifiesValues(t *testing.T) {
 	entityType := &EAVEntityType{
 		ID:      1,
 		Name:    "Test",
-		PreSave: `(set field1 (str-concat field1 " - modified"))`,
+		PreSave: `(set field:field1 (str-concat field:field1 " - modified"))`,
 	}
 
 	values := EAVRecordValues{
@@ -124,9 +124,9 @@ func TestExecutePosSaveTypedValues(t *testing.T) {
 		ID:   1,
 		Name: "Test",
 		PreSave: `
-			(set count (+ count 1))
-			(set price (* price 1.1))
-			(set active (not active))
+			(set field:count (+ field:count 1))
+			(set field:price (* field:price 1.1))
+			(set field:active (not field:active))
 		`,
 	}
 
@@ -170,7 +170,7 @@ func TestExecutePosSaveConditionalValidation(t *testing.T) {
 		ID:   1,
 		Name: "Test",
 		PreSave: `
-			(if (< price 0)
+			(if (< field:price 0)
 				(set error "Preço deve ser positivo"))
 		`,
 	}

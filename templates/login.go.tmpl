@@ -38,9 +38,8 @@
                         <!-- Divider -->
                         <div class="mb-4">
                             <hr>
-                            <div class="text-center text-muted" 
-                                style="margin: -30px 0 15px; background: var(--bs-body-bg);">
-                                <span style="padding: 0 10px;">ou</span>
+                            <div class="text-center text-muted auth-divider">
+                                <span>ou</span>
                             </div>
                         </div>
 
@@ -83,43 +82,7 @@
     </footer>
     {{template "scripts" .}}
 
-    <script>
-        document.getElementById('magicLinkForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
-            const email = document.getElementById('email').value;
-            const container = document.getElementById('messageContainer');
-            
-            try {
-                const response = await fetch('/login/magic_link', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: 'email=' + encodeURIComponent(email)
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.redirect) {
-                        // Redirect to home with message
-                        window.location.href = data.redirect;
-                    }
-                } else {
-                    container.innerHTML = `
-                        <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-                            Erro ao enviar link. Tente novamente.
-                            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                        </div>
-                    `;
-                }
-            } catch (err) {
-                container.innerHTML = `
-                    <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-                        Erro na requisicao. Tente novamente.
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                `;
-            }
-        });
-    </script>
+    <script src="/assets/login.js"></script>
 </body>
 
 </html>

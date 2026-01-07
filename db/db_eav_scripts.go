@@ -3,6 +3,7 @@ package db
 import (
 	"context"
 	"fmt"
+	"maps"
 	"strings"
 	"time"
 
@@ -120,7 +121,7 @@ func executeFiloScript(script string, values EAVRecordValues, scriptName string,
 	// Build globals map from values
 	globals := make(map[string]filo.Value)
 	for k, v := range values {
-		globals[k] = goValueToFiloValue(v)
+		globals["field:"+k] = goValueToFiloValue(v)
 	}
 
 	// Inject empty error variable
@@ -148,16 +149,25 @@ func executeFiloScript(script string, values EAVRecordValues, scriptName string,
 	modifiedValues := make(EAVRecordValues)
 
 	// First, copy all original values
-	for k, v := range values {
-		modifiedValues[k] = v
-	}
+	maps.Copy(modifiedValues, values)
 
 	// Then, apply any modifications from the script (including new variables)
-	for k, newVal := range newGlobals {
+	for kRaw, newVal := range newGlobals {
 		// Skip the built-in "error" variable
-		if k == "error" {
+		if kRaw == "error" {
 			continue
 		}
+
+		// Handle field: prefix
+		k := kRaw
+		if strings.HasPrefix(k, "field:") {
+			k = strings.TrimPrefix(k, "field:")
+		} else {
+			// For EAV scripts (pre_save/pos_load), we ONLY accept field: prefixed variables
+			// to modify record values. This prevents accidental pollution.
+			continue
+		}
+
 		modifiedValues[k] = filoValueToGoValue(newVal)
 	}
 
@@ -186,7 +196,7 @@ func goValueToFiloValue(v interface{}) filo.Value {
 }
 
 // filoValueToGoValue converts a Filo Value back to a Go value.
-func filoValueToGoValue(v filo.Value) interface{} {
+func filoValueToGoValue(v filo.Value) any {
 	switch v.Kind {
 	case filo.KBool:
 		return v.Bool

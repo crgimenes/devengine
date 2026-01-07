@@ -334,3 +334,17 @@ table td[data-align="right"] {
 .card-offset-top {
     margin-top: 10vh;
 }
+
+/* Width utilities */
+.w-60px { width: 60px; }
+.w-90px { width: 90px; }
+.w-160px { width: 160px; }
+
+/* Auth divider */
+.auth-divider {
+    margin: -30px 0 15px; 
+    background: var(--bs-body-bg);
+}
+.auth-divider span {
+    padding: 0 10px;
+}
