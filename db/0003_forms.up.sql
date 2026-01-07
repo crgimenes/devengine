@@ -32,6 +32,9 @@ CREATE TABLE IF NOT EXISTS forms (
     -- When true, form does not display the title header
     hide_title          INTEGER NOT NULL DEFAULT 0 CHECK (hide_title IN (0, 1)),
 
+    -- Debug/System Info visibility
+    show_system_info    INTEGER NOT NULL DEFAULT 0 CHECK (show_system_info IN (0, 1)),
+
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at    DATETIME
