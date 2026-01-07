@@ -3,6 +3,7 @@
 {{$values := .Values}}
 {{$depth := .Depth}}
 {{$meta := .Meta}}
+{{$form := .Form}}
 {{$activeTab := index $meta "active_tab"}}
 {{$tabPosition := index $meta "tab_position"}}
 <div class="col-12 col-md-{{$node.Element.ColSpan}}">
@@ -37,7 +38,7 @@
                 {{if $child.Element.HelpText}}<p class="text-muted mb-3">{{$child.Element.HelpText}}</p>{{end}}
                 <div class="row">
                     {{range $child.Children}}
-                        {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 2))}}
+                        {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 2) "Form" $form)}}
                     {{end}}
                 </div>
             </div>

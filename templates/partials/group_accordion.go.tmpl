@@ -3,6 +3,7 @@
 {{$values := .Values}}
 {{$depth := .Depth}}
 {{$meta := .Meta}}
+{{$form := .Form}}
 {{$expanded := index $meta "expanded_by_default"}}
 {{$showHeader := index $meta "show_header"}}
 <div class="col-12 col-md-{{$node.Element.ColSpan}}">
@@ -25,7 +26,7 @@
                     {{if $node.Element.HelpText}}<p class="text-muted">{{$node.Element.HelpText}}</p>{{end}}
                     <div class="row">
                         {{range $node.Children}}
-                            {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 1))}}
+                            {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 1) "Form" $form)}}
                         {{end}}
                     </div>
                 </div>

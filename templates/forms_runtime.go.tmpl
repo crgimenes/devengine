@@ -8,6 +8,12 @@
     {{template "navbar" .}}
 
     <main class="container-fluid py-4 py-md-5">
+        {{if .Error}}
+            <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+                <strong>Erro:</strong> {{.Error}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {{end}}
         {{if .Message}}
             <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
                 {{.Message}}
@@ -57,7 +63,7 @@
                         {{/* Render hierarchical elements using ElementsTree */}}
                         <div class="row">
                             {{range .ElementsTree}}
-                                {{template "render_element" (dict "Node" . "Values" $.Values "Depth" 0)}}
+                                {{template "render_element" (dict "Node" . "Values" $.Values "Depth" 0 "Form" $.Form)}}
                             {{end}}
                         </div>
 
@@ -89,76 +95,12 @@
     </footer>
     {{template "scripts" .}}
     
-    {{/* Generate JavaScript handlers for button elements */}}
+    {{/* Load button actions JavaScript as external files for CSP compliance */}}
     {{$hasButtons := false}}
     {{range .ElementsTree}}{{if eq .Element.ElementKind "button"}}{{$hasButtons = true}}{{end}}{{end}}
     {{if $hasButtons}}
-    <script>
-    (function() {
-        const FormButtonActions = {
-            {{range .ElementsTree}}
-            {{if eq .Element.ElementKind "button"}}
-            {{if .Element.ButtonJSCode}}
-            '{{.Element.MachineName}}': function(formData, button) {
-                {{.Element.ButtonJSCode}}
-            },
-            {{end}}
-            {{end}}
-            {{end}}
-        };
-
-        document.querySelectorAll('[data-form-action]').forEach(function(btn) {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const actionName = this.dataset.formAction;
-                const hasServerAction = this.dataset.hasServerAction === 'true';
-                const confirmMsg = this.dataset.confirmMessage;
-                const actionUrl = this.dataset.actionUrl;
-                
-                if (confirmMsg && !confirm(confirmMsg)) return;
-                
-                const form = this.closest('form');
-                const formData = new FormData(form);
-                
-                // Run client JS first (if exists)
-                if (FormButtonActions[actionName]) {
-                    const result = FormButtonActions[actionName](formData, this);
-                    if (result === false) return; // abort if returns false
-                }
-                
-                // Then POST to server (if has server action)
-                if (hasServerAction && actionUrl) {
-                    this.disabled = true;
-                    const originalContent = this.innerHTML;
-                    this.innerHTML = '<span class="spinner-border spinner-border-sm"></span> ...';
-                    
-                    fetch(actionUrl, {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(function(response) { return response.json(); })
-                    .then(function(data) {
-                        if (data.error) {
-                            alert(data.error);
-                        } else if (data.message) {
-                            alert(data.message);
-                        }
-                        if (data.redirect_to) {
-                            window.location.href = data.redirect_to;
-                        } else {
-                            window.location.reload();
-                        }
-                    })
-                    .catch(function(err) {
-                        alert('Erro: ' + err.message);
-                        btn.disabled = false;
-                        btn.innerHTML = originalContent;
-                    });
-                }
-            });
-        });
-    })();
-    </script>
+    <script src="/forms/{{.Form.ReferenceID}}/actions.js"></script>
+    <script src="/assets/form-buttons.js"></script>
     {{end}}
   </body>
 </html>
@@ -168,29 +110,30 @@
     {{$node := .Node}}
     {{$values := .Values}}
     {{$depth := .Depth}}
+    {{$form := .Form}}
     
     {{if eq $node.Element.ElementKind "divider"}}
         <div class="col-12"><hr class="my-4"></div>
     
     {{else if eq $node.Element.ElementKind "group"}}
-        {{template "group_fieldset" (dict "Node" $node "Values" $values "Depth" $depth "Meta" (parseGroupMeta $node.Element.UIMetaJSON "group"))}}
+        {{template "group_fieldset" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "Meta" (parseGroupMeta $node.Element.UIMetaJSON "group"))}}
     
     {{else if eq $node.Element.ElementKind "accordion"}}
-        {{template "group_accordion" (dict "Node" $node "Values" $values "Depth" $depth "Meta" (parseGroupMeta $node.Element.UIMetaJSON "accordion"))}}
+        {{template "group_accordion" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "Meta" (parseGroupMeta $node.Element.UIMetaJSON "accordion"))}}
     
     {{else if eq $node.Element.ElementKind "card"}}
-        {{template "group_card" (dict "Node" $node "Values" $values "Depth" $depth "Meta" (parseGroupMeta $node.Element.UIMetaJSON "card"))}}
+        {{template "group_card" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "Meta" (parseGroupMeta $node.Element.UIMetaJSON "card"))}}
     
     {{else if eq $node.Element.ElementKind "tabs"}}
-        {{template "group_tabs" (dict "Node" $node "Values" $values "Depth" $depth "Meta" (parseGroupMeta $node.Element.UIMetaJSON "tabs"))}}
+        {{template "group_tabs" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "Meta" (parseGroupMeta $node.Element.UIMetaJSON "tabs"))}}
     
     {{else if eq $node.Element.ElementKind "carousel"}}
-        {{template "group_carousel" (dict "Node" $node "Values" $values "Depth" $depth "Meta" (parseGroupMeta $node.Element.UIMetaJSON "carousel"))}}
+        {{template "group_carousel" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "Meta" (parseGroupMeta $node.Element.UIMetaJSON "carousel"))}}
     
     {{else if eq $node.Element.ElementKind "button"}}
         {{/* Button element */}}
         <div class="col-12 col-md-{{$node.Element.ColSpan}} mb-3">
-            {{template "field_button" (dict "Element" $node.Element "FormRef" $.Form.ReferenceID)}}
+            {{template "field_button" (dict "Element" $node.Element "FormRef" $form.ReferenceID)}}
             {{if $node.Element.HelpText}}
                 <div class="form-text">{{$node.Element.HelpText}}</div>
             {{end}}

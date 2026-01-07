@@ -236,16 +236,6 @@
     </footer>
     {{template "scripts" .}}
     <script src="/assets/plugin-options.js"></script>
-    <script>
-    // Toggle button options visibility based on element_kind
-    document.getElementById('element_kind').addEventListener('change', function() {
-        const buttonOpts = document.getElementById('button_options');
-        if (this.value === 'button') {
-            buttonOpts.classList.remove('d-none');
-        } else {
-            buttonOpts.classList.add('d-none');
-        }
-    });
-    </script>
+    <script src="/assets/button-options.js"></script>
   </body>
 </html>

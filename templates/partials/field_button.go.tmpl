@@ -5,7 +5,12 @@
 {{$meta := .Meta}}
 {{$el := .Element}}
 {{$formRef := .FormRef}}
-{{$hasServerAction := or $el.ButtonFiloCode $el.ButtonRunSave}}
+{{/* Ensure strictly boolean result to prevent code leakage */}}
+{{$hasServerAction := false}}
+{{if or (ne $el.ButtonFiloCode "") $el.ButtonRunSave}}
+    {{$hasServerAction = true}}
+{{end}}
+
 
 <button type="button" 
         class="btn btn-{{if $el.ButtonStyle}}{{$el.ButtonStyle}}{{else}}primary{{end}}"

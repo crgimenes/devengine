@@ -51,4 +51,5 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /forms/{formRef}/r/{recordRef}", h.FormsRuntimeEdit)
 	mux.HandleFunc("POST /forms/{formRef}/r/{recordRef}", h.FormsRuntimeUpdate)
 	mux.HandleFunc("POST /forms/{formRef}/action/{buttonName}", h.FormsRuntimeButtonAction)
+	mux.HandleFunc("GET /forms/{formRef}/actions.js", h.FormsRuntimeActionsJS)
 }

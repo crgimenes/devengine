@@ -3,8 +3,10 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
+	"log"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
@@ -182,6 +184,11 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		message = ""
 	}
 
+	errorMsg := r.URL.Query().Get("error")
+	if len(errorMsg) > 200 {
+		errorMsg = ""
+	}
+
 	data := struct {
 		Authed       bool
 		User         db.User
@@ -193,6 +200,7 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		Record       *db.EAVRecord
 		Values       map[string]interface{}
 		Message      string
+		Error        string
 		PosLoadError string
 	}{
 		Authed:       true,
@@ -205,6 +213,7 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		Record:       nil, // New record
 		Values:       values,
 		Message:      message,
+		Error:        errorMsg,
 		PosLoadError: posLoadError,
 	}
 
@@ -549,6 +558,11 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 		message = ""
 	}
 
+	errorMsg := r.URL.Query().Get("error")
+	if len(errorMsg) > 200 {
+		errorMsg = ""
+	}
+
 	data := struct {
 		Authed       bool
 		User         db.User
@@ -560,6 +574,7 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 		Record       *db.EAVRecord
 		Values       map[string]interface{}
 		Message      string
+		Error        string
 		PosLoadError string
 	}{
 		Authed:       true,
@@ -572,6 +587,7 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 		Record:       record,
 		Values:       values,
 		Message:      message,
+		Error:        errorMsg,
 		PosLoadError: posLoadError,
 	}
 
@@ -870,7 +886,7 @@ func (h *Handlers) FormsRuntimeButtonAction(w http.ResponseWriter, r *http.Reque
 
 		// Execute Filo script
 		eng := filo.NewEngine()
-		filo.RegisterStringBuiltins(eng)
+		// db.CurrentScriptSetup registers standard library builtins
 		db.CurrentScriptSetup(eng)
 
 		ctx := r.Context()
@@ -882,6 +898,8 @@ func (h *Handlers) FormsRuntimeButtonAction(w http.ResponseWriter, r *http.Reque
 
 		_, newGlobals, execErr := eng.RunScript(ctx, button.ButtonFiloCode, globals, cfg)
 		if execErr != nil {
+			log.Printf("[ERROR] Button '%s' Filo script error: %v", button.MachineName, execErr)
+			log.Printf("[ERROR] Script content:\n%s", button.ButtonFiloCode)
 			jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Script error: " + execErr.Error()})
 			return
 		}
@@ -932,6 +950,55 @@ func jsonResponse(w http.ResponseWriter, status int, data interface{}) {
 	w.WriteHeader(status)
 	enc := json.NewEncoder(w)
 	enc.Encode(data)
+}
+
+// FormsRuntimeActionsJS serves the dynamically generated JavaScript for button actions.
+// This allows the JS to be loaded as an external file, complying with CSP.
+func (h *Handlers) FormsRuntimeActionsJS(w http.ResponseWriter, r *http.Request) {
+	formRefID := r.PathValue("formRef")
+
+	// Get form
+	form, err := db.Storage.GetFormByRefID(formRefID)
+	if err != nil {
+		http.Error(w, "// Form not found", http.StatusNotFound)
+		return
+	}
+
+	// Get form elements to find buttons
+	elements, err := db.Storage.ListFormElements(form.ID)
+	if err != nil {
+		http.Error(w, "// Failed to load elements", http.StatusInternalServerError)
+		return
+	}
+
+	// Set content type as JavaScript
+	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+
+	// Generate JavaScript
+	var js strings.Builder
+	js.WriteString("// Auto-generated button actions for form: ")
+	js.WriteString(form.MachineName)
+	js.WriteString("\nwindow.FormButtonActions = {\n")
+
+	first := true
+	for _, el := range elements {
+		if el.ElementKind == "button" && el.ButtonJSCode != "" {
+			if !first {
+				js.WriteString(",\n")
+			}
+			first = false
+			js.WriteString("    '")
+			js.WriteString(el.MachineName)
+			js.WriteString("': function(formData, button) {\n        ")
+			js.WriteString(el.ButtonJSCode)
+			js.WriteString("\n    }")
+		}
+	}
+
+	js.WriteString("\n};\n")
+
+	w.Write([]byte(js.String()))
 }
 
 // Unused import placeholder

@@ -3,6 +3,7 @@
 {{$values := .Values}}
 {{$depth := .Depth}}
 {{$meta := .Meta}}
+{{$form := .Form}}
 <div class="col-12 col-md-{{$node.Element.ColSpan}}">
     {{if index $meta "show_legend"}}
     <fieldset class="border rounded p-3 mb-3">
@@ -10,7 +11,7 @@
         {{if $node.Element.HelpText}}<small class="text-muted d-block mb-2">{{$node.Element.HelpText}}</small>{{end}}
         <div class="row">
             {{range $node.Children}}
-                {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 1))}}
+                {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 1) "Form" $form)}}
             {{end}}
         </div>
     </fieldset>
@@ -20,7 +21,7 @@
         {{if $node.Element.HelpText}}<small class="text-muted d-block mb-2">{{$node.Element.HelpText}}</small>{{end}}
         <div class="row">
             {{range $node.Children}}
-                {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 1))}}
+                {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 1) "Form" $form)}}
             {{end}}
         </div>
     </div>
