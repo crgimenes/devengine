@@ -54,6 +54,7 @@
                         
                         {{if .Record}}
                             <input type="hidden" name="rev" value="{{.Record.Rev}}">
+                            <input type="hidden" name="record_ref_id" value="{{.Record.ReferenceID}}">
                             <div class="mb-3">
                                 <span class="badge bg-secondary font-monospace">{{.Record.ReferenceID}}</span>
                                 {{if eq .Record.Status "active"}}
