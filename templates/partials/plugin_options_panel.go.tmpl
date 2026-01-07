@@ -14,6 +14,13 @@
                 Mostrar título (legend)
             </label>
         </div>
+        <div class="form-check mb-2">
+            <input class="form-check-input plugin-option" type="checkbox" id="opt_hide_border" 
+                   data-key="hide_border" {{if index $meta "hide_border"}}checked{{end}}>
+            <label class="form-check-label" for="opt_hide_border">
+                Esconder borda
+            </label>
+        </div>
     </div>
 
     <!-- Accordion options -->
@@ -43,6 +50,13 @@
                    data-key="show_header" {{if index $meta "show_header"}}checked{{end}}>
             <label class="form-check-label" for="opt_card_show_header">
                 Mostrar cabeçalho
+            </label>
+        </div>
+        <div class="form-check mb-2">
+            <input class="form-check-input plugin-option" type="checkbox" id="opt_card_hide_border" 
+                   data-key="hide_border" {{if index $meta "hide_border"}}checked{{end}}>
+            <label class="form-check-label" for="opt_card_hide_border">
+                Esconder borda
             </label>
         </div>
         <div class="mb-3">

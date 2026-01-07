@@ -28,6 +28,9 @@ CREATE TABLE IF NOT EXISTS forms (
     hide_submit_button  INTEGER NOT NULL DEFAULT 0 CHECK (hide_submit_button IN (0, 1)),
     -- When true, form does not display the cancel button
     hide_cancel_button  INTEGER NOT NULL DEFAULT 0 CHECK (hide_cancel_button IN (0, 1)),
+    
+    -- When true, form does not display the title header
+    hide_title          INTEGER NOT NULL DEFAULT 0 CHECK (hide_title IN (0, 1)),
 
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,

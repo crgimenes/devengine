@@ -6,7 +6,7 @@
 {{$form := .Form}}
 <div class="col-12 col-md-{{$node.Element.ColSpan}}">
     {{if index $meta "show_legend"}}
-    <fieldset class="border rounded p-3 mb-3">
+    <fieldset class="{{if not (index $meta "hide_border")}}border rounded{{end}} p-3 mb-3">
         <legend class="h6">{{$node.Element.Label}}</legend>
         {{if $node.Element.HelpText}}<small class="text-muted d-block mb-2">{{$node.Element.HelpText}}</small>{{end}}
         <div class="row">

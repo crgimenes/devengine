@@ -7,7 +7,7 @@
 {{$showHeader := index $meta "show_header"}}
 {{$headerBg := index $meta "header_bg"}}
 <div class="col-12 col-md-{{$node.Element.ColSpan}}">
-    <div class="card mb-3">
+    <div class="card mb-3 {{if index $meta "hide_border"}}border-0{{end}}">
         {{if and $showHeader $node.Element.Label}}
         <div class="card-header {{if eq $headerBg "primary"}}bg-primary text-white{{else if eq $headerBg "dark"}}bg-dark text-white{{end}}">
             {{$node.Element.Label}}

@@ -70,7 +70,14 @@
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Visibilidade dos Botões</label>
+                            <label class="form-label">Opções de Exibição</label>
+                             <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="hide_title" name="hide_title"
+                                       {{if .Form.HideTitle}}checked{{end}}>
+                                <label class="form-check-label" for="hide_title">
+                                    Ocultar título do formulário
+                                </label>
+                            </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="hide_submit_button" name="hide_submit_button"
                                        {{if .Form.HideSubmitButton}}checked{{end}}>

@@ -29,18 +29,22 @@
         
         <div class="row">
             <div class="col-12">
-                <div class="card p-4">
+                <div class="p-4">
+                    {{if not .Form.HideTitle}}
                     <h2 class="mb-3">
                         {{.Form.Label}}
-                        {{if .Record}}
-                            <small class="text-muted"> - Editar</small>
-                        {{else}}
-                            <small class="text-muted"> - Novo</small>
+                        {{if .Form.EAVEntityTypeID}}
+                            {{if .Record}}
+                                <small class="text-muted"> - Editar</small>
+                            {{else}}
+                                <small class="text-muted"> - Novo</small>
+                            {{end}}
                         {{end}}
                     </h2>
                     
                     {{if .Form.Description}}
                     <p class="text-muted mb-4">{{.Form.Description}}</p>
+                    {{end}}
                     {{end}}
                     
                     <form method="POST" 
