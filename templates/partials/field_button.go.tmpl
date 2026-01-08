@@ -13,7 +13,7 @@
 
 
 <button type="button" 
-        class="btn btn-{{if $el.ButtonStyle}}{{$el.ButtonStyle}}{{else}}primary{{end}}"
+        class="btn btn-{{if $el.ButtonStyle}}{{$el.ButtonStyle}}{{else}}primary{{end}} w-100"
         id="btn_{{$el.MachineName}}"
         data-form-action="{{$el.MachineName}}"
         data-has-server-action="{{$hasServerAction}}"
