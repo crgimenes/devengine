@@ -265,6 +265,16 @@
             </div>
             <p class="small text-muted">Opções devem ser configuradas diretamente no JSON abaixo.</p>
         </div>
+
+        <!-- Image options -->
+        <div id="field-options-image" class="field-ui-options d-none">
+            <div class="mb-2">
+                <label for="opt_image_alt_text" class="form-label small">Texto Alternativo</label>
+                <input type="text" class="form-control form-control-sm plugin-option" id="opt_image_alt_text" 
+                       data-key="alt_text" value="{{index $meta "alt_text"}}" placeholder="Descrição da imagem">
+                <div class="form-text">Texto exibido se a imagem não carregar</div>
+            </div>
+        </div>
     </div>
 
     <!-- Button - options are in separate section, not in ui_meta_json -->

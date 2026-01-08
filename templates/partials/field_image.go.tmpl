@@ -1,0 +1,52 @@
+{{define "field_image"}}
+{{$meta := .Meta}}
+{{$name := .Name}}
+{{$value := .Value}}
+{{$required := .Required}}
+{{$readonly := .Readonly}}
+{{$altText := index $meta "alt_text"}}
+
+<div class="field-image-container">
+    {{/* Preview area */}}
+    <div class="field-image-preview-wrapper mb-2" id="{{$name}}_preview_wrapper">
+        {{if $value}}
+        <img src="{{$value}}" alt="{{if $altText}}{{$altText}}{{else}}Imagem{{end}}" 
+             class="field-image-preview rounded" id="{{$name}}_preview">
+        {{else}}
+        <div class="field-image-placeholder text-center text-muted p-4 border rounded bg-body-secondary">
+            <svg class="mb-2" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
+                <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/>
+            </svg>
+            <div class="small">Nenhuma imagem selecionada</div>
+        </div>
+        {{end}}
+    </div>
+
+    {{/* Hidden input to store URL */}}
+    <input type="hidden" id="{{$name}}" name="{{$name}}" value="{{$value}}" 
+           class="field-image-input" {{if $required}}required{{end}}>
+
+    {{/* Buttons - only show if not readonly */}}
+    {{if not $readonly}}
+    <div class="d-flex gap-2">
+        <button type="button" class="btn btn-outline-primary btn-sm field-image-select-btn"
+                data-field-name="{{$name}}" data-bs-toggle="modal" data-bs-target="#fileManagerModal">
+            <svg width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16">
+                <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
+                <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/>
+            </svg>
+            Selecionar Imagem
+        </button>
+        <button type="button" class="btn btn-outline-danger btn-sm field-image-remove-btn {{if not $value}}d-none{{end}}"
+                data-field-name="{{$name}}">
+            <svg width="16" height="16" fill="currentColor" class="me-1" viewBox="0 0 16 16">
+                <path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/>
+                <path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/>
+            </svg>
+            Remover
+        </button>
+    </div>
+    {{end}}
+</div>
+{{end}}
