@@ -38,6 +38,7 @@ type FormElement struct {
 	HelpText       string
 	ZOrder         int
 	ColSpan        int    // Bootstrap column span (1-12, default 12)
+	Alignment      string // Horizontal alignment: 'left', 'center', 'right'
 	UIKind         string // Plugin ID
 	UIMetaJSON     string
 	EAVAttributeID *int64 // NULL for UI-only elements
@@ -245,12 +246,12 @@ func (s *SQLite) CreateFormElement(
 	const sqlInsert = `
 		INSERT INTO form_elements (
 			reference_id, form_id, parent_id, machine_name, element_kind,
-			label, help_text, z_order, col_span, ui_kind, ui_meta_json,
+			label, help_text, z_order, col_span, alignment, ui_kind, ui_meta_json,
 			eav_attribute_id, is_ui_only, is_readonly,
 			button_filo_code, button_run_save, button_js_code, button_style, button_confirm_msg
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, '', 0, '', 'primary', '')
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'left', ?, ?, ?, ?, ?, '', 0, '', 'primary', '')
 		RETURNING id, reference_id, form_id, parent_id, machine_name, element_kind,
-		          label, help_text, z_order, col_span, ui_kind, ui_meta_json,
+		          label, help_text, z_order, col_span, alignment, ui_kind, ui_meta_json,
 		          eav_attribute_id, is_ui_only, is_readonly,
 		          button_filo_code, button_run_save, button_js_code, button_style, button_confirm_msg,
 		          created_at, updated_at
@@ -274,7 +275,7 @@ func (s *SQLite) CreateFormElement(
 		uiKind, uiMetaJSON, eavAttrIDVal, boolToInt(isUIOnly), boolToInt(isReadonly),
 	).Scan(
 		&e.ID, &e.ReferenceID, &e.FormID, &scanParentID, &e.MachineName, &e.ElementKind,
-		&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.UIKind, &e.UIMetaJSON,
+		&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.Alignment, &e.UIKind, &e.UIMetaJSON,
 		&scanEAVAttrID, &e.IsUIOnly, &e.IsReadonly,
 		&e.ButtonFiloCode, &e.ButtonRunSave, &e.ButtonJSCode, &e.ButtonStyle, &e.ButtonConfirmMsg,
 		&e.CreatedAt, &e.UpdatedAt,
@@ -297,7 +298,7 @@ func (s *SQLite) CreateFormElement(
 func (s *SQLite) ListFormElements(formID int64) ([]FormElement, error) {
 	const q = `
 		SELECT id, reference_id, form_id, parent_id, machine_name, element_kind,
-		       label, help_text, z_order, col_span, ui_kind, ui_meta_json,
+		       label, help_text, z_order, col_span, alignment, ui_kind, ui_meta_json,
 		       eav_attribute_id, is_ui_only, is_readonly,
 		       button_filo_code, button_run_save, button_js_code, button_style, button_confirm_msg,
 		       created_at, updated_at
@@ -320,7 +321,7 @@ func (s *SQLite) ListFormElements(formID int64) ([]FormElement, error) {
 
 		if err := rows.Scan(
 			&e.ID, &e.ReferenceID, &e.FormID, &parentID, &e.MachineName, &e.ElementKind,
-			&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.UIKind, &e.UIMetaJSON,
+			&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.Alignment, &e.UIKind, &e.UIMetaJSON,
 			&eavAttrID, &e.IsUIOnly, &e.IsReadonly,
 			&e.ButtonFiloCode, &e.ButtonRunSave, &e.ButtonJSCode, &e.ButtonStyle, &e.ButtonConfirmMsg,
 			&e.CreatedAt, &e.UpdatedAt,
@@ -344,7 +345,7 @@ func (s *SQLite) ListFormElements(formID int64) ([]FormElement, error) {
 func (s *SQLite) GetFormElementByRefID(refID string) (*FormElement, error) {
 	const q = `
 		SELECT id, reference_id, form_id, parent_id, machine_name, element_kind,
-		       label, help_text, z_order, col_span, ui_kind, ui_meta_json,
+		       label, help_text, z_order, col_span, alignment, ui_kind, ui_meta_json,
 		       eav_attribute_id, is_ui_only, is_readonly,
 		       button_filo_code, button_run_save, button_js_code, button_style, button_confirm_msg,
 		       created_at, updated_at
@@ -358,7 +359,7 @@ func (s *SQLite) GetFormElementByRefID(refID string) (*FormElement, error) {
 
 	err := s.QueryRow(q, refID).Scan(
 		&e.ID, &e.ReferenceID, &e.FormID, &parentID, &e.MachineName, &e.ElementKind,
-		&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.UIKind, &e.UIMetaJSON,
+		&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.Alignment, &e.UIKind, &e.UIMetaJSON,
 		&eavAttrID, &e.IsUIOnly, &e.IsReadonly,
 		&e.ButtonFiloCode, &e.ButtonRunSave, &e.ButtonJSCode, &e.ButtonStyle, &e.ButtonConfirmMsg,
 		&e.CreatedAt, &e.UpdatedAt,
@@ -392,6 +393,7 @@ func (s *SQLite) UpdateFormElement(
 	parentID *int64,
 	machineName, elementKind, label, helpText string,
 	zOrder, colSpan int,
+	alignment string,
 	uiKind, uiMetaJSON string,
 	eavAttributeID *int64,
 	isUIOnly, isReadonly bool,
@@ -414,6 +416,7 @@ func (s *SQLite) UpdateFormElement(
 			help_text = ?,
 			z_order = ?,
 			col_span = ?,
+			alignment = ?,
 			ui_kind = ?,
 			ui_meta_json = ?,
 			eav_attribute_id = ?,
@@ -439,7 +442,7 @@ func (s *SQLite) UpdateFormElement(
 
 	return s.Exec(q,
 		parentIDVal, machineName, elementKind, label, helpText,
-		zOrder, colSpan, uiKind, uiMetaJSON, eavAttrIDVal,
+		zOrder, colSpan, alignment, uiKind, uiMetaJSON, eavAttrIDVal,
 		boolToInt(isUIOnly), boolToInt(isReadonly),
 		buttonFiloCode, boolToInt(buttonRunSave), buttonJSCode, buttonStyle, buttonConfirmMsg,
 		id,
@@ -450,7 +453,7 @@ func (s *SQLite) UpdateFormElement(
 func (s *SQLite) ListGroupElements(formID int64) ([]FormElement, error) {
 	const q = `
 		SELECT id, reference_id, form_id, parent_id, machine_name, element_kind,
-		       label, help_text, z_order, col_span, ui_kind, ui_meta_json,
+		       label, help_text, z_order, col_span, alignment, ui_kind, ui_meta_json,
 		       eav_attribute_id, is_ui_only, is_readonly, created_at, updated_at
 		FROM form_elements
 		WHERE form_id = ? AND deleted_at IS NULL
@@ -472,7 +475,7 @@ func (s *SQLite) ListGroupElements(formID int64) ([]FormElement, error) {
 
 		if err := rows.Scan(
 			&e.ID, &e.ReferenceID, &e.FormID, &parentID, &e.MachineName, &e.ElementKind,
-			&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.UIKind, &e.UIMetaJSON,
+			&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.Alignment, &e.UIKind, &e.UIMetaJSON,
 			&eavAttrID, &e.IsUIOnly, &e.IsReadonly, &e.CreatedAt, &e.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan group element: %w", err)

@@ -103,7 +103,7 @@
                         <!-- Layout -->
                         <h5 class="mb-3 border-bottom pb-2">Layout e Hierarquia</h5>
                         <div class="row mb-4">
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label for="parent_id" class="form-label">Grupo Pai</label>
                                 <select class="form-select" id="parent_id" name="parent_id">
                                     <option value="">-- Raiz do formulário --</option>
@@ -115,22 +115,31 @@
                                 </select>
                                 <div class="form-text">Coloque este elemento dentro de um grupo</div>
                             </div>
-                            <div class="col-md-4">
-                                <label for="z_order" class="form-label">Ordem (Z-Order)</label>
+                            <div class="col-md-2">
+                                <label for="z_order" class="form-label">Ordem</label>
                                 <input type="number" class="form-control" id="z_order" name="z_order" 
                                        value="{{.Element.ZOrder}}" min="0">
-                                <div class="form-text">Menor = primeiro. Desambiguação por data.</div>
+                                <div class="form-text">Menor = primeiro</div>
                             </div>
-                            <div class="col-md-4">
+                            <div class="col-md-3">
                                 <label for="col_span" class="form-label">Largura (Colunas)</label>
                                 <select class="form-select" id="col_span" name="col_span">
                                     {{range $i := (seq 1 12)}}
                                     <option value="{{$i}}" {{if eq $i $.Element.ColSpan}}selected{{end}}>
-                                        {{$i}} {{if eq $i 12}}(Largura total){{else if eq $i 6}}(Metade){{else if eq $i 4}}(1/3){{else if eq $i 3}}(1/4){{end}}
+                                        {{$i}} {{if eq $i 12}}(Total){{else if eq $i 6}}(1/2){{else if eq $i 4}}(1/3){{else if eq $i 3}}(1/4){{end}}
                                     </option>
                                     {{end}}
                                 </select>
-                                <div class="form-text">Sistema de 12 colunas Bootstrap</div>
+                                <div class="form-text">Sistema de 12 colunas</div>
+                            </div>
+                            <div class="col-md-4">
+                                <label for="alignment" class="form-label">Alinhamento Horizontal</label>
+                                <select class="form-select" id="alignment" name="alignment">
+                                    <option value="left" {{if eq .Element.Alignment "left"}}selected{{end}}>Esquerda</option>
+                                    <option value="center" {{if eq .Element.Alignment "center"}}selected{{end}}>Centralizado</option>
+                                    <option value="right" {{if eq .Element.Alignment "right"}}selected{{end}}>Direita</option>
+                                </select>
+                                <div class="form-text">Posição quando menor que 12 colunas</div>
                             </div>
                         </div>
 

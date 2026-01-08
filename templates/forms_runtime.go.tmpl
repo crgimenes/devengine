@@ -140,7 +140,7 @@
     
     {{else if eq $node.Element.ElementKind "button"}}
         {{/* Button element */}}
-        <div class="col-12 col-md-{{$node.Element.ColSpan}} mb-3">
+        <div class="col-12 col-md-{{$node.Element.ColSpan}} mb-3{{if eq $node.Element.Alignment "center"}} mx-auto{{else if eq $node.Element.Alignment "right"}} ms-auto{{end}}">
             {{template "field_button" (dict "Element" $node.Element "FormRef" $form.ReferenceID)}}
             {{if $node.Element.HelpText}}
                 <div class="form-text">{{$node.Element.HelpText}}</div>
@@ -161,7 +161,7 @@
         {{end}}
         {{$meta := parseFieldMeta $node.Element.UIMetaJSON $uiKind}}
         
-        <div class="col-12 col-md-{{$node.Element.ColSpan}} mb-3">
+        <div class="col-12 col-md-{{$node.Element.ColSpan}} mb-3{{if eq $node.Element.Alignment "center"}} mx-auto{{else if eq $node.Element.Alignment "right"}} ms-auto{{end}}">
             <label for="{{$node.Element.MachineName}}" class="form-label">
                 {{if $node.Element.Label}}{{$node.Element.Label}}{{else}}{{$node.Attribute.Label}}{{end}}
                 {{if $node.Attribute.IsRequired}}<span class="text-danger">*</span>{{end}}
@@ -197,7 +197,7 @@
         {{if not $uiKind}}{{$uiKind = "text"}}{{end}}
         {{$meta := parseFieldMeta $node.Element.UIMetaJSON $uiKind}}
         
-        <div class="col-12 col-md-{{$node.Element.ColSpan}} mb-3">
+        <div class="col-12 col-md-{{$node.Element.ColSpan}} mb-3{{if eq $node.Element.Alignment "center"}} mx-auto{{else if eq $node.Element.Alignment "right"}} ms-auto{{end}}">
             <label for="{{$node.Element.MachineName}}" class="form-label">
                 {{$node.Element.Label}}
             </label>

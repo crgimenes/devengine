@@ -793,6 +793,12 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 		colSpan = 12
 	}
 
+	// Parse alignment
+	alignment := r.FormValue("alignment")
+	if alignment != "left" && alignment != "center" && alignment != "right" {
+		alignment = "left"
+	}
+
 	// Get parent element ID
 	var parentID *int64
 	if parentRefID != "" {
@@ -820,6 +826,7 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 		parentID,
 		machineName, elementKind, label, helpText,
 		zOrder, colSpan,
+		alignment,
 		uiKind, uiMetaJSON,
 		eavAttrID,
 		isUIOnly, isReadonly,
