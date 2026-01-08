@@ -155,11 +155,27 @@
                                         Apenas UI (não persiste dados)
                                     </label>
                                 </div>
-                                <div class="form-check">
+                                <div class="form-check mb-2">
                                     <input class="form-check-input" type="checkbox" id="is_readonly" name="is_readonly"
                                            {{if .Element.IsReadonly}}checked{{end}}>
                                     <label class="form-check-label" for="is_readonly">
                                         Somente Leitura
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="hide_label" name="hide_label"
+                                           {{if .Element.HideLabel}}checked{{end}}>
+                                    <label class="form-check-label" for="hide_label">
+                                        Ocultar Título
+                                    </label>
+                                </div>
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" id="hide_help_text" name="hide_help_text"
+                                           {{if .Element.HideHelpText}}checked{{end}}>
+                                    <label class="form-check-label" for="hide_help_text">
+                                        Ocultar Descrição
                                     </label>
                                 </div>
                             </div>

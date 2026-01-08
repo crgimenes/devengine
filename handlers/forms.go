@@ -767,6 +767,8 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 	eavAttrRefID := r.FormValue("eav_attribute_id")
 	isUIOnlyStr := r.FormValue("is_ui_only")
 	isReadonlyStr := r.FormValue("is_readonly")
+	hideLabelStr := r.FormValue("hide_label")
+	hideHelpTextStr := r.FormValue("hide_help_text")
 
 	// Button-specific fields
 	buttonFiloCode := r.FormValue("button_filo_code")
@@ -819,6 +821,8 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 
 	isUIOnly := isUIOnlyStr == "1" || isUIOnlyStr == "on"
 	isReadonly := isReadonlyStr == "1" || isReadonlyStr == "on"
+	hideLabel := hideLabelStr == "1" || hideLabelStr == "on"
+	hideHelpText := hideHelpTextStr == "1" || hideHelpTextStr == "on"
 	buttonRunSave := buttonRunSaveStr == "1" || buttonRunSaveStr == "on"
 
 	err = db.Storage.UpdateFormElement(
@@ -829,7 +833,7 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 		alignment,
 		uiKind, uiMetaJSON,
 		eavAttrID,
-		isUIOnly, isReadonly,
+		isUIOnly, isReadonly, hideLabel, hideHelpText,
 		buttonFiloCode, buttonRunSave, buttonJSCode, buttonStyle, buttonConfirmMsg,
 	)
 	if err != nil {

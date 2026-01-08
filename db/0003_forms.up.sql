@@ -112,6 +112,10 @@ CREATE TABLE IF NOT EXISTS form_elements (
     -- Read-only at form level (independent of EAV attribute)
     is_readonly   INTEGER NOT NULL DEFAULT 0 CHECK (is_readonly IN (0, 1)),
 
+    -- Hide label and help text display options
+    hide_label    INTEGER NOT NULL DEFAULT 0 CHECK (hide_label IN (0, 1)),
+    hide_help_text INTEGER NOT NULL DEFAULT 0 CHECK (hide_help_text IN (0, 1)),
+
     -- Optional Filo expressions
     validate_expr  TEXT,
     computed_expr  TEXT,

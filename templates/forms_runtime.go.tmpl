@@ -170,10 +170,12 @@
         {{$meta := parseFieldMeta $node.Element.UIMetaJSON $uiKind}}
         
         <div class="col-12 col-md-{{$node.Element.ColSpan}} mb-3{{if eq $node.Element.Alignment "center"}} mx-auto{{else if eq $node.Element.Alignment "right"}} ms-auto{{end}}">
+            {{if not $node.Element.HideLabel}}
             <label for="{{$node.Element.MachineName}}" class="form-label">
                 {{if $node.Element.Label}}{{$node.Element.Label}}{{else}}{{$node.Attribute.Label}}{{end}}
                 {{if $node.Attribute.IsRequired}}<span class="text-danger">*</span>{{end}}
             </label>
+            {{end}}
             
             {{if eq $uiKind "bool"}}
                 {{template "field_bool" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly)}}
@@ -194,10 +196,12 @@
                 {{template "field_text" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly)}}
             {{end}}
             
+            {{if not $node.Element.HideHelpText}}
             {{if $node.Element.HelpText}}
                 <div class="form-text">{{$node.Element.HelpText}}</div>
             {{else if $node.Attribute.HelpText}}
                 <div class="form-text">{{$node.Attribute.HelpText}}</div>
+            {{end}}
             {{end}}
         </div>
     
@@ -208,9 +212,11 @@
         {{$meta := parseFieldMeta $node.Element.UIMetaJSON $uiKind}}
         
         <div class="col-12 col-md-{{$node.Element.ColSpan}} mb-3{{if eq $node.Element.Alignment "center"}} mx-auto{{else if eq $node.Element.Alignment "right"}} ms-auto{{end}}">
+            {{if not $node.Element.HideLabel}}
             <label for="{{$node.Element.MachineName}}" class="form-label">
                 {{$node.Element.Label}}
             </label>
+            {{end}}
             
             {{if eq $uiKind "bool"}}
                 {{template "field_bool" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly)}}
@@ -230,8 +236,10 @@
                 {{template "field_text" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly)}}
             {{end}}
             
+            {{if not $node.Element.HideHelpText}}
             {{if $node.Element.HelpText}}
                 <div class="form-text">{{$node.Element.HelpText}}</div>
+            {{end}}
             {{end}}
         </div>
     {{end}}

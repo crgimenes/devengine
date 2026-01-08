@@ -44,6 +44,8 @@ type FormElement struct {
 	EAVAttributeID *int64 // NULL for UI-only elements
 	IsUIOnly       bool
 	IsReadonly     bool
+	HideLabel      bool
+	HideHelpText   bool
 	ValidateExpr   string
 	ComputedExpr   string
 	// Button-specific properties (only used when ElementKind = 'button')
@@ -247,12 +249,12 @@ func (s *SQLite) CreateFormElement(
 		INSERT INTO form_elements (
 			reference_id, form_id, parent_id, machine_name, element_kind,
 			label, help_text, z_order, col_span, alignment, ui_kind, ui_meta_json,
-			eav_attribute_id, is_ui_only, is_readonly,
+			eav_attribute_id, is_ui_only, is_readonly, hide_label, hide_help_text,
 			button_filo_code, button_run_save, button_js_code, button_style, button_confirm_msg
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'left', ?, ?, ?, ?, ?, '', 0, '', 'primary', '')
+		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'left', ?, ?, ?, ?, ?, 0, 0, '', 0, '', 'primary', '')
 		RETURNING id, reference_id, form_id, parent_id, machine_name, element_kind,
 		          label, help_text, z_order, col_span, alignment, ui_kind, ui_meta_json,
-		          eav_attribute_id, is_ui_only, is_readonly,
+		          eav_attribute_id, is_ui_only, is_readonly, hide_label, hide_help_text,
 		          button_filo_code, button_run_save, button_js_code, button_style, button_confirm_msg,
 		          created_at, updated_at
 	`
@@ -276,7 +278,7 @@ func (s *SQLite) CreateFormElement(
 	).Scan(
 		&e.ID, &e.ReferenceID, &e.FormID, &scanParentID, &e.MachineName, &e.ElementKind,
 		&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.Alignment, &e.UIKind, &e.UIMetaJSON,
-		&scanEAVAttrID, &e.IsUIOnly, &e.IsReadonly,
+		&scanEAVAttrID, &e.IsUIOnly, &e.IsReadonly, &e.HideLabel, &e.HideHelpText,
 		&e.ButtonFiloCode, &e.ButtonRunSave, &e.ButtonJSCode, &e.ButtonStyle, &e.ButtonConfirmMsg,
 		&e.CreatedAt, &e.UpdatedAt,
 	)
@@ -299,7 +301,7 @@ func (s *SQLite) ListFormElements(formID int64) ([]FormElement, error) {
 	const q = `
 		SELECT id, reference_id, form_id, parent_id, machine_name, element_kind,
 		       label, help_text, z_order, col_span, alignment, ui_kind, ui_meta_json,
-		       eav_attribute_id, is_ui_only, is_readonly,
+		       eav_attribute_id, is_ui_only, is_readonly, hide_label, hide_help_text,
 		       button_filo_code, button_run_save, button_js_code, button_style, button_confirm_msg,
 		       created_at, updated_at
 		FROM form_elements
@@ -322,7 +324,7 @@ func (s *SQLite) ListFormElements(formID int64) ([]FormElement, error) {
 		if err := rows.Scan(
 			&e.ID, &e.ReferenceID, &e.FormID, &parentID, &e.MachineName, &e.ElementKind,
 			&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.Alignment, &e.UIKind, &e.UIMetaJSON,
-			&eavAttrID, &e.IsUIOnly, &e.IsReadonly,
+			&eavAttrID, &e.IsUIOnly, &e.IsReadonly, &e.HideLabel, &e.HideHelpText,
 			&e.ButtonFiloCode, &e.ButtonRunSave, &e.ButtonJSCode, &e.ButtonStyle, &e.ButtonConfirmMsg,
 			&e.CreatedAt, &e.UpdatedAt,
 		); err != nil {
@@ -346,7 +348,7 @@ func (s *SQLite) GetFormElementByRefID(refID string) (*FormElement, error) {
 	const q = `
 		SELECT id, reference_id, form_id, parent_id, machine_name, element_kind,
 		       label, help_text, z_order, col_span, alignment, ui_kind, ui_meta_json,
-		       eav_attribute_id, is_ui_only, is_readonly,
+		       eav_attribute_id, is_ui_only, is_readonly, hide_label, hide_help_text,
 		       button_filo_code, button_run_save, button_js_code, button_style, button_confirm_msg,
 		       created_at, updated_at
 		FROM form_elements
@@ -360,7 +362,7 @@ func (s *SQLite) GetFormElementByRefID(refID string) (*FormElement, error) {
 	err := s.QueryRow(q, refID).Scan(
 		&e.ID, &e.ReferenceID, &e.FormID, &parentID, &e.MachineName, &e.ElementKind,
 		&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.Alignment, &e.UIKind, &e.UIMetaJSON,
-		&eavAttrID, &e.IsUIOnly, &e.IsReadonly,
+		&eavAttrID, &e.IsUIOnly, &e.IsReadonly, &e.HideLabel, &e.HideHelpText,
 		&e.ButtonFiloCode, &e.ButtonRunSave, &e.ButtonJSCode, &e.ButtonStyle, &e.ButtonConfirmMsg,
 		&e.CreatedAt, &e.UpdatedAt,
 	)
@@ -396,7 +398,7 @@ func (s *SQLite) UpdateFormElement(
 	alignment string,
 	uiKind, uiMetaJSON string,
 	eavAttributeID *int64,
-	isUIOnly, isReadonly bool,
+	isUIOnly, isReadonly, hideLabel, hideHelpText bool,
 	buttonFiloCode string, buttonRunSave bool, buttonJSCode, buttonStyle, buttonConfirmMsg string,
 ) error {
 	// Default col_span to 12 if not set
@@ -422,6 +424,8 @@ func (s *SQLite) UpdateFormElement(
 			eav_attribute_id = ?,
 			is_ui_only = ?,
 			is_readonly = ?,
+			hide_label = ?,
+			hide_help_text = ?,
 			button_filo_code = ?,
 			button_run_save = ?,
 			button_js_code = ?,
@@ -443,7 +447,7 @@ func (s *SQLite) UpdateFormElement(
 	return s.Exec(q,
 		parentIDVal, machineName, elementKind, label, helpText,
 		zOrder, colSpan, alignment, uiKind, uiMetaJSON, eavAttrIDVal,
-		boolToInt(isUIOnly), boolToInt(isReadonly),
+		boolToInt(isUIOnly), boolToInt(isReadonly), boolToInt(hideLabel), boolToInt(hideHelpText),
 		buttonFiloCode, boolToInt(buttonRunSave), buttonJSCode, buttonStyle, buttonConfirmMsg,
 		id,
 	)
@@ -454,7 +458,7 @@ func (s *SQLite) ListGroupElements(formID int64) ([]FormElement, error) {
 	const q = `
 		SELECT id, reference_id, form_id, parent_id, machine_name, element_kind,
 		       label, help_text, z_order, col_span, alignment, ui_kind, ui_meta_json,
-		       eav_attribute_id, is_ui_only, is_readonly, created_at, updated_at
+		       eav_attribute_id, is_ui_only, is_readonly, hide_label, hide_help_text, created_at, updated_at
 		FROM form_elements
 		WHERE form_id = ? AND deleted_at IS NULL
 		  AND element_kind IN ('group', 'accordion', 'card', 'tabs')
@@ -476,7 +480,7 @@ func (s *SQLite) ListGroupElements(formID int64) ([]FormElement, error) {
 		if err := rows.Scan(
 			&e.ID, &e.ReferenceID, &e.FormID, &parentID, &e.MachineName, &e.ElementKind,
 			&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.Alignment, &e.UIKind, &e.UIMetaJSON,
-			&eavAttrID, &e.IsUIOnly, &e.IsReadonly, &e.CreatedAt, &e.UpdatedAt,
+			&eavAttrID, &e.IsUIOnly, &e.IsReadonly, &e.HideLabel, &e.HideHelpText, &e.CreatedAt, &e.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan group element: %w", err)
 		}
