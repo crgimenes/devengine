@@ -764,7 +764,7 @@ func ClassifyMediaKind(mimeType, filename string) string {
 
 // serve user files
 func serveFileHandler(w http.ResponseWriter, r *http.Request) {
-	u, _, authed, err := auth.Prelude(w, r,
+	_, _, authed, err := auth.Prelude(w, r,
 		[]string{
 			http.MethodGet,  // serve file
 			http.MethodHead, // ETag and Last-Modified support
