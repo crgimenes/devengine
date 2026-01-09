@@ -21,9 +21,51 @@
             </div>
             <div class="col-md-9">
                 <div class="card p-4">
-                    <h2 class="mb-3">Menu Editor</h2>
-                    <p>Editor de menus do sistema.</p>
-                    <p class="text-muted">Esta funcionalidade será implementada em breve.</p>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="mb-0">Menu Editor</h2>
+                        <a href="/tools/menu-editor/new" class="btn btn-primary">
+                            <i class="bi bi-plus-lg"></i> Novo Menu
+                        </a>
+                    </div>
+                    <p class="text-muted">Gerenciamento de menus de navegação.</p>
+                    
+                    {{if .Menus}}
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Identificador</th>
+                                    <th>Descrição</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .Menus}}
+                                <tr>
+                                    <td>
+                                        <a href="/tools/menu-editor/{{.ReferenceID}}/edit">{{.Label}}</a>
+                                    </td>
+                                    <td><code>{{.MachineName}}</code></td>
+                                    <td>{{.Description}}</td>
+                                    <td class="text-end">
+                                        <a href="/tools/menu-editor/{{.ReferenceID}}/preview" class="btn btn-sm btn-success me-1">Testar</a>
+                                        <a href="/tools/menu-editor/{{.ReferenceID}}/edit" class="btn btn-sm btn-outline-primary me-1">Editar</a>
+                                        <form method="post" action="/tools/menu-editor/{{.ReferenceID}}/delete" class="d-inline" onsubmit="return confirm('Excluir este menu?')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{else}}
+                    <div class="alert alert-secondary">
+                        <i class="bi bi-info-circle"></i> Nenhum menu cadastrado.
+                        <a href="/tools/menu-editor/new">Criar o primeiro menu</a>.
+                    </div>
+                    {{end}}
                 </div>
             </div>
         </div>

@@ -43,7 +43,21 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /tools/forms/{id}/elements/{element_id}/down", h.ToolsFormsElementMoveDown)
 
 	mux.HandleFunc("/tools/users", h.ToolsUsers)
-	mux.HandleFunc("/tools/menu-editor", h.ToolsMenuEditor)
+
+	// Menu Editor
+	mux.HandleFunc("/tools/menu-editor", h.ToolsMenus)
+	mux.HandleFunc("GET /tools/menu-editor/new", h.ToolsMenusNew)
+	mux.HandleFunc("POST /tools/menu-editor/new", h.ToolsMenusCreate)
+	mux.HandleFunc("GET /tools/menu-editor/{id}/edit", h.ToolsMenusEdit)
+	mux.HandleFunc("POST /tools/menu-editor/{id}/update", h.ToolsMenusUpdate)
+	mux.HandleFunc("POST /tools/menu-editor/{id}/delete", h.ToolsMenusDelete)
+	mux.HandleFunc("GET /tools/menu-editor/{id}/preview", h.ToolsMenusPreview)
+	mux.HandleFunc("POST /tools/menu-editor/{id}/items/new", h.ToolsMenusItemCreate)
+	mux.HandleFunc("GET /tools/menu-editor/{id}/items/{item_id}/edit", h.ToolsMenusItemEdit)
+	mux.HandleFunc("POST /tools/menu-editor/{id}/items/{item_id}/update", h.ToolsMenusItemUpdate)
+	mux.HandleFunc("POST /tools/menu-editor/{id}/items/{item_id}/delete", h.ToolsMenusItemDelete)
+	mux.HandleFunc("POST /tools/menu-editor/{id}/items/{item_id}/up", h.ToolsMenusItemMoveUp)
+	mux.HandleFunc("POST /tools/menu-editor/{id}/items/{item_id}/down", h.ToolsMenusItemMoveDown)
 
 	// Form Runtime (public access to forms)
 	mux.HandleFunc("GET /forms/{formRef}/new", h.FormsRuntimeNew)

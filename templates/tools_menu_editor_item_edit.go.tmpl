@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="dark">
+  <head>
+    {{template "head" .}}
+  </head>
+
+  <body>
+    {{template "navbar" .}}
+
+    <main class="container-fluid py-4 py-md-5">
+        {{if .Message}}
+            <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+                {{.Message}}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            </div>
+        {{end}}
+
+        <div class="row">
+            <div class="col-md-3">
+                {{template "tools_sidebar" .}}
+            </div>
+            <div class="col-md-9">
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="mb-0">Editar Item</h2>
+                        <a href="/tools/menu-editor/{{.Menu.ReferenceID}}/edit" class="btn btn-outline-secondary">Voltar</a>
+                    </div>
+                    
+                    {{if .Error}}
+                    <div class="alert alert-danger">{{.Error}}</div>
+                    {{end}}
+
+                    <form method="post" action="/tools/menu-editor/{{.Menu.ReferenceID}}/items/{{.Item.ReferenceID}}/update">
+                        <input type="hidden" name="csrf_token" value="{{.Csrf}}">
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="label" class="form-label">Label</label>
+                                <input type="text" class="form-control" id="label" name="label" 
+                                       value="{{.Item.Label}}" required>
+                                <div class="form-text">Texto exibido no menu</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="machine_name" class="form-label">Nome da Máquina</label>
+                                <input type="text" class="form-control" id="machine_name" name="machine_name" 
+                                       value="{{.Item.MachineName}}" required pattern="[a-z][a-z0-9_]*">
+                                <div class="form-text">Identificador único do item</div>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="icon" class="form-label">Ícone</label>
+                                <input type="text" class="form-control" id="icon" name="icon" 
+                                       value="{{.Item.Icon}}" placeholder="bi-house">
+                                <div class="form-text">Classe Bootstrap Icons (<a href="https://icons.getbootstrap.com/" target="_blank">ver ícones</a>)</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="parent_id" class="form-label">Item Pai</label>
+                                <select class="form-select" id="parent_id" name="parent_id">
+                                    <option value="">- Nenhum (raiz) -</option>
+                                    {{range .AllItems}}
+                                    {{if ne .ID $.Item.ID}}
+                                    <option value="{{.ReferenceID}}" {{if and $.Item.ParentID (eq .ID (deref $.Item.ParentID))}}selected{{end}}>
+                                        {{.Label}} ({{.MachineName}})
+                                    </option>
+                                    {{end}}
+                                    {{end}}
+                                </select>
+                                <div class="form-text">Coloca este item como filho de outro item</div>
+                            </div>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">Salvar</button>
+                            <a href="/tools/menu-editor/{{.Menu.ReferenceID}}/edit" class="btn btn-outline-secondary">Cancelar</a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer>
+      {{template "footer" .}}
+    </footer>
+    {{template "scripts" .}}
+  </body>
+</html>

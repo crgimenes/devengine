@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="dark">
+  <head>
+    {{template "head" .}}
+  </head>
+
+  <body>
+    <!-- Preview: Custom navbar with menu items -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
+      <div class="container-fluid">
+          <a class="navbar-brand" href="#">Preview</a>
+        <button class="navbar-toggler" 
+            type="button" 
+            data-bs-toggle="collapse" 
+            data-bs-target="#previewNav" 
+            aria-controls="previewNav" 
+            aria-expanded="false" 
+            aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="previewNav">
+          <ul class="navbar-nav ms-auto">
+            {{range .Items}}
+                {{if .Children}}
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
+                        </a>
+                        <ul class="dropdown-menu dropdown-menu-end">
+                            {{range .Children}}
+                                {{if .Children}}
+                                    <li class="dropdown-submenu">
+                                        <a class="dropdown-item" href="#">
+                                            {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
+                                        </a>
+                                        <ul class="dropdown-menu">
+                                            {{range .Children}}
+                                                <li><a class="dropdown-item" href="#">
+                                                    {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
+                                                </a></li>
+                                            {{end}}
+                                        </ul>
+                                    </li>
+                                {{else}}
+                                    <li><a class="dropdown-item" href="#">
+                                        {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
+                                    </a></li>
+                                {{end}}
+                            {{end}}
+                        </ul>
+                    </li>
+                {{else}}
+                    <li class="nav-item">
+                        <a class="nav-link" href="#">
+                            {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
+                        </a>
+                    </li>
+                {{end}}
+            {{end}}
+          </ul>
+        </div>
+      </div>
+    </nav>
+
+    <main class="container-fluid py-4 py-md-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="mb-0">Preview: {{.Menu.Label}}</h2>
+                        <a href="/tools/menu-editor/{{.Menu.ReferenceID}}/edit" class="btn btn-outline-secondary">
+                            <i class="bi bi-arrow-left"></i> Voltar para Edição
+                        </a>
+                    </div>
+                    
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle"></i> Este é um preview do menu <strong>{{.Menu.MachineName}}</strong>.
+                        O menu está sendo exibido na barra de navegação acima.
+                    </div>
+
+                    <h5>Estrutura do Menu</h5>
+                    <ul class="list-group">
+                        {{range .Items}}
+                        <li class="list-group-item">
+                            {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}
+                            <strong>{{if .Label}}{{.Label}}{{else}}{{.MachineName}}{{end}}</strong>
+                            {{if .Children}}
+                            <ul class="list-group list-group-flush mt-2">
+                                {{range .Children}}
+                                <li class="list-group-item ps-4">
+                                    ↳ {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}
+                                    {{if .Label}}{{.Label}}{{else}}{{.MachineName}}{{end}}
+                                    {{if .Children}}
+                                    <ul class="list-group list-group-flush mt-1">
+                                        {{range .Children}}
+                                        <li class="list-group-item ps-5">
+                                            ↳ {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}
+                                            {{if .Label}}{{.Label}}{{else}}{{.MachineName}}{{end}}
+                                        </li>
+                                        {{end}}
+                                    </ul>
+                                    {{end}}
+                                </li>
+                                {{end}}
+                            </ul>
+                            {{end}}
+                        </li>
+                        {{else}}
+                        <li class="list-group-item text-muted">Nenhum item cadastrado</li>
+                        {{end}}
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </main>
+    <footer>
+      {{template "footer" .}}
+    </footer>
+    {{template "scripts" .}}
+  </body>
+</html>

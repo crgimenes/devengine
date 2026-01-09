@@ -151,7 +151,7 @@ audio {
 
 /* Custom styles */
 
-/* Dropdown submenu support */
+/* Dropdown submenu support - submenus open to the left */
 .dropdown-submenu {
     position: relative;
 }
@@ -161,17 +161,22 @@ audio {
     left: auto;
     right: 100%;
     margin-top: -1px;
+    margin-right: -2px;
 }
 
 .dropdown-submenu:hover>.dropdown-menu {
     display: block;
 }
 
-.dropdown-submenu>.dropdown-toggle::after {
-    transform: rotate(90deg);
+/* Arrow pointing left for left-opening submenus */
+.dropdown-submenu>.dropdown-item {
+    padding-right: 1.5rem;
+}
+
+.dropdown-submenu>.dropdown-item::before {
+    content: "◂";
     position: absolute;
-    left: 6px;
-    top: 0.8em;
+    left: 0.5rem;
 }
 
 /* Responsive and styled tables */
