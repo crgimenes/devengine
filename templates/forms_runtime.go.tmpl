@@ -118,6 +118,22 @@
     {{template "filemanager_modal" .}}
     <script src="/assets/field-image-picker.js"></script>
     {{end}}
+    
+    {{/* Video field support - include filemanager modal and picker script */}}
+    {{$hasVideos := false}}
+    {{range .ElementsTree}}{{if eq .Element.UIKind "video"}}{{$hasVideos = true}}{{end}}{{end}}
+    {{if $hasVideos}}
+    {{if not $hasImages}}{{template "filemanager_modal" .}}{{end}}
+    <script src="/assets/field-video-picker.js"></script>
+    {{end}}
+    
+    {{/* Audio field support */}}
+    {{$hasAudios := false}}
+    {{range .ElementsTree}}{{if eq .Element.UIKind "audio"}}{{$hasAudios = true}}{{end}}{{end}}
+    {{if $hasAudios}}
+    {{if and (not $hasImages) (not $hasVideos)}}{{template "filemanager_modal" .}}{{end}}
+    <script src="/assets/field-audio-picker.js"></script>
+    {{end}}
   </body>
 </html>
 
@@ -191,6 +207,10 @@
                 {{template "field_select" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly)}}
             {{else if eq $uiKind "image"}}
                 {{template "field_image" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly)}}
+            {{else if eq $uiKind "video"}}
+                {{template "field_video" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly)}}
+            {{else if eq $uiKind "audio"}}
+                {{template "field_audio" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly)}}
             {{else}}
                 {{/* Default: text */}}
                 {{template "field_text" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly)}}
@@ -232,6 +252,10 @@
                 {{template "field_select" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly)}}
             {{else if eq $uiKind "image"}}
                 {{template "field_image" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly)}}
+            {{else if eq $uiKind "video"}}
+                {{template "field_video" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly)}}
+            {{else if eq $uiKind "audio"}}
+                {{template "field_audio" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly)}}
             {{else}}
                 {{template "field_text" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly)}}
             {{end}}

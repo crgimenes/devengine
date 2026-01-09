@@ -275,6 +275,75 @@
                 <div class="form-text">Texto exibido se a imagem não carregar</div>
             </div>
         </div>
+
+        <!-- Video options -->
+        <div id="field-options-video" class="field-ui-options d-none">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input plugin-option" type="checkbox" id="opt_video_controls" 
+                               data-key="controls" {{if ne (index $meta "controls") false}}checked{{end}}>
+                        <label class="form-check-label" for="opt_video_controls">
+                            Mostrar controles
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input plugin-option" type="checkbox" id="opt_video_autoplay" 
+                               data-key="autoplay" {{if index $meta "autoplay"}}checked{{end}}>
+                        <label class="form-check-label" for="opt_video_autoplay">
+                            Reproduzir automaticamente
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input plugin-option" type="checkbox" id="opt_video_loop" 
+                               data-key="loop" {{if index $meta "loop"}}checked{{end}}>
+                        <label class="form-check-label" for="opt_video_loop">
+                            Repetir (loop)
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input plugin-option" type="checkbox" id="opt_video_muted" 
+                               data-key="muted" {{if index $meta "muted"}}checked{{end}}>
+                        <label class="form-check-label" for="opt_video_muted">
+                            Silenciado
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audio options -->
+        <div id="field-options-audio" class="field-ui-options d-none">
+            <div class="row">
+                <div class="col-md-6">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input plugin-option" type="checkbox" id="opt_audio_controls" 
+                               data-key="controls" {{if ne (index $meta "controls") false}}checked{{end}}>
+                        <label class="form-check-label" for="opt_audio_controls">
+                            Mostrar controles
+                        </label>
+                    </div>
+                    <div class="form-check mb-2">
+                        <input class="form-check-input plugin-option" type="checkbox" id="opt_audio_autoplay" 
+                               data-key="autoplay" {{if index $meta "autoplay"}}checked{{end}}>
+                        <label class="form-check-label" for="opt_audio_autoplay">
+                            Reproduzir automaticamente
+                        </label>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="form-check mb-2">
+                        <input class="form-check-input plugin-option" type="checkbox" id="opt_audio_loop" 
+                               data-key="loop" {{if index $meta "loop"}}checked{{end}}>
+                        <label class="form-check-label" for="opt_audio_loop">
+                            Repetir (loop)
+                        </label>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- Button - options are in separate section, not in ui_meta_json -->

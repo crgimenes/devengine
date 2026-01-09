@@ -783,10 +783,10 @@ func serveFileHandler(w http.ResponseWriter, r *http.Request) {
 		return // auth.Prelude already handled redirect
 	}
 
-	log.Printf("method %s file %q for user %s",
-		r.Method,
-		r.URL.Path,
-		u.Email)
+	//log.Printf("method %s file %q for user %s",
+	//	r.Method,
+	//	r.URL.Path,
+	//	u.Email)
 
 	path := strings.TrimPrefix(r.URL.Path, config.Cfg.BaseURL+"/file/")
 	path = strings.TrimPrefix(path, "/file/")

@@ -113,6 +113,24 @@ func getFieldDefaults(uiKind string) map[string]interface{} {
 			"allowEmpty": true,
 			"multiple":   false,
 		}
+	case "image":
+		return map[string]interface{}{
+			"alt_text": "",
+		}
+	case "video":
+		return map[string]interface{}{
+			"controls": true,
+			"autoplay": false,
+			"loop":     false,
+			"muted":    false,
+		}
+	case "audio":
+		return map[string]interface{}{
+			"controls": true,
+			"autoplay": false,
+			"loop":     false,
+			"muted":    false,
+		}
 	default:
 		return map[string]interface{}{}
 	}

@@ -135,6 +135,20 @@ audio {
     width: 100%;
 }
 
+/* Video field preview */
+.field-video-preview {
+    width: 100%;
+    display: block;
+}
+
+.field-video-placeholder {
+    min-height: 100px;
+}
+
+.field-video-container {
+    width: 100%;
+}
+
 /* Custom styles */
 
 /* Dropdown submenu support */

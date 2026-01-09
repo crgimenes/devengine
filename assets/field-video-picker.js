@@ -1,80 +1,82 @@
 /**
- * field-image-picker.js
- * Handles image field interactions with the filemanager modal
+ * field-video-picker.js
+ * Handles video field interactions with the filemanager modal
  */
 
 document.addEventListener('DOMContentLoaded', function () {
     // Track which field is currently being edited
-    let activeFieldName = null;
+    let activeVideoFieldName = null;
 
-    // Handle select button clicks
-    // Handle select button or placeholder clicks
+    // Handle select button clicks for video fields
+    // Handle select button or placeholder clicks for video fields
     document.addEventListener('click', function (e) {
-        const selectBtn = e.target.closest('.field-image-select-btn, .field-image-placeholder');
+        const selectBtn = e.target.closest('.field-video-select-btn, .field-video-placeholder');
         if (selectBtn && !selectBtn.classList.contains('readonly')) {
-            activeFieldName = selectBtn.dataset.fieldName;
+            activeVideoFieldName = selectBtn.dataset.fieldName;
 
-            // Configure modal for images
+            // Configure modal for videos
             const modal = document.getElementById('fileManagerModal');
             if (modal) {
                 const titleEl = modal.querySelector('[data-filemanager-title]');
                 const acceptHelp = modal.querySelector('[data-filemanager-accept-help]');
                 const fileInput = modal.querySelector('#fileManagerFileInput');
 
-                if (titleEl) titleEl.textContent = 'Selecionar Imagem';
-                if (acceptHelp) acceptHelp.textContent = 'Formatos: JPG, PNG, GIF, WebP, SVG';
-                if (fileInput) fileInput.setAttribute('accept', 'image/*');
+                if (titleEl) titleEl.textContent = 'Selecionar Vídeo';
+                if (acceptHelp) acceptHelp.textContent = 'Formatos: MP4, WebM, OGG';
+                if (fileInput) fileInput.setAttribute('accept', 'video/*');
 
-                // Load user images
-                loadUserImages();
+                // Load user videos
+                loadUserVideos();
             }
         }
     });
 
-    // Handle remove button clicks
+    // Handle remove button clicks for video fields
     document.addEventListener('click', function (e) {
-        const removeBtn = e.target.closest('.field-image-remove-btn');
+        const removeBtn = e.target.closest('.field-video-remove-btn');
         if (removeBtn) {
             const fieldName = removeBtn.dataset.fieldName;
-            setImageValue(fieldName, '', '');
+            setVideoValue(fieldName, '');
         }
     });
 
-    // Handle file card clicks in the modal
+    // Handle file card clicks in the modal for videos
     document.addEventListener('click', function (e) {
+        if (!activeVideoFieldName) return;
+
         const fileCard = e.target.closest('[data-file-url]');
-        if (fileCard && activeFieldName) {
+        if (fileCard) {
             const url = fileCard.dataset.fileUrl;
-            const img = fileCard.querySelector('img');
-            const alt = img ? img.alt : '';
             if (url) {
-                setImageValue(activeFieldName, url, alt);
+                setVideoValue(activeVideoFieldName, url);
                 closeModal();
             }
         }
     });
 
-    // Handle URL insert button
+    // Handle URL insert button for videos
     const insertUrlBtn = document.getElementById('fileManagerInsertUrlBtn');
     if (insertUrlBtn) {
+        const originalHandler = insertUrlBtn.onclick;
         insertUrlBtn.addEventListener('click', function () {
+            if (!activeVideoFieldName) return;
+
             const urlInput = document.getElementById('fileManagerUrlInput');
-            if (urlInput && activeFieldName && urlInput.value) {
-                setImageValue(activeFieldName, urlInput.value, '');
+            if (urlInput && urlInput.value) {
+                setVideoValue(activeVideoFieldName, urlInput.value);
                 urlInput.value = '';
                 closeModal();
             }
         });
     }
-
-    // Handle upload form submission
+    // Handle upload form submission for videos
     const uploadForm = document.getElementById('fileManagerUploadForm');
     if (uploadForm) {
         uploadForm.addEventListener('submit', function (e) {
-            if (!activeFieldName) return; // Only handle if image field is active
+            if (!activeVideoFieldName) return; // Only handle if video field is active
 
             e.preventDefault();
-            e.stopImmediatePropagation(); // Prevent other pickers from handling
+            e.stopImmediatePropagation(); // Prevent image picker from also handling this
             const fileInput = document.getElementById('fileManagerFileInput');
             const description = document.getElementById('fileManagerDescription');
             const statusEl = document.getElementById('fileManagerUploadStatus');
@@ -101,12 +103,11 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => {
                     if (response.ok || response.redirected) {
-                        // Upload successful - reload images
                         if (statusEl) statusEl.innerHTML = '<div class="text-success">Upload concluído!</div>';
                         if (fileInput) fileInput.value = '';
                         if (description) description.value = '';
-                        // Reload images after a short delay
-                        setTimeout(loadUserImages, 500);
+                        // Reload videos after a short delay
+                        setTimeout(loadUserVideos, 500);
                     } else {
                         throw new Error('Upload falhou');
                     }
@@ -120,53 +121,53 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
         });
     }
-    // Pagination state for images
-    let imageOffset = 0;
-    const imageLimit = 20;
-    let isLoadingImages = false;
-    let hasMoreImages = true;
+    // Pagination state for videos
+    let videoOffset = 0;
+    const videoLimit = 20;
+    let isLoadingVideos = false;
+    let hasMoreVideos = true;
 
     /**
-     * Load user images into the modal list with infinite scroll
+     * Load user videos into the modal list with infinite scroll
      */
-    function loadUserImages(append = false) {
+    function loadUserVideos(append = false) {
         const listEl = document.getElementById('fileManagerList');
-        if (!listEl || isLoadingImages) return;
+        if (!listEl || isLoadingVideos) return;
 
         if (!append) {
-            imageOffset = 0;
-            hasMoreImages = true;
+            videoOffset = 0;
+            hasMoreVideos = true;
             listEl.innerHTML = '<div class="text-center text-body-secondary py-4"><small>Carregando...</small></div>';
         }
 
-        if (!hasMoreImages) return;
+        if (!hasMoreVideos) return;
 
-        isLoadingImages = true;
+        isLoadingVideos = true;
 
-        fetch(`/api/files?offset=${imageOffset}&limit=${imageLimit}`)
+        fetch(`/api/files?offset=${videoOffset}&limit=${videoLimit}`)
             .then(r => r.json())
             .then(data => {
                 const files = data.data || [];
 
-                // Filter for images only
-                const images = files.filter(function (f) {
+                // Filter for videos only
+                const videos = files.filter(function (f) {
                     const type = (f.filetype || '').toLowerCase();
-                    return type.startsWith('image/');
+                    return type.startsWith('video/');
                 });
 
                 // Check if there are more files to load
-                hasMoreImages = files.length === imageLimit;
-                imageOffset += files.length;
+                hasMoreVideos = files.length === videoLimit;
+                videoOffset += files.length;
 
-                if (images.length === 0 && !append) {
-                    listEl.innerHTML = '<div class="text-center text-body-secondary py-4"><small>Nenhuma imagem encontrada</small></div>';
+                if (videos.length === 0 && !append) {
+                    listEl.innerHTML = '<div class="text-center text-body-secondary py-4"><small>Nenhum vídeo encontrado</small></div>';
                     return;
                 }
 
                 let html = '';
-                images.forEach(function (file) {
+                videos.forEach(function (file) {
                     const url = file.file_url || '';
-                    const name = file.display_name || file.filename || 'Imagem';
+                    const name = file.display_name || file.filename || 'Vídeo';
                     const desc = file.description || '';
                     const size = formatFileSize(file.filesize || 0);
                     const date = file.created_at ? file.created_at.split('T')[0] : '';
@@ -175,8 +176,9 @@ document.addEventListener('DOMContentLoaded', function () {
                         <div class="card mb-2 card-hover" data-file-url="${url}" role="button" style="cursor: pointer;">
                             <div class="row g-0">
                                 <div class="col-4">
-                                    <img src="${url}" class="img-fluid rounded-start h-100 w-100" 
-                                         alt="${name}" style="object-fit: contain; background: var(--bs-body-bg); min-height: 60px; max-height: 80px;" loading="lazy">
+                                    <video src="${url}" class="rounded-start h-100 w-100" 
+                                           style="object-fit: contain; background: var(--bs-body-bg); min-height: 60px; max-height: 80px;"
+                                           preload="metadata" autoplay playsinline webkit-playsinline muted loop></video>
                                 </div>
                                 <div class="col-8">
                                     <div class="card-body p-2">
@@ -191,7 +193,6 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
 
                 if (append) {
-                    // Remove loading indicator and append new items
                     const loadingIndicator = listEl.querySelector('.loading-more');
                     if (loadingIndicator) loadingIndicator.remove();
                     listEl.insertAdjacentHTML('beforeend', html);
@@ -199,29 +200,28 @@ document.addEventListener('DOMContentLoaded', function () {
                     listEl.innerHTML = html;
                 }
 
-                // Add loading indicator if there are more
-                if (hasMoreImages) {
+                if (hasMoreVideos) {
                     listEl.insertAdjacentHTML('beforeend', '<div class="loading-more text-center py-2"><small class="text-muted">Role para carregar mais...</small></div>');
                 }
             })
             .catch(err => {
-                console.error('Error loading images:', err);
+                console.error('Error loading videos:', err);
                 if (!append) {
-                    listEl.innerHTML = '<div class="text-center text-danger py-4"><small>Erro ao carregar imagens</small></div>';
+                    listEl.innerHTML = '<div class="text-center text-danger py-4"><small>Erro ao carregar vídeos</small></div>';
                 }
             })
             .finally(() => {
-                isLoadingImages = false;
+                isLoadingVideos = false;
             });
     }
 
-    // Infinite scroll for image list
+    // Infinite scroll for video list
     document.getElementById('fileManagerList')?.addEventListener('scroll', function () {
-        if (!activeFieldName) return;
+        if (!activeVideoFieldName) return;
         const el = this;
         if (el.scrollTop + el.clientHeight >= el.scrollHeight - 50) {
-            if (hasMoreImages && !isLoadingImages) {
-                loadUserImages(true);
+            if (hasMoreVideos && !isLoadingVideos) {
+                loadUserVideos(true);
             }
         }
     });
@@ -246,17 +246,16 @@ document.addEventListener('DOMContentLoaded', function () {
             const modal = bootstrap.Modal.getInstance(modalEl);
             if (modal) modal.hide();
         }
-        activeFieldName = null;
+        activeVideoFieldName = null;
     }
 
     /**
-     * Set image value and update preview
+     * Set video value and update preview
      */
-    function setImageValue(fieldName, url, alt) {
+    function setVideoValue(fieldName, url) {
         const input = document.getElementById(fieldName);
         const previewWrapper = document.getElementById(fieldName + '_preview_wrapper');
-        const removeBtn = document.querySelector(`.field-image-remove-btn[data-field-name="${fieldName}"]`);
-        const altText = alt || 'Imagem';
+        const removeBtn = document.querySelector(`.field-video-remove-btn[data-field-name="${fieldName}"]`);
 
         if (input) {
             input.value = url;
@@ -264,15 +263,50 @@ document.addEventListener('DOMContentLoaded', function () {
 
         if (previewWrapper) {
             if (url) {
-                previewWrapper.innerHTML = `<img src="${url}" alt="${altText}" class="field-image-preview rounded" id="${fieldName}_preview">`;
+                // Get options from container
+                const container = previewWrapper.closest('.field-video-container');
+                let options = { controls: true, autoplay: false, loop: false, muted: false };
+
+                if (container && container.dataset.videoOptions) {
+                    try {
+                        // The Go template outputs map[key:value], which is not valid JSON
+                        // We need to parse it manually or rely on proper JSON format from server
+                        // Since we can't easily parse Go map format in JS, we'll try to guess or use defaults
+                        // BETTER APPROACH: The server should output valid JSON or data attributes
+                        // For now, let's assume standard behavior: show controls in preview so user can test
+                        // BUT user wants options applied.
+
+                        // Let's parse the map string manually loosely: map[key:value ...]
+                        const metaStr = container.dataset.videoOptions;
+                        if (metaStr.startsWith('map[')) {
+                            options.controls = metaStr.includes('controls:true');
+                            options.autoplay = metaStr.includes('autoplay:true');
+                            options.loop = metaStr.includes('loop:true');
+                            options.muted = metaStr.includes('muted:true');
+                        }
+                    } catch (e) {
+                        console.error('Error parsing video options:', e);
+                    }
+                }
+
+                const attrs = [
+                    options.controls ? 'controls' : '',
+                    options.autoplay ? 'autoplay' : '',
+                    options.loop ? 'loop' : '',
+                    options.muted ? 'muted' : '',
+                    'playsinline',
+                    'class="field-video-preview rounded w-100"',
+                    `id="${fieldName}_preview"`
+                ].filter(Boolean).join(' ');
+
+                previewWrapper.innerHTML = `<video src="${url}" ${attrs}></video>`;
             } else {
                 previewWrapper.innerHTML = `
-                    <div class="field-image-placeholder text-center text-muted p-4 border rounded bg-body-secondary">
+                    <div class="field-video-placeholder text-center text-muted p-4 border rounded bg-body-secondary">
                         <svg class="mb-2" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
-                            <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
-                            <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/>
+                            <path d="M0 1a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V1zm4 0v6h8V1H4zm8 8H4v6h8V9zM1 1v2h2V1H1zm2 3H1v2h2V4zM1 7v2h2V7H1zm2 3H1v2h2v-2zm-2 3v2h2v-2H1zM15 1h-2v2h2V1zm-2 3v2h2V4h-2zm2 3h-2v2h2V7zm-2 3v2h2v-2h-2zm2 3h-2v2h2v-2z"/>
                         </svg>
-                        <div class="small">Nenhuma imagem selecionada</div>
+                        <div class="small">Nenhum vídeo selecionado</div>
                     </div>
                 `;
             }
