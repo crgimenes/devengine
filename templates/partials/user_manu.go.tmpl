@@ -22,6 +22,7 @@
       <li><span class="dropdown-item-text">{{.User.Email}}</span></li>
       <li><hr class="dropdown-divider"></li>
       <li><a class="dropdown-item" href="/me">Meu Perfil</a></li>
+      <li><a class="dropdown-item" href="/files">Meus Arquivos</a></li>
       {{if .User.Sysop}}
       {{template "tools_menu" .}}
       {{end}}
