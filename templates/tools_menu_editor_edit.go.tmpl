@@ -76,6 +76,7 @@
                                 <tr>
                                     <th class="col-order">Ordem</th>
                                     <th>Label</th>
+                                    <th>Machine Name</th>
                                     <th>Item Pai</th>
                                     <th>Ícone</th>
                                     <th class="text-end">Ações</th>
@@ -102,8 +103,8 @@
                                         <a href="/tools/menu-editor/{{$.Menu.ReferenceID}}/items/{{.ReferenceID}}/edit">
                                             {{if .Label}}{{.Label}}{{else}}<em class="text-muted">{{.MachineName}}</em>{{end}}
                                         </a>
-                                        <br><small class="text-muted">{{.MachineName}}</small>
                                     </td>
+                                    <td><small class="text-muted">{{.MachineName}}</small></td>
                                     <td>
                                         {{if .ParentLabel}}<span class="badge bg-secondary">{{.ParentLabel}}</span>{{else}}<span class="text-muted">-</span>{{end}}
                                     </td>
