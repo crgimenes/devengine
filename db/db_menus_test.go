@@ -96,7 +96,7 @@ func TestMenuItemCRUD(t *testing.T) {
 	}
 
 	// Create root item
-	item1, err := s.CreateMenuItem(menu.ID, nil, "home", "Início", "bi-house", "link", "/", 0)
+	item1, err := s.CreateMenuItem(menu.ID, nil, "home", "Início", "bi-house", "link", "/", "", "", 0)
 	if err != nil {
 		t.Fatalf("CreateMenuItem: %v", err)
 	}
@@ -108,7 +108,7 @@ func TestMenuItemCRUD(t *testing.T) {
 	}
 
 	// Create separator
-	item2, err := s.CreateMenuItem(menu.ID, nil, "sep1", "", "", "separator", "", 1)
+	item2, err := s.CreateMenuItem(menu.ID, nil, "sep1", "", "", "separator", "", "", "", 1)
 	if err != nil {
 		t.Fatalf("CreateMenuItem (separator): %v", err)
 	}
@@ -117,13 +117,13 @@ func TestMenuItemCRUD(t *testing.T) {
 	}
 
 	// Create submenu
-	submenu, err := s.CreateMenuItem(menu.ID, nil, "settings", "Configurações", "bi-gear", "submenu", "", 2)
+	submenu, err := s.CreateMenuItem(menu.ID, nil, "settings", "Configurações", "bi-gear", "submenu", "", "", "", 2)
 	if err != nil {
 		t.Fatalf("CreateMenuItem (submenu): %v", err)
 	}
 
 	// Create item under submenu
-	subItem, err := s.CreateMenuItem(menu.ID, &submenu.ID, "profile", "Meu Perfil", "bi-person", "link", "/me", 0)
+	subItem, err := s.CreateMenuItem(menu.ID, &submenu.ID, "profile", "Meu Perfil", "bi-person", "link", "/me", "", "", 0)
 	if err != nil {
 		t.Fatalf("CreateMenuItem (sub-item): %v", err)
 	}
@@ -150,7 +150,7 @@ func TestMenuItemCRUD(t *testing.T) {
 	}
 
 	// Update item
-	err = s.UpdateMenuItem(item1.ID, nil, "home", "Home Page", "bi-house-fill", "link", "/home", 0)
+	err = s.UpdateMenuItem(item1.ID, nil, "home", "Home Page", "bi-house-fill", "link", "/home", "", "", 0)
 	if err != nil {
 		t.Fatalf("UpdateMenuItem: %v", err)
 	}
@@ -179,9 +179,9 @@ func TestMenuItemMoveUpDown(t *testing.T) {
 	menu, _ := s.CreateMenu("order_test", "Order Test", "")
 
 	// Create items with explicit z_order
-	item1, _ := s.CreateMenuItem(menu.ID, nil, "item1", "Item 1", "", "link", "/1", 0)
-	item2, _ := s.CreateMenuItem(menu.ID, nil, "item2", "Item 2", "", "link", "/2", 1)
-	item3, _ := s.CreateMenuItem(menu.ID, nil, "item3", "Item 3", "", "link", "/3", 2)
+	item1, _ := s.CreateMenuItem(menu.ID, nil, "item1", "Item 1", "", "link", "/1", "", "", 0)
+	item2, _ := s.CreateMenuItem(menu.ID, nil, "item2", "Item 2", "", "link", "/2", "", "", 1)
+	item3, _ := s.CreateMenuItem(menu.ID, nil, "item3", "Item 3", "", "link", "/3", "", "", 2)
 
 	// Move item2 up (should swap with item1)
 	err := s.MoveMenuItemUp(item2.ID)
@@ -266,10 +266,10 @@ func TestListSubmenuItems(t *testing.T) {
 	menu, _ := s.CreateMenu("submenu_test", "Submenu Test", "")
 
 	// Create items of different types
-	s.CreateMenuItem(menu.ID, nil, "home", "Home", "", "link", "/", 0)
-	s.CreateMenuItem(menu.ID, nil, "settings", "Settings", "", "submenu", "", 1)
-	s.CreateMenuItem(menu.ID, nil, "admin", "Admin", "", "submenu", "", 2)
-	s.CreateMenuItem(menu.ID, nil, "sep", "", "", "separator", "", 3)
+	s.CreateMenuItem(menu.ID, nil, "home", "Home", "", "link", "/", "", "", 0)
+	s.CreateMenuItem(menu.ID, nil, "settings", "Settings", "", "submenu", "", "", "", 1)
+	s.CreateMenuItem(menu.ID, nil, "admin", "Admin", "", "submenu", "", "", "", 2)
+	s.CreateMenuItem(menu.ID, nil, "sep", "", "", "separator", "", "", "", 3)
 
 	// List only submenus
 	submenus, err := s.ListSubmenuItems(menu.ID)
@@ -318,19 +318,19 @@ func TestMenuItemMachineNameUniquenessPerMenu(t *testing.T) {
 	menu2, _ := s.CreateMenu("menu2", "Menu 2", "")
 
 	// Create item in menu1
-	_, err := s.CreateMenuItem(menu1.ID, nil, "home", "Home", "", "link", "/", 0)
+	_, err := s.CreateMenuItem(menu1.ID, nil, "home", "Home", "", "link", "/", "", "", 0)
 	if err != nil {
 		t.Fatalf("CreateMenuItem in menu1: %v", err)
 	}
 
 	// Same machine_name in different menu should work
-	_, err = s.CreateMenuItem(menu2.ID, nil, "home", "Home", "", "link", "/", 0)
+	_, err = s.CreateMenuItem(menu2.ID, nil, "home", "Home", "", "link", "/", "", "", 0)
 	if err != nil {
 		t.Fatalf("CreateMenuItem in menu2 (same name): %v", err)
 	}
 
 	// Same machine_name in same menu should fail
-	_, err = s.CreateMenuItem(menu1.ID, nil, "home", "Home 2", "", "link", "/2", 1)
+	_, err = s.CreateMenuItem(menu1.ID, nil, "home", "Home 2", "", "link", "/2", "", "", 1)
 	if err == nil {
 		t.Fatal("expected error for duplicate machine_name in same menu")
 	}

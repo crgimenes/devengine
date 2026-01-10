@@ -37,6 +37,8 @@ func RegisterLogBuiltins(eng *filo.Engine, ctx *FiloLogContext) {
 	eng.MustRegisterBuiltin("log-print", builtinLogPrint)
 	eng.MustRegisterBuiltin("log-printf", builtinLogPrintf)
 	eng.MustRegisterBuiltin("log-globals", ctx.builtinLogGlobals)
+	// Alias for convenience
+	eng.MustRegisterBuiltin("print", builtinLogPrint)
 }
 
 // builtinLogPrint prints all arguments concatenated.

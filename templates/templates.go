@@ -280,6 +280,28 @@ func loadTemplates() *template.Template {
 			}
 			return f.Interface()
 		},
+		// getMenuMachineName safely extracts MenuMachineName field from any struct using reflection.
+		// Returns empty string if the field doesn't exist.
+		"getMenuMachineName": func(data interface{}) string {
+			if data == nil {
+				return ""
+			}
+			v := reflect.ValueOf(data)
+			if v.Kind() == reflect.Ptr {
+				v = v.Elem()
+			}
+			if v.Kind() != reflect.Struct {
+				return ""
+			}
+			f := v.FieldByName("MenuMachineName")
+			if !f.IsValid() {
+				return ""
+			}
+			if f.Kind() != reflect.String {
+				return ""
+			}
+			return f.String()
+		},
 	}
 
 	base := template.New("").Funcs(funcMap)

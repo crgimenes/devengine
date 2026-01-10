@@ -197,41 +197,48 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 
 	// Load menu items if form has a menu associated
 	var menuItems []db.MenuItemNode
+	var menuMachineName string
 	if form.MenuID != nil {
-		items, err := db.Storage.ListMenuItems(*form.MenuID)
-		if err == nil {
-			menuItems = db.BuildMenuItemTree(items)
+		menu, err := db.Storage.GetMenuByID(*form.MenuID)
+		if err == nil && menu != nil {
+			menuMachineName = menu.MachineName
+			items, err := db.Storage.ListMenuItems(menu.ID)
+			if err == nil {
+				menuItems = db.BuildMenuItemTreeWithName(items, menuMachineName)
+			}
 		}
 	}
 
 	data := struct {
-		Authed       bool
-		User         db.User
-		Config       config.Config
-		Form         *db.Form
-		EntityType   *db.EAVEntityType
-		Elements     []FormRuntimeElement
-		ElementsTree []FormRuntimeNode
-		Record       *db.EAVRecord
-		Values       map[string]interface{}
-		Message      string
-		Error        string
-		PosLoadError string
-		MenuItems    []db.MenuItemNode
+		Authed          bool
+		User            db.User
+		Config          config.Config
+		Form            *db.Form
+		EntityType      *db.EAVEntityType
+		Elements        []FormRuntimeElement
+		ElementsTree    []FormRuntimeNode
+		Record          *db.EAVRecord
+		Values          map[string]interface{}
+		Message         string
+		Error           string
+		PosLoadError    string
+		MenuItems       []db.MenuItemNode
+		MenuMachineName string
 	}{
-		Authed:       true,
-		User:         *user,
-		Config:       *h.cfg,
-		Form:         form,
-		EntityType:   entityType,
-		Elements:     runtimeElements,
-		ElementsTree: elementTree,
-		Record:       nil, // New record
-		Values:       values,
-		Message:      message,
-		Error:        errorMsg,
-		PosLoadError: posLoadError,
-		MenuItems:    menuItems,
+		Authed:          true,
+		User:            *user,
+		Config:          *h.cfg,
+		Form:            form,
+		EntityType:      entityType,
+		Elements:        runtimeElements,
+		ElementsTree:    elementTree,
+		Record:          nil, // New record
+		Values:          values,
+		Message:         message,
+		Error:           errorMsg,
+		PosLoadError:    posLoadError,
+		MenuItems:       menuItems,
+		MenuMachineName: menuMachineName,
 	}
 
 	err = h.templates(w, "forms_runtime.go.tmpl", data)
@@ -474,41 +481,48 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 
 	// Load menu items if form has a menu associated
 	var menuItems []db.MenuItemNode
+	var menuMachineName string
 	if form.MenuID != nil {
-		mItems, err := db.Storage.ListMenuItems(*form.MenuID)
-		if err == nil {
-			menuItems = db.BuildMenuItemTree(mItems)
+		menu, err := db.Storage.GetMenuByID(*form.MenuID)
+		if err == nil && menu != nil {
+			menuMachineName = menu.MachineName
+			mItems, err := db.Storage.ListMenuItems(menu.ID)
+			if err == nil {
+				menuItems = db.BuildMenuItemTreeWithName(mItems, menuMachineName)
+			}
 		}
 	}
 
 	data := struct {
-		Authed       bool
-		User         db.User
-		Config       config.Config
-		Form         *db.Form
-		EntityType   *db.EAVEntityType
-		Elements     []FormRuntimeElement
-		ElementsTree []FormRuntimeNode
-		Record       *db.EAVRecord
-		Values       map[string]interface{}
-		Message      string
-		Error        string
-		PosLoadError string
-		MenuItems    []db.MenuItemNode
+		Authed          bool
+		User            db.User
+		Config          config.Config
+		Form            *db.Form
+		EntityType      *db.EAVEntityType
+		Elements        []FormRuntimeElement
+		ElementsTree    []FormRuntimeNode
+		Record          *db.EAVRecord
+		Values          map[string]interface{}
+		Message         string
+		Error           string
+		PosLoadError    string
+		MenuItems       []db.MenuItemNode
+		MenuMachineName string
 	}{
-		Authed:       true,
-		User:         *user,
-		Config:       *h.cfg,
-		Form:         form,
-		EntityType:   entityType,
-		Elements:     runtimeElements,
-		ElementsTree: elementTree,
-		Record:       record,
-		Values:       values,
-		Message:      message,
-		Error:        errorMsg,
-		PosLoadError: posLoadError,
-		MenuItems:    menuItems,
+		Authed:          true,
+		User:            *user,
+		Config:          *h.cfg,
+		Form:            form,
+		EntityType:      entityType,
+		Elements:        runtimeElements,
+		ElementsTree:    elementTree,
+		Record:          record,
+		Values:          values,
+		Message:         message,
+		Error:           errorMsg,
+		PosLoadError:    posLoadError,
+		MenuItems:       menuItems,
+		MenuMachineName: menuMachineName,
 	}
 
 	err = h.templates(w, "forms_runtime.go.tmpl", data)

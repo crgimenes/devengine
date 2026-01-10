@@ -69,4 +69,8 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /form/{machineName}/r/{recordRef}", h.FormsRuntimeUpdate)
 	mux.HandleFunc("POST /form/{machineName}/action/{buttonName}", h.FormsRuntimeButtonAction)
 	mux.HandleFunc("GET /form/{machineName}/actions.js", h.FormsRuntimeActionsJS)
+
+	// Menu Actions (public access via /menu/{menuMachineName})
+	mux.HandleFunc("GET /menu/{menuMachineName}/actions.js", h.MenuActionsJS)
+	mux.HandleFunc("POST /menu/{menuMachineName}/action/{itemMachineName}", h.MenuItemAction)
 }

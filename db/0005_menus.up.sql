@@ -71,6 +71,12 @@ CREATE TABLE IF NOT EXISTS menu_items (
     -- URL for links (optional, used when item_type = 'link')
     url           TEXT,
 
+    -- JavaScript code to execute client-side (requires external JS file for CSP)
+    js_code       TEXT,
+
+    -- Filo code to execute server-side
+    filo_code     TEXT,
+
     -- Ordering within parent
     z_order       INTEGER NOT NULL DEFAULT 0,
 

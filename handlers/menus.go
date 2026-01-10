@@ -1,12 +1,17 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
+	"strings"
 
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/filodb"
+	"github.com/crgimenes/devengine/filolog"
 	"github.com/crgimenes/devengine/session"
+	"github.com/crgimenes/filo"
 )
 
 // ToolsMenus shows the menu list page.
@@ -444,7 +449,7 @@ func (h *Handlers) ToolsMenusItemCreate(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	_, err = db.Storage.CreateMenuItem(menu.ID, parentID, machineName, label, icon, "link", "", maxZOrder)
+	_, err = db.Storage.CreateMenuItem(menu.ID, parentID, machineName, label, icon, "link", "", "", "", maxZOrder)
 	if err != nil {
 		http.Redirect(w, r, "/tools/menu-editor/"+id+"/edit?message=Erro+ao+criar+item:+"+err.Error(), http.StatusSeeOther)
 		return
@@ -517,7 +522,7 @@ func (h *Handlers) ToolsMenusItemEdit(w http.ResponseWriter, r *http.Request) {
 
 	err = h.templates(w, "tools_menu_editor_item_edit.go.tmpl", data)
 	if err != nil {
-		http.Error(w, "template error", http.StatusInternalServerError)
+		log.Printf("[ERROR] ToolsMenusItemEdit template error: %v", err)
 	}
 }
 
@@ -558,6 +563,8 @@ func (h *Handlers) ToolsMenusItemUpdate(w http.ResponseWriter, r *http.Request) 
 	icon := r.FormValue("icon")
 	itemType := r.FormValue("item_type")
 	url := r.FormValue("url")
+	jsCode := r.FormValue("js_code")
+	filoCode := r.FormValue("filo_code")
 
 	// Parse parent_id
 	var parentID *int64
@@ -570,7 +577,7 @@ func (h *Handlers) ToolsMenusItemUpdate(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	err = db.Storage.UpdateMenuItem(item.ID, parentID, machineName, label, icon, itemType, url, item.ZOrder)
+	err = db.Storage.UpdateMenuItem(item.ID, parentID, machineName, label, icon, itemType, url, jsCode, filoCode, item.ZOrder)
 	if err != nil {
 		http.Redirect(w, r, "/tools/menu-editor/"+menuID+"/items/"+itemID+"/edit?message=Erro+ao+atualizar", http.StatusSeeOther)
 		return
@@ -735,4 +742,193 @@ func (h *Handlers) ToolsMenusPreview(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
+}
+
+// MenuItemAction handles menu item action execution (Filo code).
+// POST /menu/{menuMachineName}/action/{itemMachineName}
+func (h *Handlers) MenuItemAction(w http.ResponseWriter, r *http.Request) {
+	user, _, authed, err := auth.Prelude(w, r,
+		[]string{http.MethodPost},
+		true, false, true,
+	)
+	if err != nil {
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		return
+	}
+	if !authed {
+		jsonResponse(w, http.StatusUnauthorized, map[string]string{"error": "Not authenticated"})
+		return
+	}
+
+	menuMachineName := r.PathValue("menuMachineName")
+	itemMachineName := r.PathValue("itemMachineName")
+
+	// Get menu
+	menu, err := db.Storage.GetMenuByMachineName(menuMachineName)
+	if err != nil || menu == nil {
+		jsonResponse(w, http.StatusNotFound, map[string]string{"error": "Menu not found"})
+		return
+	}
+
+	// Get menu items
+	items, err := db.Storage.ListMenuItems(menu.ID)
+	if err != nil {
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Failed to load items"})
+		return
+	}
+
+	// Find the item by machine name
+	var menuItem *db.MenuItem
+	for i := range items {
+		if items[i].MachineName == itemMachineName {
+			menuItem = &items[i]
+			break
+		}
+	}
+	if menuItem == nil {
+		jsonResponse(w, http.StatusNotFound, map[string]string{"error": "Menu item not found"})
+		return
+	}
+
+	// Check if there's Filo code to execute
+	if menuItem.FiloCode == "" {
+		// No Filo code - just return success
+		jsonResponse(w, http.StatusOK, map[string]interface{}{
+			"error":       "",
+			"message":     "",
+			"redirect_to": menuItem.URL, // Allow continuing to URL/JS
+		})
+		return
+	}
+
+	// Execute Filo code
+	globals := make(map[string]filo.Value)
+
+	// Add menu metadata
+	globals["menu:machine_name"] = filo.VString(menu.MachineName)
+	globals["menu:label"] = filo.VString(menu.Label)
+
+	// Add item metadata
+	globals["item:machine_name"] = filo.VString(menuItem.MachineName)
+	globals["item:label"] = filo.VString(menuItem.Label)
+	globals["item:url"] = filo.VString(menuItem.URL)
+
+	// Add user metadata
+	if user != nil {
+		globals["user:id"] = filo.VNum(float64(user.ID))
+		globals["user:email"] = filo.VString(user.Email)
+		globals["user:sysop"] = filo.VBool(user.Sysop)
+	}
+
+	// Control variables
+	globals["error"] = filo.VString("")
+	globals["message"] = filo.VString("")
+	globals["redirect_to"] = filo.VString("")
+
+	// Execute Filo script
+	eng := filo.NewEngine()
+
+	// Setup DB context for Filo
+	dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
+	dbCtx := filodb.NewContext(dbAdapter, nil)
+
+	// Register builtins
+	filo.RegisterStringBuiltins(eng)
+	filodb.RegisterDBBuiltins(eng, dbCtx)
+	filolog.RegisterLogBuiltins(eng, filolog.NewContext(globals))
+
+	ctx := r.Context()
+	cfg := filo.EvalConfig{
+		StepLimit:      10000,
+		RecursionLimit: 100,
+		Timeout:        5 * 1e9, // 5 seconds
+	}
+
+	_, newGlobals, runErr := eng.RunScript(ctx, menuItem.FiloCode, globals, cfg)
+
+	// Build response
+	response := map[string]interface{}{
+		"error":       "",
+		"message":     "",
+		"redirect_to": "",
+	}
+
+	// Check for errors
+	if runErr != nil {
+		response["error"] = runErr.Error()
+	} else {
+		// Read control variables from returned globals
+		if errVal, ok := newGlobals["error"]; ok {
+			if errVal.Kind == filo.KString && errVal.Str != "" {
+				response["error"] = errVal.Str
+			}
+		}
+		if msgVal, ok := newGlobals["message"]; ok {
+			if msgVal.Kind == filo.KString {
+				response["message"] = msgVal.Str
+			}
+		}
+		if redirVal, ok := newGlobals["redirect_to"]; ok {
+			if redirVal.Kind == filo.KString {
+				response["redirect_to"] = redirVal.Str
+			}
+		}
+	}
+
+	// If Filo returned an error, report it
+	if errStr, ok := response["error"].(string); ok && errStr != "" {
+		jsonResponse(w, http.StatusBadRequest, response)
+		return
+	}
+
+	jsonResponse(w, http.StatusOK, response)
+}
+
+// MenuActionsJS serves dynamically generated JavaScript for menu item actions.
+// GET /menu/{menuMachineName}/actions.js
+func (h *Handlers) MenuActionsJS(w http.ResponseWriter, r *http.Request) {
+	menuMachineName := r.PathValue("menuMachineName")
+
+	// Get menu
+	menu, err := db.Storage.GetMenuByMachineName(menuMachineName)
+	if err != nil || menu == nil {
+		http.Error(w, "// Menu not found", http.StatusNotFound)
+		return
+	}
+
+	// Get menu items
+	items, err := db.Storage.ListMenuItems(menu.ID)
+	if err != nil {
+		http.Error(w, "// Failed to load items", http.StatusInternalServerError)
+		return
+	}
+
+	// Set content type as JavaScript
+	w.Header().Set("Content-Type", "application/javascript; charset=utf-8")
+	w.Header().Set("Cache-Control", "no-cache, no-store, must-revalidate")
+
+	// Generate JavaScript
+	var js strings.Builder
+	js.WriteString("// Auto-generated menu actions for: ")
+	js.WriteString(menu.MachineName)
+	js.WriteString("\nwindow.MenuItemActions = {\n")
+
+	first := true
+	for _, item := range items {
+		if item.JSCode != "" {
+			if !first {
+				js.WriteString(",\n")
+			}
+			first = false
+			js.WriteString("    '")
+			js.WriteString(item.MachineName)
+			js.WriteString("': function() {\n        ")
+			js.WriteString(item.JSCode)
+			js.WriteString("\n    }")
+		}
+	}
+
+	js.WriteString("\n};\n")
+
+	w.Write([]byte(js.String()))
 }

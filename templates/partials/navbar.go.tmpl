@@ -33,9 +33,20 @@
               </li>
             {{else}}
               <li class="nav-item">
+                {{if or .JSCode .FiloCode}}
+                <a class="nav-link" href="{{if .URL}}{{.URL}}{{else}}#{{end}}"
+                   data-menu-action="{{.MachineName}}"
+                   data-has-filo-code="{{if .FiloCode}}true{{else}}false{{end}}"
+                   data-has-js-code="{{if .JSCode}}true{{else}}false{{end}}"
+                   {{if .FiloCode}}data-action-url="/menu/{{.MenuMachineName}}/action/{{.MachineName}}"{{end}}
+                   data-link-url="{{.URL}}">
+                  {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
+                </a>
+                {{else}}
                 <a class="nav-link" href="{{if .URL}}{{.URL}}{{else}}#{{end}}">
                   {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
                 </a>
+                {{end}}
               </li>
             {{end}}
           {{end}}
@@ -149,11 +160,24 @@
             {{end}}
         </div>
     {{else}}
+        {{if or .JSCode .FiloCode}}
+        <a href="{{if .URL}}{{.URL}}{{else}}#{{end}}" class="mobile-link"
+           data-menu-action="{{.MachineName}}"
+           data-has-filo-code="{{if .FiloCode}}true{{else}}false{{end}}"
+           data-has-js-code="{{if .JSCode}}true{{else}}false{{end}}"
+           {{if .FiloCode}}data-action-url="/menu/{{.MenuMachineName}}/action/{{.MachineName}}"{{end}}
+           data-link-url="{{.URL}}">
+            {{if .Icon}}<i class="bi {{.Icon}}"></i>{{end}}
+            <span>{{.Label}}</span>
+            <i class="bi bi-chevron-right ms-auto fs-xs opacity-50"></i>
+        </a>
+        {{else}}
         <a href="{{if .URL}}{{.URL}}{{else}}#{{end}}" class="mobile-link">
             {{if .Icon}}<i class="bi {{.Icon}}"></i>{{end}}
             <span>{{.Label}}</span>
             <i class="bi bi-chevron-right ms-auto fs-xs opacity-50"></i>
         </a>
+        {{end}}
     {{end}}
 {{end}}
 
@@ -175,9 +199,20 @@
     </li>
   {{else}}
     <li>
+      {{if or .JSCode .FiloCode}}
+      <a class="dropdown-item" href="{{if .URL}}{{.URL}}{{else}}#{{end}}"
+         data-menu-action="{{.MachineName}}"
+         data-has-filo-code="{{if .FiloCode}}true{{else}}false{{end}}"
+         data-has-js-code="{{if .JSCode}}true{{else}}false{{end}}"
+         {{if .FiloCode}}data-action-url="/menu/{{.MenuMachineName}}/action/{{.MachineName}}"{{end}}
+         data-link-url="{{.URL}}">
+        {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
+      </a>
+      {{else}}
       <a class="dropdown-item" href="{{if .URL}}{{.URL}}{{else}}#{{end}}">
         {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
       </a>
+      {{end}}
     </li>
   {{end}}
 {{end}}

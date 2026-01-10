@@ -32,6 +32,8 @@ type MenuItem struct {
 	Icon        string // Optional Bootstrap icon class
 	ItemType    string // 'link', 'separator', 'submenu'
 	URL         string // Optional, for links
+	JSCode      string // JavaScript code to execute client-side
+	FiloCode    string // Filo code to execute server-side
 	ZOrder      int
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
@@ -149,12 +151,18 @@ func GetDirectChildren(items []MenuItem, parentID int64) []MenuItem {
 // MenuItemNode represents a menu item with its children as a tree structure.
 type MenuItemNode struct {
 	MenuItem
-	Children []MenuItemNode
+	Children        []MenuItemNode
+	MenuMachineName string // Menu machine name for action URLs
 }
 
 // BuildMenuItemTree builds a tree structure for menu items.
 // It returns only the root-level items (items with no parent), each with their children populated recursively.
 func BuildMenuItemTree(items []MenuItem) []MenuItemNode {
+	return BuildMenuItemTreeWithName(items, "")
+}
+
+// BuildMenuItemTreeWithName builds a tree structure with the menu machine name propagated to all nodes.
+func BuildMenuItemTreeWithName(items []MenuItem, menuMachineName string) []MenuItemNode {
 	// Build a map of parent_id -> children
 	childrenOf := make(map[int64][]MenuItem)
 	for _, item := range items {
@@ -168,7 +176,7 @@ func BuildMenuItemTree(items []MenuItem) []MenuItemNode {
 
 	var buildNode func(item MenuItem) MenuItemNode
 	buildNode = func(item MenuItem) MenuItemNode {
-		node := MenuItemNode{MenuItem: item}
+		node := MenuItemNode{MenuItem: item, MenuMachineName: menuMachineName}
 
 		// Cycle detection
 		if visited[item.ID] {
@@ -229,6 +237,28 @@ func (s *SQLite) GetMenuByRefID(refID string) (*Menu, error) {
 			return nil, fmt.Errorf("menu not found: %s", refID)
 		}
 		return nil, fmt.Errorf("get menu by ref id: %w", err)
+	}
+	return &m, nil
+}
+
+// GetMenuByID retrieves a menu by its ID.
+// Returns nil, nil if not found.
+func (s *SQLite) GetMenuByID(id int64) (*Menu, error) {
+	const q = `
+		SELECT id, reference_id, machine_name, label, description, created_at, updated_at, deleted_at
+		FROM menus
+		WHERE id = ? AND deleted_at IS NULL
+	`
+
+	var m Menu
+	err := s.QueryRow(q, id).Scan(
+		&m.ID, &m.ReferenceID, &m.MachineName, &m.Label, &m.Description, &m.CreatedAt, &m.UpdatedAt, &m.DeletedAt,
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil // Not found
+		}
+		return nil, fmt.Errorf("get menu by id: %w", err)
 	}
 	return &m, nil
 }
@@ -303,7 +333,7 @@ func (s *SQLite) SoftDeleteMenu(id int64) error {
 func (s *SQLite) CreateMenuItem(
 	menuID int64,
 	parentID *int64,
-	machineName, label, icon, itemType, url string,
+	machineName, label, icon, itemType, url, jsCode, filoCode string,
 	zOrder int,
 ) (*MenuItem, error) {
 	refID := utils.NewOpaqueID()
@@ -311,9 +341,9 @@ func (s *SQLite) CreateMenuItem(
 		itemType = "link"
 	}
 	const sqlInsert = `
-		INSERT INTO menu_items (reference_id, menu_id, parent_id, machine_name, label, icon, item_type, url, z_order)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-		RETURNING id, reference_id, menu_id, parent_id, machine_name, label, icon, item_type, url, z_order, created_at, updated_at
+		INSERT INTO menu_items (reference_id, menu_id, parent_id, machine_name, label, icon, item_type, url, js_code, filo_code, z_order)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+		RETURNING id, reference_id, menu_id, parent_id, machine_name, label, icon, item_type, url, js_code, filo_code, z_order, created_at, updated_at
 	`
 
 	var item MenuItem
@@ -325,12 +355,14 @@ func (s *SQLite) CreateMenuItem(
 	var scanParentID sql.NullInt64
 	var scanIcon sql.NullString
 	var scanURL sql.NullString
+	var scanJSCode sql.NullString
+	var scanFiloCode sql.NullString
 
 	err := s.QueryRowRW(sqlInsert,
-		refID, menuID, parentIDVal, machineName, label, icon, itemType, url, zOrder,
+		refID, menuID, parentIDVal, machineName, label, icon, itemType, url, jsCode, filoCode, zOrder,
 	).Scan(
 		&item.ID, &item.ReferenceID, &item.MenuID, &scanParentID, &item.MachineName,
-		&item.Label, &scanIcon, &item.ItemType, &scanURL, &item.ZOrder,
+		&item.Label, &scanIcon, &item.ItemType, &scanURL, &scanJSCode, &scanFiloCode, &item.ZOrder,
 		&item.CreatedAt, &item.UpdatedAt,
 	)
 	if err != nil {
@@ -346,6 +378,12 @@ func (s *SQLite) CreateMenuItem(
 	if scanURL.Valid {
 		item.URL = scanURL.String
 	}
+	if scanJSCode.Valid {
+		item.JSCode = scanJSCode.String
+	}
+	if scanFiloCode.Valid {
+		item.FiloCode = scanFiloCode.String
+	}
 
 	return &item, nil
 }
@@ -353,7 +391,7 @@ func (s *SQLite) CreateMenuItem(
 // ListMenuItems returns all non-deleted items for a menu, ordered by z_order.
 func (s *SQLite) ListMenuItems(menuID int64) ([]MenuItem, error) {
 	const q = `
-		SELECT id, reference_id, menu_id, parent_id, machine_name, label, icon, item_type, url, z_order, created_at, updated_at
+		SELECT id, reference_id, menu_id, parent_id, machine_name, label, icon, item_type, url, js_code, filo_code, z_order, created_at, updated_at
 		FROM menu_items
 		WHERE menu_id = ? AND deleted_at IS NULL
 		ORDER BY COALESCE(parent_id, 0), z_order, machine_name, id
@@ -371,10 +409,12 @@ func (s *SQLite) ListMenuItems(menuID int64) ([]MenuItem, error) {
 		var parentID sql.NullInt64
 		var icon sql.NullString
 		var url sql.NullString
+		var jsCode sql.NullString
+		var filoCode sql.NullString
 
 		if err := rows.Scan(
 			&item.ID, &item.ReferenceID, &item.MenuID, &parentID, &item.MachineName,
-			&item.Label, &icon, &item.ItemType, &url, &item.ZOrder,
+			&item.Label, &icon, &item.ItemType, &url, &jsCode, &filoCode, &item.ZOrder,
 			&item.CreatedAt, &item.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan menu item: %w", err)
@@ -389,6 +429,12 @@ func (s *SQLite) ListMenuItems(menuID int64) ([]MenuItem, error) {
 		if url.Valid {
 			item.URL = url.String
 		}
+		if jsCode.Valid {
+			item.JSCode = jsCode.String
+		}
+		if filoCode.Valid {
+			item.FiloCode = filoCode.String
+		}
 
 		items = append(items, item)
 	}
@@ -398,7 +444,7 @@ func (s *SQLite) ListMenuItems(menuID int64) ([]MenuItem, error) {
 // GetMenuItemByRefID retrieves a menu item by reference_id.
 func (s *SQLite) GetMenuItemByRefID(refID string) (*MenuItem, error) {
 	const q = `
-		SELECT id, reference_id, menu_id, parent_id, machine_name, label, icon, item_type, url, z_order, created_at, updated_at
+		SELECT id, reference_id, menu_id, parent_id, machine_name, label, icon, item_type, url, js_code, filo_code, z_order, created_at, updated_at
 		FROM menu_items
 		WHERE reference_id = ? AND deleted_at IS NULL
 	`
@@ -407,10 +453,12 @@ func (s *SQLite) GetMenuItemByRefID(refID string) (*MenuItem, error) {
 	var parentID sql.NullInt64
 	var icon sql.NullString
 	var url sql.NullString
+	var jsCode sql.NullString
+	var filoCode sql.NullString
 
 	err := s.QueryRow(q, refID).Scan(
 		&item.ID, &item.ReferenceID, &item.MenuID, &parentID, &item.MachineName,
-		&item.Label, &icon, &item.ItemType, &url, &item.ZOrder,
+		&item.Label, &icon, &item.ItemType, &url, &jsCode, &filoCode, &item.ZOrder,
 		&item.CreatedAt, &item.UpdatedAt,
 	)
 	if err != nil {
@@ -429,6 +477,12 @@ func (s *SQLite) GetMenuItemByRefID(refID string) (*MenuItem, error) {
 	if url.Valid {
 		item.URL = url.String
 	}
+	if jsCode.Valid {
+		item.JSCode = jsCode.String
+	}
+	if filoCode.Valid {
+		item.FiloCode = filoCode.String
+	}
 
 	return &item, nil
 }
@@ -437,7 +491,7 @@ func (s *SQLite) GetMenuItemByRefID(refID string) (*MenuItem, error) {
 func (s *SQLite) UpdateMenuItem(
 	id int64,
 	parentID *int64,
-	machineName, label, icon, itemType, url string,
+	machineName, label, icon, itemType, url, jsCode, filoCode string,
 	zOrder int,
 ) error {
 	if itemType == "" {
@@ -451,6 +505,8 @@ func (s *SQLite) UpdateMenuItem(
 			icon = ?,
 			item_type = ?,
 			url = ?,
+			js_code = ?,
+			filo_code = ?,
 			z_order = ?,
 			updated_at = CURRENT_TIMESTAMP
 		WHERE id = ? AND deleted_at IS NULL
@@ -461,7 +517,7 @@ func (s *SQLite) UpdateMenuItem(
 		parentIDVal = sql.NullInt64{Int64: *parentID, Valid: true}
 	}
 
-	return s.Exec(q, parentIDVal, machineName, label, icon, itemType, url, zOrder, id)
+	return s.Exec(q, parentIDVal, machineName, label, icon, itemType, url, jsCode, filoCode, zOrder, id)
 }
 
 // DeleteMenuItem permanently deletes a menu item.
@@ -473,7 +529,7 @@ func (s *SQLite) DeleteMenuItem(id int64) error {
 // ListSubmenuItems returns items that can be parents (type 'submenu').
 func (s *SQLite) ListSubmenuItems(menuID int64) ([]MenuItem, error) {
 	const q = `
-		SELECT id, reference_id, menu_id, parent_id, machine_name, label, icon, item_type, url, z_order, created_at, updated_at
+		SELECT id, reference_id, menu_id, parent_id, machine_name, label, icon, item_type, url, js_code, filo_code, z_order, created_at, updated_at
 		FROM menu_items
 		WHERE menu_id = ? AND deleted_at IS NULL AND item_type = 'submenu'
 		ORDER BY z_order, machine_name, id
@@ -491,10 +547,12 @@ func (s *SQLite) ListSubmenuItems(menuID int64) ([]MenuItem, error) {
 		var parentID sql.NullInt64
 		var icon sql.NullString
 		var url sql.NullString
+		var jsCode sql.NullString
+		var filoCode sql.NullString
 
 		if err := rows.Scan(
 			&item.ID, &item.ReferenceID, &item.MenuID, &parentID, &item.MachineName,
-			&item.Label, &icon, &item.ItemType, &url, &item.ZOrder,
+			&item.Label, &icon, &item.ItemType, &url, &jsCode, &filoCode, &item.ZOrder,
 			&item.CreatedAt, &item.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan submenu item: %w", err)
@@ -508,6 +566,12 @@ func (s *SQLite) ListSubmenuItems(menuID int64) ([]MenuItem, error) {
 		}
 		if url.Valid {
 			item.URL = url.String
+		}
+		if jsCode.Valid {
+			item.JSCode = jsCode.String
+		}
+		if filoCode.Valid {
+			item.FiloCode = filoCode.String
 		}
 
 		items = append(items, item)

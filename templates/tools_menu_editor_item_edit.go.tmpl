@@ -73,6 +73,44 @@
                             </div>
                         </div>
 
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label for="item_type" class="form-label">Tipo</label>
+                                <select class="form-select" id="item_type" name="item_type">
+                                    <option value="link" {{if eq .Item.ItemType "link"}}selected{{end}}>Link</option>
+                                    <option value="submenu" {{if eq .Item.ItemType "submenu"}}selected{{end}}>Submenu</option>
+                                    <option value="separator" {{if eq .Item.ItemType "separator"}}selected{{end}}>Separador</option>
+                                </select>
+                                <div class="form-text">Define o comportamento do item</div>
+                            </div>
+
+                            <div class="col-md-6 mb-3">
+                                <label for="url" class="form-label">Link (URL)</label>
+                                <input type="text" class="form-control" id="url" name="url" 
+                                       value="{{.Item.URL}}" placeholder="/exemplo ou https://...">
+                                <div class="form-text">URL para navegação direta</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="js_code" class="form-label">Código JavaScript</label>
+                            <textarea class="form-control font-monospace" id="js_code" name="js_code" rows="4" 
+                                      placeholder="alert('Olá!');&#10;console.log('teste');">{{.Item.JSCode}}</textarea>
+                            <div class="form-text">JavaScript executado no cliente quando o item é clicado</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="filo_code" class="form-label">Código Filo</label>
+                            <textarea class="form-control font-monospace" id="filo_code" name="filo_code" rows="4"
+                                      placeholder="(let () (print &quot;Executado no servidor&quot;))">{{.Item.FiloCode}}</textarea>
+                            <div class="form-text">Código Filo executado no servidor quando o item é clicado</div>
+                        </div>
+
+                        <div class="alert alert-info mb-3">
+                            <strong>Ordem de Execução:</strong> Quando acionado, executa na ordem: <strong>Filo</strong> → <strong>JavaScript</strong> → <strong>Link</strong>.
+                            Se o código Filo retornar erro ou redirecionamento, as etapas seguintes são ignoradas.
+                        </div>
+
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">Salvar</button>
                             <a href="/tools/menu-editor/{{.Menu.ReferenceID}}/edit" class="btn btn-outline-secondary">Cancelar</a>
