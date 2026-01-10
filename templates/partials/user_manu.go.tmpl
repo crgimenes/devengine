@@ -1,21 +1,21 @@
 {{define "user_menu"}}
 <li class="nav-item dropdown">
-    <a class="nav-link dropdown-toggle" 
+    <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" 
        href="#" 
        id="userDropdown" 
        role="button" 
        data-bs-toggle="dropdown" 
        aria-expanded="false">
+        <span class="user-name">{{.User.Username}}</span>
         {{if .User.AvatarURL}}
             <img 
                 src="{{.User.AvatarURL}}" 
                 alt="Avatar" 
-                class="rounded-circle" 
-                width="32" 
-                height="32"
-                style="object-fit: cover; width: 32px; height: 32px; aspect-ratio: 1/1;">
+                class="rounded-circle avatar-sm">
         {{else}}
-                <span class="badge bg-secondary">{{.User.Username}}</span>
+            <span class="badge bg-secondary rounded-circle avatar-placeholder-sm d-flex align-items-center justify-content-center">
+                {{first .User.Username}}
+            </span>
         {{end}}
     </a>
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
