@@ -101,10 +101,14 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	formRefID := r.PathValue("formRef")
-	form, err := db.Storage.GetFormByRefID(formRefID)
+	machineName := r.PathValue("machineName")
+	form, err := db.Storage.GetFormByMachineName(machineName)
 	if err != nil {
-		http.Error(w, "Form not found", http.StatusNotFound)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	if form == nil {
+		http.NotFound(w, r)
 		return
 	}
 
@@ -247,10 +251,14 @@ func (h *Handlers) FormsRuntimeCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	formRefID := r.PathValue("formRef")
-	form, err := db.Storage.GetFormByRefID(formRefID)
+	machineName := r.PathValue("machineName")
+	form, err := db.Storage.GetFormByMachineName(machineName)
 	if err != nil {
-		http.Error(w, "Form not found", http.StatusNotFound)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	if form == nil {
+		http.NotFound(w, r)
 		return
 	}
 
@@ -282,14 +290,14 @@ func (h *Handlers) FormsRuntimeCreate(w http.ResponseWriter, r *http.Request) {
 	// Parse form values
 	parsedValues, err := parseFormAttributes(r, elements, attributes)
 	if err != nil {
-		http.Redirect(w, r, "/forms/"+formRefID+"/new?message="+err.Error(), http.StatusSeeOther)
+		http.Redirect(w, r, "/form/"+machineName+"?message="+err.Error(), http.StatusSeeOther)
 		return
 	}
 
 	// Transaction
 	tx, err := db.Storage.BeginTransaction()
 	if err != nil {
-		http.Redirect(w, r, "/forms/"+formRefID+"/new?message=Erro ao iniciar transação", http.StatusSeeOther)
+		http.Redirect(w, r, "/form/"+machineName+"?message=Erro ao iniciar transação", http.StatusSeeOther)
 		return
 	}
 	committed := false
@@ -302,17 +310,17 @@ func (h *Handlers) FormsRuntimeCreate(w http.ResponseWriter, r *http.Request) {
 	// Helper handles pre_save, record creation, vsalue saving
 	_, recordRefID, err := insertRecordTx(tx, entityType, attributes, parsedValues)
 	if err != nil {
-		http.Redirect(w, r, "/forms/"+formRefID+"/new?message="+err.Error(), http.StatusSeeOther)
+		http.Redirect(w, r, "/form/"+machineName+"?message="+err.Error(), http.StatusSeeOther)
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
-		http.Redirect(w, r, "/forms/"+formRefID+"/new?message=Erro ao finalizar: "+err.Error(), http.StatusSeeOther)
+		http.Redirect(w, r, "/form/"+machineName+"?message=Erro ao finalizar: "+err.Error(), http.StatusSeeOther)
 		return
 	}
 	committed = true
 
-	http.Redirect(w, r, "/forms/"+formRefID+"/r/"+recordRefID+"?message=Registro criado com sucesso", http.StatusSeeOther)
+	http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message=Registro criado com sucesso", http.StatusSeeOther)
 }
 
 // FormsRuntimeEdit shows a form for editing an existing record.
@@ -329,12 +337,16 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	formRefID := r.PathValue("formRef")
+	machineName := r.PathValue("machineName")
 	recordRefID := r.PathValue("recordRef")
 
-	form, err := db.Storage.GetFormByRefID(formRefID)
+	form, err := db.Storage.GetFormByMachineName(machineName)
 	if err != nil {
-		http.Error(w, "Form not found", http.StatusNotFound)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	if form == nil {
+		http.NotFound(w, r)
 		return
 	}
 
@@ -516,12 +528,16 @@ func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	formRefID := r.PathValue("formRef")
+	machineName := r.PathValue("machineName")
 	recordRefID := r.PathValue("recordRef")
 
-	form, err := db.Storage.GetFormByRefID(formRefID)
+	form, err := db.Storage.GetFormByMachineName(machineName)
 	if err != nil {
-		http.Error(w, "Form not found", http.StatusNotFound)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	if form == nil {
+		http.NotFound(w, r)
 		return
 	}
 
@@ -546,7 +562,7 @@ func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 	revStr := r.FormValue("rev")
 	submittedRev, _ := strconv.Atoi(revStr)
 	if submittedRev != record.Rev {
-		http.Redirect(w, r, "/forms/"+formRefID+"/r/"+recordRefID+"?message=Registro foi modificado por outro usuário", http.StatusSeeOther)
+		http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message=Registro foi modificado por outro usuário", http.StatusSeeOther)
 		return
 	}
 
@@ -557,14 +573,14 @@ func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 	// Parse form values
 	parsedValues, err := parseFormAttributes(r, elements, attributes)
 	if err != nil {
-		http.Redirect(w, r, "/forms/"+formRefID+"/r/"+recordRefID+"?message="+err.Error(), http.StatusSeeOther)
+		http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message="+err.Error(), http.StatusSeeOther)
 		return
 	}
 
 	// Transaction
 	tx, err := db.Storage.BeginTransaction()
 	if err != nil {
-		http.Redirect(w, r, "/forms/"+formRefID+"/r/"+recordRefID+"?message=Erro ao iniciar transação", http.StatusSeeOther)
+		http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message=Erro ao iniciar transação", http.StatusSeeOther)
 		return
 	}
 	committed := false
@@ -577,17 +593,17 @@ func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 	// Helper handles pre_save, revision update, value saving
 	err = updateRecordTx(tx, entityType, record, attributes, parsedValues)
 	if err != nil {
-		http.Redirect(w, r, "/forms/"+formRefID+"/r/"+recordRefID+"?message="+err.Error(), http.StatusSeeOther)
+		http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message="+err.Error(), http.StatusSeeOther)
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
-		http.Redirect(w, r, "/forms/"+formRefID+"/r/"+recordRefID+"?message=Erro ao finalizar: "+err.Error(), http.StatusSeeOther)
+		http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message=Erro ao finalizar: "+err.Error(), http.StatusSeeOther)
 		return
 	}
 	committed = true
 
-	http.Redirect(w, r, "/forms/"+formRefID+"/r/"+recordRefID+"?message=Registro atualizado com sucesso", http.StatusSeeOther)
+	http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message=Registro atualizado com sucesso", http.StatusSeeOther)
 }
 
 // FormsRuntimeButtonAction handles custom button actions.
@@ -608,12 +624,16 @@ func (h *Handlers) FormsRuntimeButtonAction(w http.ResponseWriter, r *http.Reque
 
 	// ... Auth check done ...
 
-	formRefID := r.PathValue("formRef")
+	machineName := r.PathValue("machineName")
 	buttonName := r.PathValue("buttonName")
 
 	// Get form
-	form, err := db.Storage.GetFormByRefID(formRefID)
+	form, err := db.Storage.GetFormByMachineName(machineName)
 	if err != nil {
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "internal server error"})
+		return
+	}
+	if form == nil {
 		jsonResponse(w, http.StatusNotFound, map[string]string{"error": "Form not found"})
 		return
 	}
@@ -661,7 +681,7 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 	// record_ref_id is sent by hidden field in existing records
 	recordRefID := r.FormValue("record_ref_id")
 	isUpdate := recordRefID != ""
-	formRefID := form.ReferenceID
+	machineName := form.MachineName
 
 	// Ensure Entity Type is loaded if we need to access DB (RunSave or just Context)
 	var entityType *db.EAVEntityType
@@ -891,7 +911,7 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 				return
 			}
 			recordRefID = newRefID
-			response["redirect_to"] = "/forms/" + formRefID + "/r/" + newRefID
+			response["redirect_to"] = "/form/" + machineName + "/r/" + newRefID
 		}
 	}
 
@@ -936,11 +956,15 @@ func jsonResponse(w http.ResponseWriter, status int, data interface{}) {
 // FormsRuntimeActionsJS serves the dynamically generated JavaScript for button actions.
 // This allows the JS to be loaded as an external file, complying with CSP.
 func (h *Handlers) FormsRuntimeActionsJS(w http.ResponseWriter, r *http.Request) {
-	formRefID := r.PathValue("formRef")
+	machineName := r.PathValue("machineName")
 
 	// Get form
-	form, err := db.Storage.GetFormByRefID(formRefID)
+	form, err := db.Storage.GetFormByMachineName(machineName)
 	if err != nil {
+		http.Error(w, "// internal server error", http.StatusInternalServerError)
+		return
+	}
+	if form == nil {
 		http.Error(w, "// Form not found", http.StatusNotFound)
 		return
 	}

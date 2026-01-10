@@ -48,7 +48,7 @@
                     {{end}}
                     
                     <form method="POST" 
-                          action="{{if .Record}}/forms/{{.Form.ReferenceID}}/r/{{.Record.ReferenceID}}{{else}}/forms/{{.Form.ReferenceID}}/new{{end}}"
+                          action="{{if .Record}}/form/{{.Form.MachineName}}/r/{{.Record.ReferenceID}}{{else}}/form/{{.Form.MachineName}}{{end}}"
                           class="needs-validation"
                           novalidate>
                         
@@ -107,7 +107,7 @@
     {{$hasButtons := false}}
     {{range .ElementsTree}}{{if eq .Element.ElementKind "button"}}{{$hasButtons = true}}{{end}}{{end}}
     {{if $hasButtons}}
-    <script src="/forms/{{.Form.ReferenceID}}/actions.js"></script>
+    <script src="/form/{{.Form.MachineName}}/actions.js"></script>
     <script src="/assets/form-buttons.js"></script>
     {{end}}
     
@@ -165,7 +165,7 @@
     {{else if eq $node.Element.ElementKind "button"}}
         {{/* Button element */}}
         <div class="col-12 col-md-{{$node.Element.ColSpan}} mb-3{{if eq $node.Element.Alignment "center"}} mx-auto{{else if eq $node.Element.Alignment "right"}} ms-auto{{end}}">
-            {{template "field_button" (dict "Element" $node.Element "FormRef" $form.ReferenceID)}}
+            {{template "field_button" (dict "Element" $node.Element "FormMachineName" $form.MachineName)}}
             {{if $node.Element.HelpText}}
                 <div class="form-text">{{$node.Element.HelpText}}</div>
             {{end}}

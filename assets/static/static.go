@@ -34,7 +34,7 @@ func RegisterAppFS(fs http.FileSystem) {
 
 // Routes registra o handler de assets no mux.
 func Routes(mux *http.ServeMux) {
-	mux.HandleFunc("/assets/", Handler)
+	mux.HandleFunc("GET /assets/", Handler)
 }
 
 func Init() error {

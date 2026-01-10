@@ -83,11 +83,37 @@
                     <small class="text-muted">{{.User.Email}}</small>
                 </div>
             </div>
-            <div class="mt-3 d-flex gap-2">
-                 <a href="/me" class="btn btn-dark btn-sm flex-fill"><i class="bi bi-person"></i> Perfil</a>
-                 <a href="/logout" class="btn btn-dark btn-sm flex-fill"><i class="bi bi-box-arrow-right"></i> Sair</a>
+            <div class="mt-3 d-flex flex-column gap-2">
+                 <div class="d-flex gap-2">
+                    <a href="/me" class="btn btn-dark btn-sm flex-fill"><i class="bi bi-person"></i> Perfil</a>
+                    <a href="/logout" class="btn btn-dark btn-sm flex-fill"><i class="bi bi-box-arrow-right"></i> Sair</a>
+                 </div>
+                 <a href="/files" class="btn btn-dark btn-sm w-100"><i class="bi bi-folder"></i> Meus Arquivos</a>
             </div>
         </div>
+
+        {{if .User.Sysop}}
+        <div class="mobile-item-group mb-3">
+             <div class="mobile-group-title text-uppercase text-muted fw-bold fs-xs mb-2 mt-3 px-2">
+                <i class="bi bi-tools me-1"></i> Ferramentas
+            </div>
+            <a href="/tools" class="mobile-link">
+                <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
+            </a>
+            <a href="/tools/database-schema" class="mobile-link">
+                <i class="bi bi-database"></i> <span>Database Schema</span>
+            </a>
+            <a href="/tools/forms" class="mobile-link">
+                <i class="bi bi-ui-checks"></i> <span>Forms</span>
+            </a>
+             <a href="/tools/users" class="mobile-link">
+                <i class="bi bi-people"></i> <span>Users</span>
+            </a>
+            <a href="/tools/menu-editor" class="mobile-link">
+                <i class="bi bi-menu-button-wide"></i> <span>Menu Editor</span>
+            </a>
+        </div>
+        {{end}}
         {{end}}
 
         <!-- Menu Links -->

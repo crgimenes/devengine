@@ -266,31 +266,39 @@ func (h *Handlers) ToolsFormsEdit(w http.ResponseWriter, r *http.Request) {
 		enrichedElements = append(enrichedElements, e)
 	}
 
+	// Dereference MenuID for template comparison
+	var selectedMenuID int64
+	if form.MenuID != nil {
+		selectedMenuID = *form.MenuID
+	}
+
 	data := struct {
-		Authed        bool
-		User          db.User
-		Error         string
-		Message       string
-		Config        config.Config
-		CurrentPage   string
-		Form          *db.Form
-		EntityType    *db.EAVEntityType
-		EntityTypes   []db.EAVEntityType
-		Elements      []ElementWithAttr
-		EAVAttributes []db.EAVAttribute
-		Menus         []db.Menu
+		Authed         bool
+		User           db.User
+		Error          string
+		Message        string
+		Config         config.Config
+		CurrentPage    string
+		Form           *db.Form
+		EntityType     *db.EAVEntityType
+		EntityTypes    []db.EAVEntityType
+		Elements       []ElementWithAttr
+		EAVAttributes  []db.EAVAttribute
+		Menus          []db.Menu
+		SelectedMenuID int64
 	}{
-		Authed:        true,
-		User:          *user,
-		Message:       message,
-		Config:        *h.cfg,
-		CurrentPage:   "forms",
-		Form:          form,
-		EntityType:    entityType,
-		EntityTypes:   entityTypes,
-		Elements:      enrichedElements,
-		EAVAttributes: eavAttributes,
-		Menus:         menus,
+		Authed:         true,
+		User:           *user,
+		Message:        message,
+		Config:         *h.cfg,
+		CurrentPage:    "forms",
+		Form:           form,
+		EntityType:     entityType,
+		EntityTypes:    entityTypes,
+		Elements:       enrichedElements,
+		EAVAttributes:  eavAttributes,
+		Menus:          menus,
+		SelectedMenuID: selectedMenuID,
 	}
 
 	err = h.templates(w, "tools_forms_edit.go.tmpl", data)

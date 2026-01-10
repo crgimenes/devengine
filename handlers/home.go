@@ -84,12 +84,13 @@ func (h *Handlers) Home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// For authenticated users, check for "init" form
+	// For authenticated users, check for "init" form and render directly
 	if authed {
 		initForm, err := db.Storage.GetFormByMachineName("init")
 		if err == nil && initForm != nil {
-			// Redirect to form new entry for "init" form
-			http.Redirect(w, r, "/forms/"+initForm.ReferenceID+"/new", http.StatusSeeOther)
+			// Render form directly (no redirect for better UX)
+			r.SetPathValue("machineName", "init")
+			h.FormsRuntimeNew(w, r)
 			return
 		}
 	}

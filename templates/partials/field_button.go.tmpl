@@ -4,7 +4,7 @@
 */}}
 {{$meta := .Meta}}
 {{$el := .Element}}
-{{$formRef := .FormRef}}
+{{$formMachineName := .FormMachineName}}
 {{/* Ensure strictly boolean result to prevent code leakage */}}
 {{$hasServerAction := false}}
 {{if or (ne $el.ButtonFiloCode "") $el.ButtonRunSave}}
@@ -18,7 +18,7 @@
         data-form-action="{{$el.MachineName}}"
         data-has-server-action="{{$hasServerAction}}"
         {{if $el.ButtonConfirmMsg}}data-confirm-message="{{$el.ButtonConfirmMsg}}"{{end}}
-        {{if $hasServerAction}}data-action-url="/forms/{{$formRef}}/action/{{$el.MachineName}}"{{end}}>
+        {{if $hasServerAction}}data-action-url="/form/{{$formMachineName}}/action/{{$el.MachineName}}"{{end}}>
     {{$el.Label}}
 </button>
 {{end}}

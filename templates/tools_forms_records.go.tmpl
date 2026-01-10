@@ -37,7 +37,7 @@
                         <a href="/tools/forms/{{.Form.ReferenceID}}/edit" class="btn btn-outline-secondary">
                             Editar Form
                         </a>
-                        <a href="/forms/{{.Form.ReferenceID}}/new" class="btn btn-success">
+                        <a href="/form/{{.Form.MachineName}}" class="btn btn-success">
                             Novo Registro
                         </a>
                     </div>
@@ -89,7 +89,7 @@
 
                                 <!-- Actions -->
                                 <div class="btn-group w-100" role="group">
-                                    <a href="/forms/{{$.Form.ReferenceID}}/r/{{.Record.ReferenceID}}" 
+                                    <a href="/form/{{$.Form.MachineName}}/r/{{.Record.ReferenceID}}" 
                                        class="btn btn-sm btn-outline-primary">
                                         Editar
                                     </a>
@@ -113,7 +113,7 @@
                 <div class="text-center py-5">
                     <i class="bi bi-inbox fs-1 text-muted"></i>
                     <p class="text-muted mt-3">Nenhum registro encontrado</p>
-                    <a href="/forms/{{.Form.ReferenceID}}/new" class="btn btn-success">
+                    <a href="/form/{{.Form.MachineName}}" class="btn btn-success">
                         Criar Primeiro Registro
                     </a>
                 </div>
