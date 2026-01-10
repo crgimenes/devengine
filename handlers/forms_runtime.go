@@ -191,6 +191,15 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		errorMsg = ""
 	}
 
+	// Load menu items if form has a menu associated
+	var menuItems []db.MenuItemNode
+	if form.MenuID != nil {
+		items, err := db.Storage.ListMenuItems(*form.MenuID)
+		if err == nil {
+			menuItems = db.BuildMenuItemTree(items)
+		}
+	}
+
 	data := struct {
 		Authed       bool
 		User         db.User
@@ -204,6 +213,7 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		Message      string
 		Error        string
 		PosLoadError string
+		MenuItems    []db.MenuItemNode
 	}{
 		Authed:       true,
 		User:         *user,
@@ -217,6 +227,7 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		Message:      message,
 		Error:        errorMsg,
 		PosLoadError: posLoadError,
+		MenuItems:    menuItems,
 	}
 
 	err = h.templates(w, "forms_runtime.go.tmpl", data)
@@ -449,6 +460,15 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 		errorMsg = ""
 	}
 
+	// Load menu items if form has a menu associated
+	var menuItems []db.MenuItemNode
+	if form.MenuID != nil {
+		mItems, err := db.Storage.ListMenuItems(*form.MenuID)
+		if err == nil {
+			menuItems = db.BuildMenuItemTree(mItems)
+		}
+	}
+
 	data := struct {
 		Authed       bool
 		User         db.User
@@ -462,6 +482,7 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 		Message      string
 		Error        string
 		PosLoadError string
+		MenuItems    []db.MenuItemNode
 	}{
 		Authed:       true,
 		User:         *user,
@@ -475,6 +496,7 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 		Message:      message,
 		Error:        errorMsg,
 		PosLoadError: posLoadError,
+		MenuItems:    menuItems,
 	}
 
 	err = h.templates(w, "forms_runtime.go.tmpl", data)

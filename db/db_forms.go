@@ -21,6 +21,7 @@ type Form struct {
 	HideCancelButton bool   // When true, form does not display cancel button
 	HideTitle        bool   // When true, form does not display title header
 	ShowSystemInfo   bool   // When true, displays record ID and status in runtime
+	MenuID           *int64 // Associated menu for navbar display when form is active
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 	DeletedAt        *time.Time
@@ -139,7 +140,7 @@ func (s *SQLite) CreateForm(machineName, label, description string, eavEntityTyp
 func (s *SQLite) GetFormByRefID(refID string) (*Form, error) {
 	const q = `
 		SELECT id, reference_id, machine_name, label, description, eav_entity_type_id,
-		       hide_submit_button, hide_cancel_button, hide_title, show_system_info, created_at, updated_at, deleted_at
+		       hide_submit_button, hide_cancel_button, hide_title, show_system_info, menu_id, created_at, updated_at, deleted_at
 		FROM forms
 		WHERE reference_id = ? AND deleted_at IS NULL
 	`
@@ -147,7 +148,7 @@ func (s *SQLite) GetFormByRefID(refID string) (*Form, error) {
 	var f Form
 	err := s.QueryRow(q, refID).Scan(
 		&f.ID, &f.ReferenceID, &f.MachineName, &f.Label, &f.Description,
-		&f.EAVEntityTypeID, &f.HideSubmitButton, &f.HideCancelButton, &f.HideTitle, &f.ShowSystemInfo, &f.CreatedAt, &f.UpdatedAt, &f.DeletedAt,
+		&f.EAVEntityTypeID, &f.HideSubmitButton, &f.HideCancelButton, &f.HideTitle, &f.ShowSystemInfo, &f.MenuID, &f.CreatedAt, &f.UpdatedAt, &f.DeletedAt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -163,7 +164,7 @@ func (s *SQLite) GetFormByRefID(refID string) (*Form, error) {
 func (s *SQLite) GetFormByMachineName(machineName string) (*Form, error) {
 	const q = `
 		SELECT id, reference_id, machine_name, label, description, eav_entity_type_id,
-		       hide_submit_button, hide_cancel_button, hide_title, show_system_info, created_at, updated_at, deleted_at
+		       hide_submit_button, hide_cancel_button, hide_title, show_system_info, menu_id, created_at, updated_at, deleted_at
 		FROM forms
 		WHERE machine_name = ? AND deleted_at IS NULL
 	`
@@ -171,7 +172,7 @@ func (s *SQLite) GetFormByMachineName(machineName string) (*Form, error) {
 	var f Form
 	err := s.QueryRow(q, machineName).Scan(
 		&f.ID, &f.ReferenceID, &f.MachineName, &f.Label, &f.Description,
-		&f.EAVEntityTypeID, &f.HideSubmitButton, &f.HideCancelButton, &f.HideTitle, &f.ShowSystemInfo, &f.CreatedAt, &f.UpdatedAt, &f.DeletedAt,
+		&f.EAVEntityTypeID, &f.HideSubmitButton, &f.HideCancelButton, &f.HideTitle, &f.ShowSystemInfo, &f.MenuID, &f.CreatedAt, &f.UpdatedAt, &f.DeletedAt,
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -186,7 +187,7 @@ func (s *SQLite) GetFormByMachineName(machineName string) (*Form, error) {
 func (s *SQLite) ListForms() ([]Form, error) {
 	const q = `
 		SELECT id, reference_id, machine_name, label, description, eav_entity_type_id,
-		       hide_submit_button, hide_cancel_button, hide_title, show_system_info, created_at, updated_at
+		       hide_submit_button, hide_cancel_button, hide_title, show_system_info, menu_id, created_at, updated_at
 		FROM forms
 		WHERE deleted_at IS NULL
 		ORDER BY label
@@ -203,7 +204,7 @@ func (s *SQLite) ListForms() ([]Form, error) {
 		var f Form
 		if err := rows.Scan(
 			&f.ID, &f.ReferenceID, &f.MachineName, &f.Label, &f.Description,
-			&f.EAVEntityTypeID, &f.HideSubmitButton, &f.HideCancelButton, &f.HideTitle, &f.ShowSystemInfo, &f.CreatedAt, &f.UpdatedAt,
+			&f.EAVEntityTypeID, &f.HideSubmitButton, &f.HideCancelButton, &f.HideTitle, &f.ShowSystemInfo, &f.MenuID, &f.CreatedAt, &f.UpdatedAt,
 		); err != nil {
 			return nil, fmt.Errorf("scan form: %w", err)
 		}
@@ -213,15 +214,15 @@ func (s *SQLite) ListForms() ([]Form, error) {
 }
 
 // UpdateForm updates a form's basic info.
-func (s *SQLite) UpdateForm(id int64, machineName, label, description string, eavEntityTypeID *int64, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo bool) error {
+func (s *SQLite) UpdateForm(id int64, machineName, label, description string, eavEntityTypeID *int64, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo bool, menuID *int64) error {
 	const q = `
 		UPDATE forms
 		SET machine_name = ?, label = ?, description = ?, eav_entity_type_id = ?, 
-		    hide_submit_button = ?, hide_cancel_button = ?, hide_title = ?, show_system_info = ?,
+		    hide_submit_button = ?, hide_cancel_button = ?, hide_title = ?, show_system_info = ?, menu_id = ?,
 		    updated_at = CURRENT_TIMESTAMP
 		WHERE id = ? AND deleted_at IS NULL
 	`
-	return s.Exec(q, machineName, label, description, eavEntityTypeID, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo, id)
+	return s.Exec(q, machineName, label, description, eavEntityTypeID, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo, menuID, id)
 }
 
 // SoftDeleteForm soft-deletes a form.

@@ -208,6 +208,9 @@ func (h *Handlers) ToolsFormsEdit(w http.ResponseWriter, r *http.Request) {
 	// Get entity types for dropdown
 	entityTypes, _ := db.Storage.ListEAVEntityTypes()
 
+	// Get menus for dropdown
+	menus, _ := db.Storage.ListMenus()
+
 	// Get form elements and sort hierarchically
 	elements, _ := db.Storage.ListFormElements(form.ID)
 	elements = db.SortElementsHierarchically(elements)
@@ -275,6 +278,7 @@ func (h *Handlers) ToolsFormsEdit(w http.ResponseWriter, r *http.Request) {
 		EntityTypes   []db.EAVEntityType
 		Elements      []ElementWithAttr
 		EAVAttributes []db.EAVAttribute
+		Menus         []db.Menu
 	}{
 		Authed:        true,
 		User:          *user,
@@ -286,6 +290,7 @@ func (h *Handlers) ToolsFormsEdit(w http.ResponseWriter, r *http.Request) {
 		EntityTypes:   entityTypes,
 		Elements:      enrichedElements,
 		EAVAttributes: eavAttributes,
+		Menus:         menus,
 	}
 
 	err = h.templates(w, "tools_forms_edit.go.tmpl", data)
@@ -316,6 +321,7 @@ func (h *Handlers) ToolsFormsUpdate(w http.ResponseWriter, r *http.Request) {
 	label := r.FormValue("label")
 	description := r.FormValue("description")
 	entityTypeRefID := r.FormValue("entity_type_id")
+	menuRefID := r.FormValue("menu_id")
 	hideSubmitButton := r.FormValue("hide_submit_button") == "on"
 	hideCancelButton := r.FormValue("hide_cancel_button") == "on"
 	hideTitle := r.FormValue("hide_title") == "on"
@@ -338,8 +344,19 @@ func (h *Handlers) ToolsFormsUpdate(w http.ResponseWriter, r *http.Request) {
 		eavEntityTypeID = &et.ID
 	}
 
+	// Get menu ID if selected
+	var menuID *int64
+	if menuRefID != "" {
+		menu, err := db.Storage.GetMenuByRefID(menuRefID)
+		if err != nil {
+			http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Menu não encontrado", http.StatusSeeOther)
+			return
+		}
+		menuID = &menu.ID
+	}
+
 	// Update form
-	err = db.Storage.UpdateForm(form.ID, machineName, label, description, eavEntityTypeID, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo)
+	err = db.Storage.UpdateForm(form.ID, machineName, label, description, eavEntityTypeID, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo, menuID)
 	if err != nil {
 		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Erro ao atualizar: "+err.Error(), http.StatusSeeOther)
 		return

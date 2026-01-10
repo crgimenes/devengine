@@ -68,6 +68,19 @@
                                 {{end}}
                             </select>
                         </div>
+
+                        <div class="mb-3">
+                            <label for="menu_id" class="form-label">Menu</label>
+                            <select class="form-select" id="menu_id" name="menu_id">
+                                <option value="">-- Sem menu --</option>
+                                {{range .Menus}}
+                                <option value="{{.ReferenceID}}" {{if $.Form.MenuID}}{{if eq .ID $.Form.MenuID}}selected{{end}}{{end}}>
+                                    {{.Label}} ({{.MachineName}})
+                                </option>
+                                {{end}}
+                            </select>
+                            <div class="form-text">Menu exibido na navbar quando o formulário está ativo.</div>
+                        </div>
                         
                         <div class="mb-3">
                             <label class="form-label">Opções de Exibição</label>

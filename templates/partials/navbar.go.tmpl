@@ -13,6 +13,46 @@
     </button>
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav ms-auto align-items-center">
+        {{$menuItems := getMenuItems .}}
+        {{if $menuItems}}
+          {{range $menuItems}}
+            {{if .Children}}
+              <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                  {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
+                </a>
+                <ul class="dropdown-menu dropdown-menu-end">
+                  {{range .Children}}
+                    {{if .Children}}
+                      <li class="dropdown-submenu">
+                        <a class="dropdown-item" href="#">
+                          {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
+                        </a>
+                        <ul class="dropdown-menu">
+                          {{range .Children}}
+                            <li><a class="dropdown-item" href="{{if .URL}}{{.URL}}{{else}}#{{end}}">
+                              {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
+                            </a></li>
+                          {{end}}
+                        </ul>
+                      </li>
+                    {{else}}
+                      <li><a class="dropdown-item" href="{{if .URL}}{{.URL}}{{else}}#{{end}}">
+                        {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
+                      </a></li>
+                    {{end}}
+                  {{end}}
+                </ul>
+              </li>
+            {{else}}
+              <li class="nav-item">
+                <a class="nav-link" href="{{if .URL}}{{.URL}}{{else}}#{{end}}">
+                  {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
+                </a>
+              </li>
+            {{end}}
+          {{end}}
+        {{end}}
         {{if .Authed}}
           <!-- User Menu Dropdown -->
           {{template "user_menu" .}}

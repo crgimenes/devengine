@@ -35,6 +35,9 @@ CREATE TABLE IF NOT EXISTS forms (
     -- Debug/System Info visibility
     show_system_info    INTEGER NOT NULL DEFAULT 0 CHECK (show_system_info IN (0, 1)),
 
+    -- Associated menu for navbar display when form is active
+    menu_id INTEGER REFERENCES menus(id) ON DELETE SET NULL,
+
     created_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     deleted_at    DATETIME

@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"io/fs"
 	"log"
+	"reflect"
 	"strings"
 	"sync"
 )
@@ -248,6 +249,36 @@ func loadTemplates() *template.Template {
 				defaults[k] = v
 			}
 			return defaults
+		},
+		// getMenuItems safely extracts MenuItems field from any struct using reflection.
+		// Returns nil if the field doesn't exist or is nil/empty.
+		"getMenuItems": func(data interface{}) interface{} {
+			if data == nil {
+				return nil
+			}
+			v := reflect.ValueOf(data)
+			if v.Kind() == reflect.Ptr {
+				v = v.Elem()
+			}
+			if v.Kind() != reflect.Struct {
+				return nil
+			}
+			f := v.FieldByName("MenuItems")
+			if !f.IsValid() {
+				return nil
+			}
+			// Check if the field is a slice or array and has elements
+			switch f.Kind() {
+			case reflect.Slice, reflect.Array:
+				if f.IsNil() || f.Len() == 0 {
+					return nil
+				}
+			case reflect.Ptr, reflect.Interface, reflect.Map, reflect.Chan, reflect.Func:
+				if f.IsNil() {
+					return nil
+				}
+			}
+			return f.Interface()
 		},
 	}
 
