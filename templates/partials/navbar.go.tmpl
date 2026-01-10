@@ -1,18 +1,22 @@
 {{define "navbar"}}
 <nav class="navbar navbar-expand-lg navbar-dark bg-dark border-bottom">
   <div class="container-fluid">
-      <a class="navbar-brand" href="/">{{ .Config.SiteTitle }}</a>
-    <button class="navbar-toggler" 
-        type="button" 
-        data-bs-toggle="collapse" 
-        data-bs-target="#navbarNav" 
-        aria-controls="navbarNav" 
-        aria-expanded="false" 
-        aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
+    <!-- Brand -->
+    <a class="navbar-brand fw-bold" href="/">
+      <i class="bi bi-code-square text-primary me-2"></i>{{ .Config.SiteTitle }}
+    </a>
+
+    <!-- Custom Mobile Toggler (Hamburger) -->
+    <button id="mobile-menu-toggle" class="btn btn-icon d-lg-none border-0 text-light" type="button">
+      <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" fill="currentColor" class="bi bi-list" viewBox="0 0 16 16">
+        <path fill-rule="evenodd" d="M2.5 12a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5zm0-4a.5.5 0 0 1 .5-.5h10a.5.5 0 0 1 0 1H3a.5.5 0 0 1-.5-.5z"/>
+      </svg>
     </button>
-    <div class="collapse navbar-collapse" id="navbarNav">
+
+    <!-- Desktop Menu (Hidden on Mobile) -->
+    <div class="collapse navbar-collapse d-none d-lg-block" id="desktopNav">
       <ul class="navbar-nav ms-auto align-items-center">
+        <!-- Dynamic Menu Items -->
         {{$menuItems := getMenuItems .}}
         {{if $menuItems}}
           {{range $menuItems}}
@@ -23,24 +27,7 @@
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end">
                   {{range .Children}}
-                    {{if .Children}}
-                      <li class="dropdown-submenu">
-                        <a class="dropdown-item" href="#">
-                          {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
-                        </a>
-                        <ul class="dropdown-menu">
-                          {{range .Children}}
-                            <li><a class="dropdown-item" href="{{if .URL}}{{.URL}}{{else}}#{{end}}">
-                              {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
-                            </a></li>
-                          {{end}}
-                        </ul>
-                      </li>
-                    {{else}}
-                      <li><a class="dropdown-item" href="{{if .URL}}{{.URL}}{{else}}#{{end}}">
-                        {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
-                      </a></li>
-                    {{end}}
+                    {{template "navbar_dropdown_item" .}}
                   {{end}}
                 </ul>
               </li>
@@ -53,17 +40,119 @@
             {{end}}
           {{end}}
         {{end}}
+
+        <!-- User Menu -->
         {{if .Authed}}
-          <!-- User Menu Dropdown -->
           {{template "user_menu" .}}
-       {{else}}
-          <li class="nav-item">
-            <a class="nav-link" href="/login">Login</a>
+        {{else}}
+          <li class="nav-item ms-3">
+            <a class="btn btn-outline-light btn-sm px-4 rounded-pill" href="/login">Login</a>
           </li>
         {{end}}
       </ul>
     </div>
   </div>
 </nav>
+
+<!-- Mobile Menu Overlay (Custom) -->
+<div id="mobile-backdrop" class="mobile-backdrop"></div>
+<div id="mobile-menu" class="mobile-menu">
+    <div class="mobile-menu-header">
+        <h5 class="m-0 text-white">{{ .Config.SiteTitle }}</h5>
+        <button id="mobile-menu-close" class="btn btn-icon text-muted">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+            </svg>
+        </button>
+    </div>
+
+    <div class="mobile-menu-content">
+        <!-- User Profile Section -->
+        {{if .Authed}}
+        <div class="mobile-user-card mb-4">
+            <div class="d-flex align-items-center gap-3">
+                 {{if .User.AvatarURL}}
+                    <img src="{{.User.AvatarURL}}" alt="Avatar" class="rounded-circle avatar-md shadow-sm">
+                {{else}}
+                    <span class="badge bg-primary rounded-circle avatar-placeholder-md d-flex align-items-center justify-content-center fs-4">
+                        {{first .User.Username}}
+                    </span>
+                {{end}}
+                <div>
+                    <h6 class="text-white mb-0">{{.User.Username}}</h6>
+                    <small class="text-muted">{{.User.Email}}</small>
+                </div>
+            </div>
+            <div class="mt-3 d-flex gap-2">
+                 <a href="/me" class="btn btn-dark btn-sm flex-fill"><i class="bi bi-person"></i> Perfil</a>
+                 <a href="/logout" class="btn btn-dark btn-sm flex-fill"><i class="bi bi-box-arrow-right"></i> Sair</a>
+            </div>
+        </div>
+        {{end}}
+
+        <!-- Menu Links -->
+        <div class="mobile-links">
+            {{$menuItems := getMenuItems .}}
+            {{if $menuItems}}
+                {{range $menuItems}}
+                    {{template "mobile_menu_item" .}}
+                {{end}}
+            {{end}}
+
+            {{if not .Authed}}
+               <div class="mt-4">
+                  <a href="/login" class="btn btn-primary w-100 rounded-pill py-2">Fazer Login</a>
+               </div>
+            {{end}}
+        </div>
+    </div>
+</div>
+{{end}}
+
+{{/* Template for mobile menu items */}}
+{{define "mobile_menu_item"}}
+    {{if eq .ItemType "separator"}}
+        <hr class="mobile-divider my-3">
+    {{else if or (eq .ItemType "submenu") .Children}}
+        <div class="mobile-item-group mb-2">
+            <div class="mobile-group-title text-uppercase text-muted fw-bold fs-xs mb-2 mt-3 px-2">
+                {{if .Icon}}<i class="bi {{.Icon}} me-1"></i>{{end}} {{.Label}}
+            </div>
+            {{range .Children}}
+                {{template "mobile_menu_item" .}}
+            {{end}}
+        </div>
+    {{else}}
+        <a href="{{if .URL}}{{.URL}}{{else}}#{{end}}" class="mobile-link">
+            {{if .Icon}}<i class="bi {{.Icon}}"></i>{{end}}
+            <span>{{.Label}}</span>
+            <i class="bi bi-chevron-right ms-auto fs-xs opacity-50"></i>
+        </a>
+    {{end}}
+{{end}}
+
+{{/* Template for dropdown menu items (children) */}}
+{{define "navbar_dropdown_item"}}
+  {{if eq .ItemType "separator"}}
+    <li><hr class="dropdown-divider"></li>
+  {{else if eq .ItemType "submenu"}}
+    {{/* Nested submenu - Bootstrap 5 supports dropend */}}
+    <li class="dropend">
+      <a class="dropdown-item dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+        {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
+      </a>
+      <ul class="dropdown-menu">
+        {{range .Children}}
+          {{template "navbar_dropdown_item" .}}
+        {{end}}
+      </ul>
+    </li>
+  {{else}}
+    <li>
+      <a class="dropdown-item" href="{{if .URL}}{{.URL}}{{else}}#{{end}}">
+        {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}{{.Label}}
+      </a>
+    </li>
+  {{end}}
 {{end}}
 

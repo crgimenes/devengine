@@ -1,5 +1,6 @@
 {{define "scripts"}}
 <script defer src="/assets/bootstrap/js/bootstrap.bundle.min.js?v={{ .Config.GitTag }}"></script>
+<script defer src="/assets/mobile-menu.js?v={{ .Config.GitTag }}"></script>
 
 {{/* Load SSE client only for authenticated and enabled users to avoid unnecessary connections */}}
 {{ if and .Authed .User.Enabled }}
