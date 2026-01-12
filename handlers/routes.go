@@ -46,6 +46,8 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /tools/forms/{id}/elements/{element_id}/down", h.ToolsFormsElementMoveDown)
 
 	mux.HandleFunc("GET /tools/users", h.ToolsUsers)
+	mux.HandleFunc("GET /tools/search-forms", h.ToolsSearchForms)
+	mux.HandleFunc("GET /tools/filo", h.ToolsFilo)
 
 	// Menu Editor
 	mux.HandleFunc("GET /tools/menu-editor", h.ToolsMenus)
