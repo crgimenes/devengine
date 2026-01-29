@@ -16,6 +16,7 @@ import (
 	"github.com/crgimenes/devengine/filolog"
 	"github.com/crgimenes/devengine/utils"
 	"github.com/crgimenes/filo"
+	"github.com/crgimenes/filo/filostrings"
 )
 
 // FormRuntimeElement combines a form element with its EAV attribute info.
@@ -817,7 +818,7 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 		dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
 
 		// Register builtins (including DB ops attached to this TX)
-		filo.RegisterStringBuiltins(eng)
+		filostrings.RegisterBuiltins(eng)
 		filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
 		filolog.RegisterLogBuiltins(eng, filolog.NewContext(globals))
 
@@ -1088,7 +1089,7 @@ func insertRecordTx(tx *db.Transaction, entityType *db.EAVEntityType, attributes
 		dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
 
 		scriptSetup := func(eng *filo.Engine) {
-			filo.RegisterStringBuiltins(eng)
+			filostrings.RegisterBuiltins(eng)
 			filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
 		}
 		modifiedValues, userError, execErr := db.ExecutePreSaveScriptWithSetup(entityType, values, scriptSetup)
@@ -1128,7 +1129,7 @@ func updateRecordTx(tx *db.Transaction, entityType *db.EAVEntityType, record *db
 		dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
 
 		scriptSetup := func(eng *filo.Engine) {
-			filo.RegisterStringBuiltins(eng)
+			filostrings.RegisterBuiltins(eng)
 			filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
 		}
 		modifiedValues, userError, execErr := db.ExecutePreSaveScriptWithSetup(entityType, values, scriptSetup)

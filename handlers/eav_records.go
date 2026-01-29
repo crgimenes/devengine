@@ -13,6 +13,7 @@ import (
 	"github.com/crgimenes/devengine/filodb"
 	"github.com/crgimenes/devengine/utils"
 	"github.com/crgimenes/filo"
+	"github.com/crgimenes/filo/filostrings"
 )
 
 // RecordWithValues combines a record with its attribute values
@@ -483,7 +484,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 	// Execute pre_save script with transaction context
 	if entityType.PreSave != "" {
 		scriptSetup := func(eng *filo.Engine) {
-			filo.RegisterStringBuiltins(eng)
+			filostrings.RegisterBuiltins(eng)
 			filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
 		}
 		modifiedValues, userError, execErr := db.ExecutePreSaveScriptWithSetup(entityType, parsedValues, scriptSetup)
@@ -858,7 +859,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 		dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
 
 		scriptSetup := func(eng *filo.Engine) {
-			filo.RegisterStringBuiltins(eng)
+			filostrings.RegisterBuiltins(eng)
 			filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
 		}
 		modifiedValues, userError, execErr := db.ExecutePreSaveScriptWithSetup(entityType, parsedValues, scriptSetup)

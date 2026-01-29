@@ -12,6 +12,7 @@ import (
 	"github.com/crgimenes/devengine/filolog"
 	"github.com/crgimenes/devengine/session"
 	"github.com/crgimenes/filo"
+	"github.com/crgimenes/filo/filostrings"
 )
 
 // ToolsMenus shows the menu list page.
@@ -833,7 +834,7 @@ func (h *Handlers) MenuItemAction(w http.ResponseWriter, r *http.Request) {
 	dbCtx := filodb.NewContext(dbAdapter, nil)
 
 	// Register builtins
-	filo.RegisterStringBuiltins(eng)
+	filostrings.RegisterBuiltins(eng)
 	filodb.RegisterDBBuiltins(eng, dbCtx)
 	filolog.RegisterLogBuiltins(eng, filolog.NewContext(globals))
 

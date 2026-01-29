@@ -4,6 +4,7 @@ import (
 	"database/sql"
 
 	"github.com/crgimenes/filo"
+	"github.com/crgimenes/filo/filostrings"
 )
 
 // SQLiteAdapter adapts a *sql.DB pair (rw and ro) to the DBStorage interface.
@@ -70,7 +71,7 @@ func (t *sqlTxAdapter) Rollback() error {
 func MakeScriptSetupFunc(storage DBStorage) func(*filo.Engine) {
 	return func(eng *filo.Engine) {
 		// Register string builtins
-		filo.RegisterStringBuiltins(eng)
+		filostrings.RegisterBuiltins(eng)
 
 		// Register DB builtins
 		dbCtx := NewContextWithStorage(storage)

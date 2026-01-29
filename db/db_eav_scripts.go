@@ -9,6 +9,7 @@ import (
 
 	"github.com/crgimenes/devengine/filolog"
 	"github.com/crgimenes/filo"
+	"github.com/crgimenes/filo/filostrings"
 )
 
 // EAVRecordValues holds typed values keyed by attribute machine_name.
@@ -22,7 +23,7 @@ type ScriptEngineSetupFunc func(*filo.Engine)
 
 // DefaultScriptSetup is the default setup that only registers string builtins.
 var DefaultScriptSetup ScriptEngineSetupFunc = func(eng *filo.Engine) {
-	filo.RegisterStringBuiltins(eng)
+	filostrings.RegisterBuiltins(eng)
 }
 
 // CurrentScriptSetup is the active setup function. Set this at application startup
