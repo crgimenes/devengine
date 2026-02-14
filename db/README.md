@@ -17,7 +17,7 @@ The package is internal to this repository. Import it from other Go packages wit
 import "github.com/crgimenes/devengine/db"
 ```
 
-All examples assume Go 1.25 or later.
+All examples assume Go 1.26 or later.
 
 ## Opening the database
 
