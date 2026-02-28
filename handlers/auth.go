@@ -108,7 +108,7 @@ func (h *Handlers) LoginMagic(w http.ResponseWriter, r *http.Request) {
 	}
 
 	ret, err := mail.Send(mail.EmailRequest{
-		From:    "noreply@" + strings.TrimPrefix(h.cfg.EmailDomain, "https://"),
+		From:    "noreply@" + strings.TrimPrefix(strings.TrimPrefix(h.cfg.EmailDomain, "https://"), "http://"),
 		To:      []string{email},
 		Subject: "Seu link de acesso magico",
 		Text: "Clique no link para fazer login:\n\t" +
