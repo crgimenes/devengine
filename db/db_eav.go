@@ -33,7 +33,7 @@ type EAVEntityType struct {
 	PosLoad     string    `json:"pos_load"` // Filo script executed after loading records
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
-	DeletedAt   time.Time `json:"deleted_at,omitempty"` // zero value means not deleted
+	DeletedAt   time.Time `json:"deleted_at"` // zero value means not deleted
 }
 
 // EAVAttribute represents a typed field (column) belonging to an entity type.
@@ -59,7 +59,7 @@ type EAVAttribute struct {
 	DefaultVDatetime *string   `json:"default_v_datetime,omitempty"`
 	CreatedAt        time.Time `json:"created_at"`
 	UpdatedAt        time.Time `json:"updated_at"`
-	DeletedAt        time.Time `json:"deleted_at,omitempty"` // zero value means not deleted
+	DeletedAt        time.Time `json:"deleted_at"` // zero value means not deleted
 }
 
 // EAVRecord represents an instance (row) of an entity type.
@@ -71,7 +71,7 @@ type EAVRecord struct {
 	Rev          int       `json:"rev"`    // optimistic lock counter, starts at 1
 	CreatedAt    time.Time `json:"created_at"`
 	UpdatedAt    time.Time `json:"updated_at"`
-	DeletedAt    time.Time `json:"deleted_at,omitempty"` // zero value means not deleted
+	DeletedAt    time.Time `json:"deleted_at"` // zero value means not deleted
 }
 
 // EAVValue represents a typed cell value for a (record, attribute) pair.
@@ -621,7 +621,7 @@ func (s *SQLite) UpdateEAVAttribute(
 func (s *SQLite) CheckEAVValueUnique(
 	attributeID int64,
 	primitiveKind string,
-	value interface{},
+	value any,
 	excludeRecordID int64,
 ) (bool, error) {
 	// NULL values are always unique
@@ -631,7 +631,7 @@ func (s *SQLite) CheckEAVValueUnique(
 
 	// Build query based on primitive kind
 	var sqlCheck string
-	var args []interface{}
+	var args []any
 
 	switch primitiveKind {
 	case "BOOL":
@@ -641,7 +641,7 @@ func (s *SQLite) CheckEAVValueUnique(
 			  AND v.v_bool = ?
 			  AND v.record_id != ?
 			  AND r.deleted_at IS NULL`
-		args = []interface{}{attributeID, value, excludeRecordID}
+		args = []any{attributeID, value, excludeRecordID}
 
 	case "INT":
 		sqlCheck = `SELECT COUNT(*) FROM eav_values v
@@ -650,7 +650,7 @@ func (s *SQLite) CheckEAVValueUnique(
 			  AND v.v_int = ?
 			  AND v.record_id != ?
 			  AND r.deleted_at IS NULL`
-		args = []interface{}{attributeID, value, excludeRecordID}
+		args = []any{attributeID, value, excludeRecordID}
 
 	case "REAL":
 		sqlCheck = `SELECT COUNT(*) FROM eav_values v
@@ -659,7 +659,7 @@ func (s *SQLite) CheckEAVValueUnique(
 			  AND v.v_real = ?
 			  AND v.record_id != ?
 			  AND r.deleted_at IS NULL`
-		args = []interface{}{attributeID, value, excludeRecordID}
+		args = []any{attributeID, value, excludeRecordID}
 
 	case "TEXT":
 		sqlCheck = `SELECT COUNT(*) FROM eav_values v
@@ -668,7 +668,7 @@ func (s *SQLite) CheckEAVValueUnique(
 			  AND v.v_text = ?
 			  AND v.record_id != ?
 			  AND r.deleted_at IS NULL`
-		args = []interface{}{attributeID, value, excludeRecordID}
+		args = []any{attributeID, value, excludeRecordID}
 
 	case "DATETIME":
 		sqlCheck = `SELECT COUNT(*) FROM eav_values v
@@ -677,7 +677,7 @@ func (s *SQLite) CheckEAVValueUnique(
 			  AND v.v_datetime = ?
 			  AND v.record_id != ?
 			  AND r.deleted_at IS NULL`
-		args = []interface{}{attributeID, value, excludeRecordID}
+		args = []any{attributeID, value, excludeRecordID}
 
 	default:
 		return false, fmt.Errorf("%w: unsupported primitive_kind: %s", ErrInvalidValue, primitiveKind)

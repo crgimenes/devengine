@@ -5,6 +5,7 @@ import (
 	"html/template"
 	"io/fs"
 	"log"
+	"maps"
 	"reflect"
 	"strings"
 	"sync"
@@ -32,66 +33,66 @@ func SetAppTemplatesFS(fsys fs.FS) {
 
 // getGroupDefaults returns default metadata values for group plugin types.
 // These are used when ui_meta_json is empty or missing fields.
-func getGroupDefaults(elementKind string) map[string]interface{} {
+func getGroupDefaults(elementKind string) map[string]any {
 	switch elementKind {
 	case "group":
-		return map[string]interface{}{
+		return map[string]any{
 			"show_legend":  true,
 			"border_style": "default",
 		}
 	case "accordion":
-		return map[string]interface{}{
+		return map[string]any{
 			"expanded_by_default": true,
 			"show_header":         true,
 		}
 	case "card":
-		return map[string]interface{}{
+		return map[string]any{
 			"show_header": true,
 			"header_bg":   "default",
 		}
 	case "tabs":
-		return map[string]interface{}{
+		return map[string]any{
 			"tab_position": "top",
 			"active_tab":   0,
 		}
 	case "carousel":
-		return map[string]interface{}{
+		return map[string]any{
 			"show_controls":   true,
 			"show_indicators": true,
 			"interval":        5000,
 			"fade":            false,
 		}
 	default:
-		return map[string]interface{}{}
+		return map[string]any{}
 	}
 }
 
 // getFieldDefaults returns default metadata values for field plugin types.
 // These are used when ui_meta_json is empty or missing fields.
-func getFieldDefaults(uiKind string) map[string]interface{} {
+func getFieldDefaults(uiKind string) map[string]any {
 	switch uiKind {
 	case "text":
-		return map[string]interface{}{
+		return map[string]any{
 			"placeholder": "",
 			"maxLength":   0,
 			"pattern":     "",
 			"inputMode":   "text",
 		}
 	case "textarea":
-		return map[string]interface{}{
+		return map[string]any{
 			"placeholder": "",
 			"rows":        3,
 			"maxLength":   0,
 		}
 	case "int":
-		return map[string]interface{}{
+		return map[string]any{
 			"min":         nil,
 			"max":         nil,
 			"step":        1,
 			"placeholder": "",
 		}
 	case "decimal":
-		return map[string]interface{}{
+		return map[string]any{
 			"min":           nil,
 			"max":           nil,
 			"step":          "any",
@@ -99,41 +100,41 @@ func getFieldDefaults(uiKind string) map[string]interface{} {
 			"placeholder":   "",
 		}
 	case "bool":
-		return map[string]interface{}{
+		return map[string]any{
 			"style": "select", // select, checkbox, switch
 		}
 	case "datetime":
-		return map[string]interface{}{
+		return map[string]any{
 			"includeTime": true,
 			"minDate":     "",
 			"maxDate":     "",
 		}
 	case "select":
-		return map[string]interface{}{
-			"options":    []interface{}{},
+		return map[string]any{
+			"options":    []any{},
 			"allowEmpty": true,
 			"multiple":   false,
 		}
 	case "image":
-		return map[string]interface{}{
+		return map[string]any{
 			"alt_text": "",
 		}
 	case "video":
-		return map[string]interface{}{
+		return map[string]any{
 			"controls": true,
 			"autoplay": false,
 			"loop":     false,
 			"muted":    false,
 		}
 	case "audio":
-		return map[string]interface{}{
+		return map[string]any{
 			"controls": true,
 			"autoplay": false,
 			"loop":     false,
 			"muted":    false,
 		}
 	default:
-		return map[string]interface{}{}
+		return map[string]any{}
 	}
 }
 
@@ -204,11 +205,11 @@ func loadTemplates() *template.Template {
 			return a * b
 		},
 		// dict creates a map from key-value pairs for passing to templates
-		"dict": func(values ...interface{}) map[string]interface{} {
+		"dict": func(values ...any) map[string]any {
 			if len(values)%2 != 0 {
 				return nil
 			}
-			dict := make(map[string]interface{}, len(values)/2)
+			dict := make(map[string]any, len(values)/2)
 			for i := 0; i < len(values); i += 2 {
 				key, ok := values[i].(string)
 				if !ok {
@@ -219,45 +220,41 @@ func loadTemplates() *template.Template {
 			return dict
 		},
 		// parseGroupMeta parses ui_meta_json with defaults for group plugins
-		"parseGroupMeta": func(jsonStr string, elementKind string) map[string]interface{} {
+		"parseGroupMeta": func(jsonStr string, elementKind string) map[string]any {
 			defaults := getGroupDefaults(elementKind)
 			if jsonStr == "" {
 				return defaults
 			}
-			var meta map[string]interface{}
+			var meta map[string]any
 			if err := json.Unmarshal([]byte(jsonStr), &meta); err != nil {
 				return defaults
 			}
 			// Merge: meta values override defaults
-			for k, v := range meta {
-				defaults[k] = v
-			}
+			maps.Copy(defaults, meta)
 			return defaults
 		},
 		// parseFieldMeta parses ui_meta_json with defaults for field plugins
-		"parseFieldMeta": func(jsonStr string, uiKind string) map[string]interface{} {
+		"parseFieldMeta": func(jsonStr string, uiKind string) map[string]any {
 			defaults := getFieldDefaults(uiKind)
 			if jsonStr == "" {
 				return defaults
 			}
-			var meta map[string]interface{}
+			var meta map[string]any
 			if err := json.Unmarshal([]byte(jsonStr), &meta); err != nil {
 				return defaults
 			}
 			// Merge: meta values override defaults
-			for k, v := range meta {
-				defaults[k] = v
-			}
+			maps.Copy(defaults, meta)
 			return defaults
 		},
 		// getMenuItems safely extracts MenuItems field from any struct using reflection.
 		// Returns nil if the field doesn't exist or is nil/empty.
-		"getMenuItems": func(data interface{}) interface{} {
+		"getMenuItems": func(data any) any {
 			if data == nil {
 				return nil
 			}
 			v := reflect.ValueOf(data)
-			if v.Kind() == reflect.Ptr {
+			if v.Kind() == reflect.Pointer {
 				v = v.Elem()
 			}
 			if v.Kind() != reflect.Struct {
@@ -273,7 +270,7 @@ func loadTemplates() *template.Template {
 				if f.IsNil() || f.Len() == 0 {
 					return nil
 				}
-			case reflect.Ptr, reflect.Interface, reflect.Map, reflect.Chan, reflect.Func:
+			case reflect.Pointer, reflect.Interface, reflect.Map, reflect.Chan, reflect.Func:
 				if f.IsNil() {
 					return nil
 				}
@@ -282,12 +279,12 @@ func loadTemplates() *template.Template {
 		},
 		// getMenuMachineName safely extracts MenuMachineName field from any struct using reflection.
 		// Returns empty string if the field doesn't exist.
-		"getMenuMachineName": func(data interface{}) string {
+		"getMenuMachineName": func(data any) string {
 			if data == nil {
 				return ""
 			}
 			v := reflect.ValueOf(data)
-			if v.Kind() == reflect.Ptr {
+			if v.Kind() == reflect.Pointer {
 				v = v.Elem()
 			}
 			if v.Kind() != reflect.Struct {

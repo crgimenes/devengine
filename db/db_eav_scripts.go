@@ -14,7 +14,7 @@ import (
 
 // EAVRecordValues holds typed values keyed by attribute machine_name.
 // Values are typed as interface{} and must be one of: bool, int64, float64, string, nil.
-type EAVRecordValues map[string]interface{}
+type EAVRecordValues map[string]any
 
 // ScriptEngineSetupFunc is a function that configures a Filo engine before execution.
 // This allows callers to register additional builtins (like DB access) without
@@ -165,8 +165,8 @@ func executeFiloScript(script string, values EAVRecordValues, scriptName string,
 
 		// Handle field: prefix
 		k := kRaw
-		if strings.HasPrefix(k, "field:") {
-			k = strings.TrimPrefix(k, "field:")
+		if after, ok := strings.CutPrefix(k, "field:"); ok {
+			k = after
 		} else {
 			// For EAV scripts (pre_save/pos_load), we ONLY accept field: prefixed variables
 			// to modify record values. This prevents accidental pollution.
@@ -180,7 +180,7 @@ func executeFiloScript(script string, values EAVRecordValues, scriptName string,
 }
 
 // goValueToFiloValue converts a Go value to a Filo Value.
-func goValueToFiloValue(v interface{}) filo.Value {
+func goValueToFiloValue(v any) filo.Value {
 	if v == nil {
 		// Filo doesn't have a nil type, use empty string
 		return filo.VString("")

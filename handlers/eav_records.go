@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
+	"maps"
 	"net/http"
 	"strconv"
 
@@ -19,7 +20,7 @@ import (
 // RecordWithValues combines a record with its attribute values
 type RecordWithValues struct {
 	Record db.EAVRecord
-	Values map[string]interface{} // attribute machine_name -> value
+	Values map[string]any // attribute machine_name -> value
 }
 
 // txAdapter adapts *db.Transaction to filodb.DBTransaction interface
@@ -114,7 +115,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecords(w http.ResponseWriter, r *http.
 		}
 
 		// Convert to map keyed by attribute machine_name
-		valueMap := make(map[string]interface{})
+		valueMap := make(map[string]any)
 		for _, val := range values {
 			// Find attribute
 			var attrName string
@@ -249,7 +250,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordsAPI(w http.ResponseWriter, r *ht
 			return
 		}
 
-		valueMap := make(map[string]interface{})
+		valueMap := make(map[string]any)
 		for _, val := range values {
 			var attrName string
 			for _, attr := range attributes {
@@ -282,7 +283,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordsAPI(w http.ResponseWriter, r *ht
 
 	// Return JSON
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]interface{}{
+	json.NewEncoder(w).Encode(map[string]any{
 		"records": recordsWithValues,
 		"offset":  offset + 100,
 		"hasMore": hasMore,
@@ -315,7 +316,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordNew(w http.ResponseWriter, r *htt
 	}
 
 	// Prepare initial values with defaults
-	values := make(map[string]interface{})
+	values := make(map[string]any)
 	for _, attr := range attributes {
 		if attr.DefaultVBool != nil {
 			// Convert bool pointer to bool value for template
@@ -340,9 +341,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordNew(w http.ResponseWriter, r *htt
 			// Script errors shouldn't block viewing
 		} else {
 			// Update values with modified values
-			for k, v := range modifiedValues {
-				values[k] = v
-			}
+			maps.Copy(values, modifiedValues)
 			posLoadError = userError
 		}
 	}
@@ -355,7 +354,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordNew(w http.ResponseWriter, r *htt
 		EntityType   *db.EAVEntityType
 		Attributes   []db.EAVAttribute
 		Record       *db.EAVRecord
-		Values       map[string]interface{}
+		Values       map[string]any
 		Message      string
 		PosLoadError string
 	}{
@@ -550,7 +549,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 		}
 
 		// Validate unique constraint (using transaction)
-		var uniqueValue interface{}
+		var uniqueValue any
 		switch attr.PrimitiveKind {
 		case "BOOL":
 			uniqueValue = vBool
@@ -650,7 +649,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordEdit(w http.ResponseWriter, r *ht
 	}
 
 	// Convert to map
-	valueMap := make(map[string]interface{})
+	valueMap := make(map[string]any)
 	for _, val := range values {
 		var attrName string
 		for _, attr := range attributes {
@@ -699,9 +698,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordEdit(w http.ResponseWriter, r *ht
 			// Script errors shouldn't block viewing
 		} else {
 			// Update valueMap with modified values
-			for k, v := range modifiedValues {
-				valueMap[k] = v
-			}
+			maps.Copy(valueMap, modifiedValues)
 			posLoadError = userError
 		}
 	}
@@ -720,7 +717,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordEdit(w http.ResponseWriter, r *ht
 		EntityType   *db.EAVEntityType
 		Attributes   []db.EAVAttribute
 		Record       *db.EAVRecord
-		Values       map[string]interface{}
+		Values       map[string]any
 		Message      string
 		PosLoadError string
 	}{
@@ -925,7 +922,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 		}
 
 		// Validate unique constraint (exclude current record)
-		var uniqueValue interface{}
+		var uniqueValue any
 		switch attr.PrimitiveKind {
 		case "BOOL":
 			uniqueValue = vBool

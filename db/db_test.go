@@ -126,7 +126,7 @@ func TestExecAndQuery(t *testing.T) {
 	if err := s.Exec(sqlCreateItems); err != nil {
 		t.Fatalf("create table: %v", err)
 	}
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		const sqlInsertItem = `INSERT INTO items(
                 name
             ) VALUES (?)`
@@ -251,7 +251,7 @@ func TestCheckpointAndClose(t *testing.T) {
 	if err := s.Exec(sqlCreateT); err != nil {
 		t.Fatalf("create: %v", err)
 	}
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		const sqlInsertT = `INSERT INTO t(
                 x
             ) VALUES (?)`
@@ -312,7 +312,7 @@ func TestConcurrentReadersSingleWriter(t *testing.T) {
 	// Multiple readers
 	readers := max(runtime.GOMAXPROCS(0), 4)
 	var readErr atomicError
-	for i := 0; i < readers; i++ {
+	for range readers {
 		wg.Go(func() {
 			deadline := time.Now().Add(150 * time.Millisecond)
 			for time.Now().Before(deadline) && readErr.Load() == nil {
@@ -2409,12 +2409,12 @@ func TestPurgeExpiredMagicLinkTokensMultipleExpired(t *testing.T) {
 	defer s.Close()
 
 	// Create mix of expired and valid tokens
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		token := fmt.Sprintf("expired-%d", i)
 		_ = s.StoreMagicLinkToken(token, "expired@example.com", time.Now().UTC().Add(-1*time.Hour))
 	}
 
-	for i := 0; i < 3; i++ {
+	for i := range 3 {
 		token := fmt.Sprintf("valid-%d", i)
 		_ = s.StoreMagicLinkToken(token, "valid@example.com", time.Now().UTC().Add(1*time.Hour))
 	}

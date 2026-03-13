@@ -2,6 +2,7 @@ package templates
 
 import (
 	"encoding/json"
+	"maps"
 	"testing"
 )
 
@@ -11,7 +12,7 @@ func TestGetGroupDefaults(t *testing.T) {
 		elementKind string
 		expectedLen int
 		checkKey    string
-		checkValue  interface{}
+		checkValue  any
 	}{
 		{
 			name:        "group defaults",
@@ -84,7 +85,7 @@ func TestParseGroupMetaIntegration(t *testing.T) {
 		jsonStr     string
 		elementKind string
 		checkKey    string
-		expected    interface{}
+		expected    any
 	}{
 		{
 			name:        "empty JSON uses defaults",
@@ -124,18 +125,16 @@ func TestParseGroupMetaIntegration(t *testing.T) {
 	}
 
 	// Simulating the parseGroupMeta logic inline for testing
-	parseGroupMeta := func(jsonStr string, elementKind string) map[string]interface{} {
+	parseGroupMeta := func(jsonStr string, elementKind string) map[string]any {
 		defaults := getGroupDefaults(elementKind)
 		if jsonStr == "" {
 			return defaults
 		}
-		var meta map[string]interface{}
+		var meta map[string]any
 		if err := json.Unmarshal([]byte(jsonStr), &meta); err != nil {
 			return defaults
 		}
-		for k, v := range meta {
-			defaults[k] = v
-		}
+		maps.Copy(defaults, meta)
 		return defaults
 	}
 
@@ -192,18 +191,16 @@ func TestGetFieldDefaults(t *testing.T) {
 }
 
 func TestParseFieldMetaIntegration(t *testing.T) {
-	parseFieldMeta := func(jsonStr string, uiKind string) map[string]interface{} {
+	parseFieldMeta := func(jsonStr string, uiKind string) map[string]any {
 		defaults := getFieldDefaults(uiKind)
 		if jsonStr == "" {
 			return defaults
 		}
-		var meta map[string]interface{}
+		var meta map[string]any
 		if err := json.Unmarshal([]byte(jsonStr), &meta); err != nil {
 			return defaults
 		}
-		for k, v := range meta {
-			defaults[k] = v
-		}
+		maps.Copy(defaults, meta)
 		return defaults
 	}
 
@@ -212,7 +209,7 @@ func TestParseFieldMetaIntegration(t *testing.T) {
 		jsonStr  string
 		uiKind   string
 		checkKey string
-		expected interface{}
+		expected any
 	}{
 		{"empty JSON uses defaults", "", "text", "inputMode", "text"},
 		{"invalid JSON uses defaults", "{bad}", "textarea", "rows", 3},

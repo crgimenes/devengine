@@ -527,17 +527,17 @@ func (s *SQLite) MoveElementUp(elementID int64) error {
 	var prevID int64
 	var prevZOrder int
 	var qPrev string
-	var args []interface{}
+	var args []any
 	if parentID.Valid {
 		qPrev = `SELECT id, z_order FROM form_elements 
 			WHERE form_id = ? AND parent_id = ? AND z_order < ? AND deleted_at IS NULL
 			ORDER BY z_order DESC LIMIT 1`
-		args = []interface{}{formID, parentID.Int64, currentZOrder}
+		args = []any{formID, parentID.Int64, currentZOrder}
 	} else {
 		qPrev = `SELECT id, z_order FROM form_elements 
 			WHERE form_id = ? AND parent_id IS NULL AND z_order < ? AND deleted_at IS NULL
 			ORDER BY z_order DESC LIMIT 1`
-		args = []interface{}{formID, currentZOrder}
+		args = []any{formID, currentZOrder}
 	}
 	if err := tx.QueryRow(qPrev, args...).Scan(&prevID, &prevZOrder); err != nil {
 		if err == sql.ErrNoRows {
@@ -579,17 +579,17 @@ func (s *SQLite) MoveElementDown(elementID int64) error {
 	var nextID int64
 	var nextZOrder int
 	var qNext string
-	var args []interface{}
+	var args []any
 	if parentID.Valid {
 		qNext = `SELECT id, z_order FROM form_elements 
 			WHERE form_id = ? AND parent_id = ? AND z_order > ? AND deleted_at IS NULL
 			ORDER BY z_order ASC LIMIT 1`
-		args = []interface{}{formID, parentID.Int64, currentZOrder}
+		args = []any{formID, parentID.Int64, currentZOrder}
 	} else {
 		qNext = `SELECT id, z_order FROM form_elements 
 			WHERE form_id = ? AND parent_id IS NULL AND z_order > ? AND deleted_at IS NULL
 			ORDER BY z_order ASC LIMIT 1`
-		args = []interface{}{formID, currentZOrder}
+		args = []any{formID, currentZOrder}
 	}
 	if err := tx.QueryRow(qNext, args...).Scan(&nextID, &nextZOrder); err != nil {
 		if err == sql.ErrNoRows {

@@ -323,7 +323,7 @@ func TestQueryRWForMultipleRows(t *testing.T) {
 		t.Fatalf("CREATE TABLE error: %v", err)
 	}
 
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		if err := s.Exec(`INSERT INTO test_items(name) VALUES(?)`, "item"); err != nil {
 			t.Fatalf("INSERT error: %v", err)
 		}

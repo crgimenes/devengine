@@ -794,7 +794,7 @@ func (h *Handlers) MenuItemAction(w http.ResponseWriter, r *http.Request) {
 	// Check if there's Filo code to execute
 	if menuItem.FiloCode == "" {
 		// No Filo code - just return success
-		jsonResponse(w, http.StatusOK, map[string]interface{}{
+		jsonResponse(w, http.StatusOK, map[string]any{
 			"error":       "",
 			"message":     "",
 			"redirect_to": menuItem.URL, // Allow continuing to URL/JS
@@ -848,7 +848,7 @@ func (h *Handlers) MenuItemAction(w http.ResponseWriter, r *http.Request) {
 	_, newGlobals, runErr := eng.RunScript(ctx, menuItem.FiloCode, globals, cfg)
 
 	// Build response
-	response := map[string]interface{}{
+	response := map[string]any{
 		"error":       "",
 		"message":     "",
 		"redirect_to": "",

@@ -183,11 +183,11 @@ func (c *FiloDBContext) builtinDBQueryVal(ctx context.Context, args []filo.Value
 	}
 
 	// Scan first column only
-	var val interface{}
-	dest := make([]interface{}, len(cols))
+	var val any
+	dest := make([]any, len(cols))
 	dest[0] = &val
 	for i := 1; i < len(cols); i++ {
-		var discard interface{}
+		var discard any
 		dest[i] = &discard
 	}
 
@@ -292,8 +292,8 @@ func (c *FiloDBContext) builtinDBRollback(ctx context.Context, args []filo.Value
 }
 
 // Helper: convert Filo args to Go parameters
-func argsToParams(args []filo.Value) []interface{} {
-	params := make([]interface{}, len(args))
+func argsToParams(args []filo.Value) []any {
+	params := make([]any, len(args))
 	for i, arg := range args {
 		params[i] = filoToGoValue(arg)
 	}
@@ -301,7 +301,7 @@ func argsToParams(args []filo.Value) []interface{} {
 }
 
 // Helper: convert Filo value to Go value for SQL parameter
-func filoToGoValue(v filo.Value) interface{} {
+func filoToGoValue(v filo.Value) any {
 	switch v.Kind {
 	case filo.KBool:
 		return v.Bool
@@ -319,7 +319,7 @@ func filoToGoValue(v filo.Value) interface{} {
 }
 
 // Helper: convert Go value to Filo value
-func goToFiloValue(v interface{}) filo.Value {
+func goToFiloValue(v any) filo.Value {
 	if v == nil {
 		return filo.VString("")
 	}
@@ -373,8 +373,8 @@ func scanRowToList(rows *sql.Rows) (filo.Value, error) {
 
 // Helper: scan row with known column count
 func scanRowToListInternal(rows *sql.Rows, colCount int) (filo.Value, error) {
-	values := make([]interface{}, colCount)
-	valuePtrs := make([]interface{}, colCount)
+	values := make([]any, colCount)
+	valuePtrs := make([]any, colCount)
 	for i := range values {
 		valuePtrs[i] = &values[i]
 	}

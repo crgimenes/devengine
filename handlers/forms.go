@@ -911,12 +911,12 @@ func (h *Handlers) ToolsFormsRecords(w http.ResponseWriter, r *http.Request) {
 	// Get values for each record (first few attrs as preview)
 	type RecordPreview struct {
 		Record db.EAVRecord
-		Values map[string]interface{}
+		Values map[string]any
 	}
 	var recordPreviews []RecordPreview
 	for _, rec := range records {
 		vals, _ := db.Storage.GetEAVValuesByRecordID(rec.ID)
-		valMap := make(map[string]interface{})
+		valMap := make(map[string]any)
 		for _, v := range vals {
 			for _, attr := range attributes {
 				if attr.ID == v.AttributeID {

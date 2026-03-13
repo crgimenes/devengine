@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"maps"
 	"mime"
 	"net/http"
 	"path"
@@ -54,9 +55,7 @@ func Init() error {
 			return fmt.Errorf("build app assets index: %w", err)
 		}
 		// Assets da app sobrescrevem os do devengine
-		for k, v := range appAssets {
-			index[k] = v
-		}
+		maps.Copy(index, appAssets)
 	}
 
 	return nil

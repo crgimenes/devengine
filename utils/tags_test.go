@@ -1,5 +1,7 @@
 package utils
 
+import "strings"
+
 import "testing"
 
 func TestNormalizeTagsCSV_Empty(t *testing.T) {
@@ -52,11 +54,12 @@ func TestNormalizeTagsCSV_MaxTags(t *testing.T) {
 func TestNormalizeTagsCSV_TotalLimit(t *testing.T) {
 	// Build tags close to the limit; each tag is 50 chars -> total exceeds 512
 	base := "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" // 50 a's
-	in := base
-	for i := 0; i < 12; i++ { // 13*50 + 12 commas = 662 > 512
-		in += "," + base
+	var in strings.Builder
+	in.WriteString(base)
+	for range 12 { // 13*50 + 12 commas = 662 > 512
+		in.WriteString("," + base)
 	}
-	if _, _, err := NormalizeTagsCSV(in); err == nil {
+	if _, _, err := NormalizeTagsCSV(in.String()); err == nil {
 		t.Fatalf("expected error for total too large")
 	}
 }

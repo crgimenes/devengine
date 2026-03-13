@@ -505,7 +505,7 @@ func TestEAVListRecordsPagination(t *testing.T) {
 	}
 
 	// Create 5 records
-	for i := 0; i < 5; i++ {
+	for range 5 {
 		_, err := s.CreateEAVRecord(et.ID)
 		if err != nil {
 			t.Fatalf("CreateEAVRecord() error: %v", err)

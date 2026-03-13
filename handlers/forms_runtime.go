@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"maps"
 	"net/http"
 	"strconv"
 	"strings"
@@ -159,7 +160,7 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 	elementTree := BuildElementTree(elements, attrMap)
 
 	// Prepare initial values with defaults from attributes
-	values := make(map[string]interface{})
+	values := make(map[string]any)
 	for _, attr := range attributes {
 		if attr.DefaultVBool != nil {
 			values[attr.MachineName] = *attr.DefaultVBool
@@ -179,9 +180,7 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 	if entityType != nil && entityType.PosLoad != "" {
 		modifiedValues, userError, execErr := db.ExecutePosLoadScript(entityType, db.EAVRecordValues(values))
 		if execErr == nil {
-			for k, v := range modifiedValues {
-				values[k] = v
-			}
+			maps.Copy(values, modifiedValues)
 			posLoadError = userError
 		}
 	}
@@ -219,7 +218,7 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		Elements        []FormRuntimeElement
 		ElementsTree    []FormRuntimeNode
 		Record          *db.EAVRecord
-		Values          map[string]interface{}
+		Values          map[string]any
 		Message         string
 		Error           string
 		PosLoadError    string
@@ -421,7 +420,7 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Build values map
-	values := make(map[string]interface{})
+	values := make(map[string]any)
 	for _, val := range eavValues {
 		var attr *db.EAVAttribute
 		for i := range attributes {
@@ -463,9 +462,7 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 	if entityType.PosLoad != "" {
 		modifiedValues, userError, execErr := db.ExecutePosLoadScript(entityType, db.EAVRecordValues(values))
 		if execErr == nil {
-			for k, v := range modifiedValues {
-				values[k] = v
-			}
+			maps.Copy(values, modifiedValues)
 			posLoadError = userError
 		}
 	}
@@ -503,7 +500,7 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 		Elements        []FormRuntimeElement
 		ElementsTree    []FormRuntimeNode
 		Record          *db.EAVRecord
-		Values          map[string]interface{}
+		Values          map[string]any
 		Message         string
 		Error           string
 		PosLoadError    string
@@ -716,7 +713,7 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 	}
 
 	// Response variables (can be modified by Filo script)
-	response := map[string]interface{}{
+	response := map[string]any{
 		"error":       "",
 		"message":     "",
 		"redirect_to": "",
@@ -838,7 +835,7 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 
 		// Read back changes to inputs from Filo
 		for kRaw, val := range newGlobals {
-			var goVal interface{}
+			var goVal any
 			switch val.Kind {
 			case filo.KNumber:
 				goVal = int64(val.Num)
@@ -855,8 +852,8 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 
 			// Handle field: prefix
 			k := kRaw
-			if strings.HasPrefix(k, "field:") {
-				k = strings.TrimPrefix(k, "field:")
+			if after, ok := strings.CutPrefix(k, "field:"); ok {
+				k = after
 			} else {
 				// Ignore non-field globals (like error, message, etc unless they match field names explicitly without prefix which is deprecated but supported for non-colliding legacy if any)
 				// Actually, per strict rules, we only save "field:" variables or variables that match attribute names directly IF we supported legacy.
@@ -942,7 +939,7 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 }
 
 // goToFiloValue converts a Go value to a Filo Value for button action scripts.
-func goToFiloValue(v interface{}) filo.Value {
+func goToFiloValue(v any) filo.Value {
 	if v == nil {
 		return filo.VString("")
 	}
@@ -961,7 +958,7 @@ func goToFiloValue(v interface{}) filo.Value {
 }
 
 // jsonResponse writes a JSON response with the given status code.
-func jsonResponse(w http.ResponseWriter, status int, data interface{}) {
+func jsonResponse(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	enc := json.NewEncoder(w)
@@ -1166,7 +1163,7 @@ func saveValuesTx(tx *db.Transaction, recordID int64, attributes []db.EAVAttribu
 			continue
 		}
 
-		var vBool, vInt, vReal, vText, vDatetime interface{}
+		var vBool, vInt, vReal, vText, vDatetime any
 		switch attr.PrimitiveKind {
 		case "BOOL":
 			if b, ok := rawValue.(bool); ok {
