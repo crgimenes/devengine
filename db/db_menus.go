@@ -204,15 +204,42 @@ func BuildMenuItemTreeWithName(items []MenuItem, menuMachineName string) []MenuI
 // CreateMenu creates a new menu.
 func (s *SQLite) CreateMenu(machineName, label, description string) (*Menu, error) {
 	refID := utils.NewOpaqueID()
-	const sqlInsert = `
-		INSERT INTO menus (reference_id, machine_name, label, description)
-		VALUES (?, ?, ?, ?)
-		RETURNING id, reference_id, machine_name, label, description, created_at, updated_at
+	const sqlInsert = `INSERT INTO menus (
+		reference_id, -- 1
+		machine_name, -- 2
+		label,        -- 3
+		description   -- 4
+	) VALUES (
+		?, -- 1
+		?, -- 2
+		?, -- 3
+		?  -- 4
+	)
+	RETURNING
+		id,           -- 1
+		reference_id, -- 2
+		machine_name, -- 3
+		label,        -- 4
+		description,  -- 5
+		created_at,   -- 6
+		updated_at    -- 7
 	`
 
 	var m Menu
-	err := s.QueryRowRW(sqlInsert, refID, machineName, label, description).Scan(
-		&m.ID, &m.ReferenceID, &m.MachineName, &m.Label, &m.Description, &m.CreatedAt, &m.UpdatedAt,
+	err := s.QueryRowRW(
+		sqlInsert,
+		refID,       // 1
+		machineName, // 2
+		label,       // 3
+		description, // 4
+	).Scan(
+		&m.ID,          // 1
+		&m.ReferenceID, // 2
+		&m.MachineName, // 3
+		&m.Label,       // 4
+		&m.Description, // 5
+		&m.CreatedAt,   // 6
+		&m.UpdatedAt,   // 7
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create menu: %w", err)
@@ -222,15 +249,32 @@ func (s *SQLite) CreateMenu(machineName, label, description string) (*Menu, erro
 
 // GetMenuByRefID retrieves a menu by reference_id.
 func (s *SQLite) GetMenuByRefID(refID string) (*Menu, error) {
-	const q = `
-		SELECT id, reference_id, machine_name, label, description, created_at, updated_at, deleted_at
-		FROM menus
-		WHERE reference_id = ? AND deleted_at IS NULL
-	`
+	const q = `SELECT
+		id,           -- 1
+		reference_id, -- 2
+		machine_name, -- 3
+		label,        -- 4
+		description,  -- 5
+		created_at,   -- 6
+		updated_at,   -- 7
+		deleted_at    -- 8
+	FROM menus
+	WHERE reference_id = ? -- 1
+	AND deleted_at IS NULL`
 
 	var m Menu
-	err := s.QueryRow(q, refID).Scan(
-		&m.ID, &m.ReferenceID, &m.MachineName, &m.Label, &m.Description, &m.CreatedAt, &m.UpdatedAt, &m.DeletedAt,
+	err := s.QueryRow(
+		q,
+		refID, // 1
+	).Scan(
+		&m.ID,          // 1
+		&m.ReferenceID, // 2
+		&m.MachineName, // 3
+		&m.Label,       // 4
+		&m.Description, // 5
+		&m.CreatedAt,   // 6
+		&m.UpdatedAt,   // 7
+		&m.DeletedAt,   // 8
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -244,15 +288,32 @@ func (s *SQLite) GetMenuByRefID(refID string) (*Menu, error) {
 // GetMenuByID retrieves a menu by its ID.
 // Returns nil, nil if not found.
 func (s *SQLite) GetMenuByID(id int64) (*Menu, error) {
-	const q = `
-		SELECT id, reference_id, machine_name, label, description, created_at, updated_at, deleted_at
-		FROM menus
-		WHERE id = ? AND deleted_at IS NULL
-	`
+	const q = `SELECT
+		id,           -- 1
+		reference_id, -- 2
+		machine_name, -- 3
+		label,        -- 4
+		description,  -- 5
+		created_at,   -- 6
+		updated_at,   -- 7
+		deleted_at    -- 8
+	FROM menus
+	WHERE id = ?           -- 1
+	AND deleted_at IS NULL`
 
 	var m Menu
-	err := s.QueryRow(q, id).Scan(
-		&m.ID, &m.ReferenceID, &m.MachineName, &m.Label, &m.Description, &m.CreatedAt, &m.UpdatedAt, &m.DeletedAt,
+	err := s.QueryRow(
+		q,
+		id, // 1
+	).Scan(
+		&m.ID,          // 1
+		&m.ReferenceID, // 2
+		&m.MachineName, // 3
+		&m.Label,       // 4
+		&m.Description, // 5
+		&m.CreatedAt,   // 6
+		&m.UpdatedAt,   // 7
+		&m.DeletedAt,   // 8
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -266,15 +327,32 @@ func (s *SQLite) GetMenuByID(id int64) (*Menu, error) {
 // GetMenuByMachineName retrieves a menu by machine_name.
 // Returns nil, nil if not found (soft not-found to allow fallback logic).
 func (s *SQLite) GetMenuByMachineName(machineName string) (*Menu, error) {
-	const q = `
-		SELECT id, reference_id, machine_name, label, description, created_at, updated_at, deleted_at
-		FROM menus
-		WHERE machine_name = ? AND deleted_at IS NULL
-	`
+	const q = `SELECT
+		id,           -- 1
+		reference_id, -- 2
+		machine_name, -- 3
+		label,        -- 4
+		description,  -- 5
+		created_at,   -- 6
+		updated_at,   -- 7
+		deleted_at    -- 8
+	FROM menus
+	WHERE machine_name = ? -- 1
+	AND deleted_at IS NULL`
 
 	var m Menu
-	err := s.QueryRow(q, machineName).Scan(
-		&m.ID, &m.ReferenceID, &m.MachineName, &m.Label, &m.Description, &m.CreatedAt, &m.UpdatedAt, &m.DeletedAt,
+	err := s.QueryRow(
+		q,
+		machineName, // 1
+	).Scan(
+		&m.ID,          // 1
+		&m.ReferenceID, // 2
+		&m.MachineName, // 3
+		&m.Label,       // 4
+		&m.Description, // 5
+		&m.CreatedAt,   // 6
+		&m.UpdatedAt,   // 7
+		&m.DeletedAt,   // 8
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -287,12 +365,17 @@ func (s *SQLite) GetMenuByMachineName(machineName string) (*Menu, error) {
 
 // ListMenus returns all non-deleted menus.
 func (s *SQLite) ListMenus() ([]Menu, error) {
-	const q = `
-		SELECT id, reference_id, machine_name, label, description, created_at, updated_at
-		FROM menus
-		WHERE deleted_at IS NULL
-		ORDER BY label
-	`
+	const q = `SELECT
+		id,           -- 1
+		reference_id, -- 2
+		machine_name, -- 3
+		label,        -- 4
+		description,  -- 5
+		created_at,   -- 6
+		updated_at    -- 7
+	FROM menus
+	WHERE deleted_at IS NULL
+	ORDER BY label`
 
 	rows, err := s.Query(q)
 	if err != nil {
@@ -304,7 +387,13 @@ func (s *SQLite) ListMenus() ([]Menu, error) {
 	for rows.Next() {
 		var m Menu
 		if err := rows.Scan(
-			&m.ID, &m.ReferenceID, &m.MachineName, &m.Label, &m.Description, &m.CreatedAt, &m.UpdatedAt,
+			&m.ID,          // 1
+			&m.ReferenceID, // 2
+			&m.MachineName, // 3
+			&m.Label,       // 4
+			&m.Description, // 5
+			&m.CreatedAt,   // 6
+			&m.UpdatedAt,   // 7
 		); err != nil {
 			return nil, fmt.Errorf("scan menu: %w", err)
 		}
@@ -315,12 +404,21 @@ func (s *SQLite) ListMenus() ([]Menu, error) {
 
 // UpdateMenu updates a menu's basic info.
 func (s *SQLite) UpdateMenu(id int64, machineName, label, description string) error {
-	const q = `
-		UPDATE menus
-		SET machine_name = ?, label = ?, description = ?, updated_at = CURRENT_TIMESTAMP
-		WHERE id = ? AND deleted_at IS NULL
-	`
-	return s.Exec(q, machineName, label, description, id)
+	const q = `UPDATE menus
+	SET
+		machine_name = ?, -- 1
+		label = ?,        -- 2
+		description = ?,  -- 3
+		updated_at = CURRENT_TIMESTAMP
+	WHERE id = ?          -- 4
+	AND deleted_at IS NULL`
+	return s.Exec(
+		q,
+		machineName, // 1
+		label,       // 2
+		description, // 3
+		id,          // 4
+	)
 }
 
 // SoftDeleteMenu soft-deletes a menu.
@@ -340,10 +438,46 @@ func (s *SQLite) CreateMenuItem(
 	if itemType == "" {
 		itemType = "link"
 	}
-	const sqlInsert = `
-		INSERT INTO menu_items (reference_id, menu_id, parent_id, machine_name, label, icon, item_type, url, js_code, filo_code, z_order)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-		RETURNING id, reference_id, menu_id, parent_id, machine_name, label, icon, item_type, url, js_code, filo_code, z_order, created_at, updated_at
+	const sqlInsert = `INSERT INTO menu_items (
+		reference_id, -- 1
+		menu_id,      -- 2
+		parent_id,    -- 3
+		machine_name, -- 4
+		label,        -- 5
+		icon,         -- 6
+		item_type,    -- 7
+		url,          -- 8
+		js_code,      -- 9
+		filo_code,    -- 10
+		z_order       -- 11
+	) VALUES (
+		?,  -- 1
+		?,  -- 2
+		?,  -- 3
+		?,  -- 4
+		?,  -- 5
+		?,  -- 6
+		?,  -- 7
+		?,  -- 8
+		?,  -- 9
+		?,  -- 10
+		?   -- 11
+	)
+	RETURNING
+		id,           -- 1
+		reference_id, -- 2
+		menu_id,      -- 3
+		parent_id,    -- 4
+		machine_name, -- 5
+		label,        -- 6
+		icon,         -- 7
+		item_type,    -- 8
+		url,          -- 9
+		js_code,      -- 10
+		filo_code,    -- 11
+		z_order,      -- 12
+		created_at,   -- 13
+		updated_at    -- 14
 	`
 
 	var item MenuItem
@@ -358,12 +492,34 @@ func (s *SQLite) CreateMenuItem(
 	var scanJSCode sql.NullString
 	var scanFiloCode sql.NullString
 
-	err := s.QueryRowRW(sqlInsert,
-		refID, menuID, parentIDVal, machineName, label, icon, itemType, url, jsCode, filoCode, zOrder,
+	err := s.QueryRowRW(
+		sqlInsert,
+		refID,       // 1
+		menuID,      // 2
+		parentIDVal, // 3
+		machineName, // 4
+		label,       // 5
+		icon,        // 6
+		itemType,    // 7
+		url,         // 8
+		jsCode,      // 9
+		filoCode,    // 10
+		zOrder,      // 11
 	).Scan(
-		&item.ID, &item.ReferenceID, &item.MenuID, &scanParentID, &item.MachineName,
-		&item.Label, &scanIcon, &item.ItemType, &scanURL, &scanJSCode, &scanFiloCode, &item.ZOrder,
-		&item.CreatedAt, &item.UpdatedAt,
+		&item.ID,          // 1
+		&item.ReferenceID, // 2
+		&item.MenuID,      // 3
+		&scanParentID,     // 4
+		&item.MachineName, // 5
+		&item.Label,       // 6
+		&scanIcon,         // 7
+		&item.ItemType,    // 8
+		&scanURL,          // 9
+		&scanJSCode,       // 10
+		&scanFiloCode,     // 11
+		&item.ZOrder,      // 12
+		&item.CreatedAt,   // 13
+		&item.UpdatedAt,   // 14
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create menu item: %w", err)
@@ -390,14 +546,30 @@ func (s *SQLite) CreateMenuItem(
 
 // ListMenuItems returns all non-deleted items for a menu, ordered by z_order.
 func (s *SQLite) ListMenuItems(menuID int64) ([]MenuItem, error) {
-	const q = `
-		SELECT id, reference_id, menu_id, parent_id, machine_name, label, icon, item_type, url, js_code, filo_code, z_order, created_at, updated_at
-		FROM menu_items
-		WHERE menu_id = ? AND deleted_at IS NULL
-		ORDER BY COALESCE(parent_id, 0), z_order, machine_name, id
-	`
+	const q = `SELECT
+		id,           -- 1
+		reference_id, -- 2
+		menu_id,      -- 3
+		parent_id,    -- 4
+		machine_name, -- 5
+		label,        -- 6
+		icon,         -- 7
+		item_type,    -- 8
+		url,          -- 9
+		js_code,      -- 10
+		filo_code,    -- 11
+		z_order,      -- 12
+		created_at,   -- 13
+		updated_at    -- 14
+	FROM menu_items
+	WHERE menu_id = ?     -- 1
+	AND deleted_at IS NULL
+	ORDER BY COALESCE(parent_id, 0), z_order, machine_name, id`
 
-	rows, err := s.Query(q, menuID)
+	rows, err := s.Query(
+		q,
+		menuID, // 1
+	)
 	if err != nil {
 		return nil, fmt.Errorf("list menu items: %w", err)
 	}
@@ -413,9 +585,20 @@ func (s *SQLite) ListMenuItems(menuID int64) ([]MenuItem, error) {
 		var filoCode sql.NullString
 
 		if err := rows.Scan(
-			&item.ID, &item.ReferenceID, &item.MenuID, &parentID, &item.MachineName,
-			&item.Label, &icon, &item.ItemType, &url, &jsCode, &filoCode, &item.ZOrder,
-			&item.CreatedAt, &item.UpdatedAt,
+			&item.ID,          // 1
+			&item.ReferenceID, // 2
+			&item.MenuID,      // 3
+			&parentID,         // 4
+			&item.MachineName, // 5
+			&item.Label,       // 6
+			&icon,             // 7
+			&item.ItemType,    // 8
+			&url,              // 9
+			&jsCode,           // 10
+			&filoCode,         // 11
+			&item.ZOrder,      // 12
+			&item.CreatedAt,   // 13
+			&item.UpdatedAt,   // 14
 		); err != nil {
 			return nil, fmt.Errorf("scan menu item: %w", err)
 		}
@@ -443,11 +626,24 @@ func (s *SQLite) ListMenuItems(menuID int64) ([]MenuItem, error) {
 
 // GetMenuItemByRefID retrieves a menu item by reference_id.
 func (s *SQLite) GetMenuItemByRefID(refID string) (*MenuItem, error) {
-	const q = `
-		SELECT id, reference_id, menu_id, parent_id, machine_name, label, icon, item_type, url, js_code, filo_code, z_order, created_at, updated_at
-		FROM menu_items
-		WHERE reference_id = ? AND deleted_at IS NULL
-	`
+	const q = `SELECT
+		id,           -- 1
+		reference_id, -- 2
+		menu_id,      -- 3
+		parent_id,    -- 4
+		machine_name, -- 5
+		label,        -- 6
+		icon,         -- 7
+		item_type,    -- 8
+		url,          -- 9
+		js_code,      -- 10
+		filo_code,    -- 11
+		z_order,      -- 12
+		created_at,   -- 13
+		updated_at    -- 14
+	FROM menu_items
+	WHERE reference_id = ? -- 1
+	AND deleted_at IS NULL`
 
 	var item MenuItem
 	var parentID sql.NullInt64
@@ -456,10 +652,24 @@ func (s *SQLite) GetMenuItemByRefID(refID string) (*MenuItem, error) {
 	var jsCode sql.NullString
 	var filoCode sql.NullString
 
-	err := s.QueryRow(q, refID).Scan(
-		&item.ID, &item.ReferenceID, &item.MenuID, &parentID, &item.MachineName,
-		&item.Label, &icon, &item.ItemType, &url, &jsCode, &filoCode, &item.ZOrder,
-		&item.CreatedAt, &item.UpdatedAt,
+	err := s.QueryRow(
+		q,
+		refID, // 1
+	).Scan(
+		&item.ID,          // 1
+		&item.ReferenceID, // 2
+		&item.MenuID,      // 3
+		&parentID,         // 4
+		&item.MachineName, // 5
+		&item.Label,       // 6
+		&icon,             // 7
+		&item.ItemType,    // 8
+		&url,              // 9
+		&jsCode,           // 10
+		&filoCode,         // 11
+		&item.ZOrder,      // 12
+		&item.CreatedAt,   // 13
+		&item.UpdatedAt,   // 14
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -497,27 +707,39 @@ func (s *SQLite) UpdateMenuItem(
 	if itemType == "" {
 		itemType = "link"
 	}
-	const q = `
-		UPDATE menu_items SET
-			parent_id = ?,
-			machine_name = ?,
-			label = ?,
-			icon = ?,
-			item_type = ?,
-			url = ?,
-			js_code = ?,
-			filo_code = ?,
-			z_order = ?,
-			updated_at = CURRENT_TIMESTAMP
-		WHERE id = ? AND deleted_at IS NULL
-	`
+	const q = `UPDATE menu_items
+	SET
+		parent_id = ?,    -- 1
+		machine_name = ?, -- 2
+		label = ?,        -- 3
+		icon = ?,         -- 4
+		item_type = ?,    -- 5
+		url = ?,          -- 6
+		js_code = ?,      -- 7
+		filo_code = ?,    -- 8
+		z_order = ?,      -- 9
+		updated_at = CURRENT_TIMESTAMP
+	WHERE id = ?          -- 10
+	AND deleted_at IS NULL`
 
 	var parentIDVal sql.NullInt64
 	if parentID != nil {
 		parentIDVal = sql.NullInt64{Int64: *parentID, Valid: true}
 	}
 
-	return s.Exec(q, parentIDVal, machineName, label, icon, itemType, url, jsCode, filoCode, zOrder, id)
+	return s.Exec(
+		q,
+		parentIDVal, // 1
+		machineName, // 2
+		label,       // 3
+		icon,        // 4
+		itemType,    // 5
+		url,         // 6
+		jsCode,      // 7
+		filoCode,    // 8
+		zOrder,      // 9
+		id,          // 10
+	)
 }
 
 // DeleteMenuItem permanently deletes a menu item.
@@ -528,14 +750,31 @@ func (s *SQLite) DeleteMenuItem(id int64) error {
 
 // ListSubmenuItems returns items that can be parents (type 'submenu').
 func (s *SQLite) ListSubmenuItems(menuID int64) ([]MenuItem, error) {
-	const q = `
-		SELECT id, reference_id, menu_id, parent_id, machine_name, label, icon, item_type, url, js_code, filo_code, z_order, created_at, updated_at
-		FROM menu_items
-		WHERE menu_id = ? AND deleted_at IS NULL AND item_type = 'submenu'
-		ORDER BY z_order, machine_name, id
-	`
+	const q = `SELECT
+		id,           -- 1
+		reference_id, -- 2
+		menu_id,      -- 3
+		parent_id,    -- 4
+		machine_name, -- 5
+		label,        -- 6
+		icon,         -- 7
+		item_type,    -- 8
+		url,          -- 9
+		js_code,      -- 10
+		filo_code,    -- 11
+		z_order,      -- 12
+		created_at,   -- 13
+		updated_at    -- 14
+	FROM menu_items
+	WHERE menu_id = ?     -- 1
+	AND deleted_at IS NULL
+	AND item_type = 'submenu'
+	ORDER BY z_order, machine_name, id`
 
-	rows, err := s.Query(q, menuID)
+	rows, err := s.Query(
+		q,
+		menuID, // 1
+	)
 	if err != nil {
 		return nil, fmt.Errorf("list submenu items: %w", err)
 	}
@@ -551,9 +790,20 @@ func (s *SQLite) ListSubmenuItems(menuID int64) ([]MenuItem, error) {
 		var filoCode sql.NullString
 
 		if err := rows.Scan(
-			&item.ID, &item.ReferenceID, &item.MenuID, &parentID, &item.MachineName,
-			&item.Label, &icon, &item.ItemType, &url, &jsCode, &filoCode, &item.ZOrder,
-			&item.CreatedAt, &item.UpdatedAt,
+			&item.ID,          // 1
+			&item.ReferenceID, // 2
+			&item.MenuID,      // 3
+			&parentID,         // 4
+			&item.MachineName, // 5
+			&item.Label,       // 6
+			&icon,             // 7
+			&item.ItemType,    // 8
+			&url,              // 9
+			&jsCode,           // 10
+			&filoCode,         // 11
+			&item.ZOrder,      // 12
+			&item.CreatedAt,   // 13
+			&item.UpdatedAt,   // 14
 		); err != nil {
 			return nil, fmt.Errorf("scan submenu item: %w", err)
 		}
@@ -591,8 +841,18 @@ func (s *SQLite) MoveMenuItemUp(itemID int64) error {
 	var menuID int64
 	var currentZOrder int
 	var parentID sql.NullInt64
-	const qCurrent = `SELECT menu_id, z_order, parent_id FROM menu_items WHERE id = ? AND deleted_at IS NULL`
-	if err := tx.QueryRow(qCurrent, itemID).Scan(&menuID, &currentZOrder, &parentID); err != nil {
+	const qCurrent = `SELECT
+		menu_id,   -- 1
+		z_order,   -- 2
+		parent_id  -- 3
+	FROM menu_items
+	WHERE id = ?   -- 1
+	AND deleted_at IS NULL`
+	if err := tx.QueryRow(qCurrent, itemID).Scan(
+		&menuID,        // 1
+		&currentZOrder, // 2
+		&parentID,      // 3
+	); err != nil {
 		return fmt.Errorf("get current item: %w", err)
 	}
 
@@ -602,17 +862,32 @@ func (s *SQLite) MoveMenuItemUp(itemID int64) error {
 	var qPrev string
 	var args []any
 	if parentID.Valid {
-		qPrev = `SELECT id, z_order FROM menu_items 
-			WHERE menu_id = ? AND parent_id = ? AND z_order < ? AND deleted_at IS NULL
-			ORDER BY z_order DESC LIMIT 1`
+		qPrev = `SELECT
+			id,      -- 1
+			z_order  -- 2
+		FROM menu_items
+		WHERE menu_id = ?   -- 1
+		AND parent_id = ?   -- 2
+		AND z_order < ?     -- 3
+		AND deleted_at IS NULL
+		ORDER BY z_order DESC LIMIT 1`
 		args = []any{menuID, parentID.Int64, currentZOrder}
 	} else {
-		qPrev = `SELECT id, z_order FROM menu_items 
-			WHERE menu_id = ? AND parent_id IS NULL AND z_order < ? AND deleted_at IS NULL
-			ORDER BY z_order DESC LIMIT 1`
+		qPrev = `SELECT
+			id,      -- 1
+			z_order  -- 2
+		FROM menu_items
+		WHERE menu_id = ?   -- 1
+		AND parent_id IS NULL
+		AND z_order < ?     -- 2
+		AND deleted_at IS NULL
+		ORDER BY z_order DESC LIMIT 1`
 		args = []any{menuID, currentZOrder}
 	}
-	if err := tx.QueryRow(qPrev, args...).Scan(&prevID, &prevZOrder); err != nil {
+	if err := tx.QueryRow(qPrev, args...).Scan(
+		&prevID,     // 1
+		&prevZOrder, // 2
+	); err != nil {
 		if err == sql.ErrNoRows {
 			return nil // Already at top
 		}
@@ -620,7 +895,12 @@ func (s *SQLite) MoveMenuItemUp(itemID int64) error {
 	}
 
 	// Swap z_order values
-	const qUpdate = `UPDATE menu_items SET z_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+	const qUpdate = `UPDATE menu_items
+	SET
+		z_order = ?,  -- 1
+		updated_at = CURRENT_TIMESTAMP
+	WHERE id = ?      -- 2
+	`
 	if err := tx.Exec(qUpdate, prevZOrder, itemID); err != nil {
 		return fmt.Errorf("update current z_order: %w", err)
 	}
@@ -643,8 +923,18 @@ func (s *SQLite) MoveMenuItemDown(itemID int64) error {
 	var menuID int64
 	var currentZOrder int
 	var parentID sql.NullInt64
-	const qCurrent = `SELECT menu_id, z_order, parent_id FROM menu_items WHERE id = ? AND deleted_at IS NULL`
-	if err := tx.QueryRow(qCurrent, itemID).Scan(&menuID, &currentZOrder, &parentID); err != nil {
+	const qCurrent = `SELECT
+		menu_id,   -- 1
+		z_order,   -- 2
+		parent_id  -- 3
+	FROM menu_items
+	WHERE id = ?   -- 1
+	AND deleted_at IS NULL`
+	if err := tx.QueryRow(qCurrent, itemID).Scan(
+		&menuID,        // 1
+		&currentZOrder, // 2
+		&parentID,      // 3
+	); err != nil {
 		return fmt.Errorf("get current item: %w", err)
 	}
 
@@ -654,17 +944,32 @@ func (s *SQLite) MoveMenuItemDown(itemID int64) error {
 	var qNext string
 	var args []any
 	if parentID.Valid {
-		qNext = `SELECT id, z_order FROM menu_items 
-			WHERE menu_id = ? AND parent_id = ? AND z_order > ? AND deleted_at IS NULL
-			ORDER BY z_order ASC LIMIT 1`
+		qNext = `SELECT
+			id,      -- 1
+			z_order  -- 2
+		FROM menu_items
+		WHERE menu_id = ?   -- 1
+		AND parent_id = ?   -- 2
+		AND z_order > ?     -- 3
+		AND deleted_at IS NULL
+		ORDER BY z_order ASC LIMIT 1`
 		args = []any{menuID, parentID.Int64, currentZOrder}
 	} else {
-		qNext = `SELECT id, z_order FROM menu_items 
-			WHERE menu_id = ? AND parent_id IS NULL AND z_order > ? AND deleted_at IS NULL
-			ORDER BY z_order ASC LIMIT 1`
+		qNext = `SELECT
+			id,      -- 1
+			z_order  -- 2
+		FROM menu_items
+		WHERE menu_id = ?   -- 1
+		AND parent_id IS NULL
+		AND z_order > ?     -- 2
+		AND deleted_at IS NULL
+		ORDER BY z_order ASC LIMIT 1`
 		args = []any{menuID, currentZOrder}
 	}
-	if err := tx.QueryRow(qNext, args...).Scan(&nextID, &nextZOrder); err != nil {
+	if err := tx.QueryRow(qNext, args...).Scan(
+		&nextID,     // 1
+		&nextZOrder, // 2
+	); err != nil {
 		if err == sql.ErrNoRows {
 			return nil // Already at bottom
 		}
@@ -672,7 +977,12 @@ func (s *SQLite) MoveMenuItemDown(itemID int64) error {
 	}
 
 	// Swap z_order values
-	const qUpdate = `UPDATE menu_items SET z_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+	const qUpdate = `UPDATE menu_items
+	SET
+		z_order = ?,  -- 1
+		updated_at = CURRENT_TIMESTAMP
+	WHERE id = ?      -- 2
+	`
 	if err := tx.Exec(qUpdate, nextZOrder, itemID); err != nil {
 		return fmt.Errorf("update current z_order: %w", err)
 	}

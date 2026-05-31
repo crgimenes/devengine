@@ -104,24 +104,24 @@ func (s *SQLite) CreateEAVEntityType(name, machineName, description, preSave, po
 		created_at,
 		updated_at
 	) VALUES (
-		?,
-		?,
-		?,
-		?,
-		?,
-		?,
-		CURRENT_TIMESTAMP,
-		CURRENT_TIMESTAMP
+		?,                 -- 1
+		?,                 -- 2
+		?,                 -- 3
+		?,                 -- 4
+		?,                 -- 5
+		?,                 -- 6
+		CURRENT_TIMESTAMP, -- created_at
+		CURRENT_TIMESTAMP  -- updated_at
 	) RETURNING
-		id,             -- 1
-		reference_id,   -- 2
-		machine_name,   -- 3
-		name,           -- 4
-		description,    -- 5
+		id,                     -- 1
+		reference_id,           -- 2
+		machine_name,           -- 3
+		name,                   -- 4
+		description,            -- 5
 		COALESCE(pre_save, ''), -- 6
 		COALESCE(pos_load, ''), -- 7
-		created_at,     -- 8
-		updated_at      -- 9
+		created_at,             -- 8
+		updated_at              -- 9
 	;`
 
 	var et EAVEntityType
@@ -417,9 +417,25 @@ func (s *SQLite) CreateEAVAttribute(
 		created_at,
 		updated_at
 	) VALUES (
-		?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,
-		CURRENT_TIMESTAMP,
-		CURRENT_TIMESTAMP
+		?,                 -- 1
+		?,                 -- 2
+		?,                 -- 3
+		?,                 -- 4
+		?,                 -- 5
+		?,                 -- 6
+		?,                 -- 7
+		?,                 -- 8
+		?,                 -- 9
+		?,                 -- 10
+		?,                 -- 11
+		?,                 -- 12
+		?,                 -- 13
+		?,                 -- 14
+		?,                 -- 15
+		?,                 -- 16
+		?,                 -- 17
+		CURRENT_TIMESTAMP, -- created_at
+		CURRENT_TIMESTAMP  -- updated_at
 	) RETURNING
 		id,                  -- 1
 		reference_id,        -- 2
@@ -907,11 +923,11 @@ func (s *SQLite) CreateEAVRecord(entityTypeID int64) (*EAVRecord, error) {
 		created_at,
 		updated_at
 	) VALUES (
-		?,
-		?,
-		1,
-		CURRENT_TIMESTAMP,
-		CURRENT_TIMESTAMP
+		?,                 -- 1
+		?,                 -- 2
+		1,                 -- rev
+		CURRENT_TIMESTAMP, -- created_at
+		CURRENT_TIMESTAMP  -- updated_at
 	) RETURNING
 		id,             -- 1
 		reference_id,   -- 2
@@ -942,14 +958,21 @@ func (s *SQLite) CreateEAVRecord(entityTypeID int64) (*EAVRecord, error) {
 // UpdateEAVRecordStatus updates the status of a record (e.g., from 'draft' to 'active')
 // and increments rev for optimistic locking
 func (s *SQLite) UpdateEAVRecordStatus(id int64, currentRev int, status string) error {
-	query := `
-		UPDATE eav_records
-		SET status = ?, 
-		    rev = ?,
-		    updated_at = CURRENT_TIMESTAMP
-		WHERE id = ? AND rev = ? AND deleted_at IS NULL
-	`
-	result, err := s.rw.Exec(query, status, currentRev+1, id, currentRev)
+	const query = `UPDATE eav_records
+	SET
+		status = ?,     -- 1
+		rev = ?,        -- 2
+		updated_at = CURRENT_TIMESTAMP
+	WHERE id = ?        -- 3
+	AND rev = ?         -- 4
+	AND deleted_at IS NULL;`
+	result, err := s.rw.Exec(
+		query,
+		status,       // 1
+		currentRev+1, // 2
+		id,           // 3
+		currentRev,   // 4
+	)
 	if err != nil {
 		return err
 	}
@@ -1202,8 +1225,14 @@ func (s *SQLite) UpsertEAVValue(
 		v_datetime,   -- 7
 		updated_at
 	) VALUES (
-		?, ?, ?, ?, ?, ?, ?,
-		CURRENT_TIMESTAMP
+		?,                 -- 1
+		?,                 -- 2
+		?,                 -- 3
+		?,                 -- 4
+		?,                 -- 5
+		?,                 -- 6
+		?,                 -- 7
+		CURRENT_TIMESTAMP  -- updated_at
 	) ON CONFLICT(record_id, attribute_id) DO UPDATE SET
 		v_bool = excluded.v_bool,
 		v_int = excluded.v_int,

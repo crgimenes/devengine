@@ -314,7 +314,12 @@ func (s *SQLite) ListFilesByUserIDSorted(
         ORDER BY %s
         LIMIT ? OFFSET ?;`, orderBy)
 
-	rows, err := s.Query(query, userID, limit, offset)
+	rows, err := s.Query(
+		query,
+		userID, // 1
+		limit,  // 2
+		offset, // 3
+	)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			// Client aborted/canceled; do not log as error
@@ -329,18 +334,18 @@ func (s *SQLite) ListFilesByUserIDSorted(
 	for rows.Next() {
 		var f File
 		if err := rows.Scan(
-			&f.ID,
-			&f.UserID,
-			&f.OriginalFilename,
-			&f.Filename,
-			&f.Filesize,
-			&f.Filetype,
-			&f.Filehash,
-			&f.Filetag,
-			&f.Filedescription,
-			&f.Processed,
-			&f.CreatedAt,
-			&f.UpdatedAt,
+			&f.ID,               // 1
+			&f.UserID,           // 2
+			&f.OriginalFilename, // 3
+			&f.Filename,         // 4
+			&f.Filesize,         // 5
+			&f.Filetype,         // 6
+			&f.Filehash,         // 7
+			&f.Filetag,          // 8
+			&f.Filedescription,  // 9
+			&f.Processed,        // 10
+			&f.CreatedAt,        // 11
+			&f.UpdatedAt,        // 12
 		); err != nil {
 			if errors.Is(err, context.Canceled) {
 				// Client aborted/canceled; do not log as error
@@ -433,7 +438,8 @@ func (s *SQLite) SearchFilesByUserIDFTS(
 		userID, // 1
 		q,      // 2
 		limit,  // 3
-		offset) // 4
+		offset, // 4
+	)
 	if err != nil {
 		if errors.Is(err, context.Canceled) {
 			// Client aborted/canceled; do not log as error
@@ -482,10 +488,17 @@ func (s *SQLite) SoftDeleteFileByUserAndFilename(
 	filename string,
 ) error {
 	const sqlUpdate = `UPDATE filemanager_files
-            SET deleted = 1,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE filename = ? AND user_id = ? AND deleted = 0`
-	return s.Exec(sqlUpdate, filename, userID)
+        SET
+            deleted = 1,
+            updated_at = CURRENT_TIMESTAMP
+        WHERE filename = ?  -- 1
+        AND user_id = ?     -- 2
+        AND deleted = 0`
+	return s.Exec(
+		sqlUpdate,
+		filename, // 1
+		userID,   // 2
+	)
 }
 
 // UpdateFileMetadataByUserAndFilename updates the file description and tag for a file
@@ -497,9 +510,18 @@ func (s *SQLite) UpdateFileMetadataByUserAndFilename(
 	tag string,
 ) error {
 	const sqlUpdate = `UPDATE filemanager_files
-            SET filedescription = ?,
-                filetag = ?,
-                updated_at = CURRENT_TIMESTAMP
-            WHERE filename = ? AND user_id = ? AND deleted = 0`
-	return s.Exec(sqlUpdate, description, tag, filename, userID)
+        SET
+            filedescription = ?, -- 1
+            filetag = ?,         -- 2
+            updated_at = CURRENT_TIMESTAMP
+        WHERE filename = ?       -- 3
+        AND user_id = ?          -- 4
+        AND deleted = 0`
+	return s.Exec(
+		sqlUpdate,
+		description, // 1
+		tag,         // 2
+		filename,    // 3
+		userID,      // 4
+	)
 }

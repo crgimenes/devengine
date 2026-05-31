@@ -80,11 +80,17 @@ func (s *SQLite) UpsertEAVValueWithRev(
 	SET
 		rev = rev + 1,
 		updated_at = CURRENT_TIMESTAMP
-	WHERE id = ? AND rev = ? AND deleted_at IS NULL
+	WHERE id = ?       -- 1
+	AND rev = ?        -- 2
+	AND deleted_at IS NULL
 	RETURNING rev;`
 
 	var newRev int
-	err = tx.QueryRow(sqlUpdateRev, recordID, currentRev).Scan(&newRev)
+	err = tx.QueryRow(
+		sqlUpdateRev,
+		recordID,   // 1
+		currentRev, // 2
+	).Scan(&newRev)
 	if err != nil {
 		if errors.Is(err, ErrNoRows) {
 			return 0, ErrConflict
@@ -94,17 +100,23 @@ func (s *SQLite) UpsertEAVValueWithRev(
 
 	// Upsert value
 	const sqlUpsert = `INSERT INTO eav_values (
-		record_id,
-		attribute_id,
-		v_bool,
-		v_int,
-		v_real,
-		v_text,
-		v_datetime,
+		record_id,    -- 1
+		attribute_id, -- 2
+		v_bool,       -- 3
+		v_int,        -- 4
+		v_real,       -- 5
+		v_text,       -- 6
+		v_datetime,   -- 7
 		updated_at
 	) VALUES (
-		?, ?, ?, ?, ?, ?, ?,
-		CURRENT_TIMESTAMP
+		?,                 -- 1
+		?,                 -- 2
+		?,                 -- 3
+		?,                 -- 4
+		?,                 -- 5
+		?,                 -- 6
+		?,                 -- 7
+		CURRENT_TIMESTAMP  -- updated_at
 	) ON CONFLICT(record_id, attribute_id) DO UPDATE SET
 		v_bool = excluded.v_bool,
 		v_int = excluded.v_int,
@@ -113,14 +125,15 @@ func (s *SQLite) UpsertEAVValueWithRev(
 		v_datetime = excluded.v_datetime,
 		updated_at = CURRENT_TIMESTAMP;`
 
-	_, err = tx.Exec(sqlUpsert,
-		recordID,
-		attributeID,
-		vBool,
-		vInt,
-		vReal,
-		vText,
-		vDatetime,
+	_, err = tx.Exec(
+		sqlUpsert,
+		recordID,    // 1
+		attributeID, // 2
+		vBool,       // 3
+		vInt,        // 4
+		vReal,       // 5
+		vText,       // 6
+		vDatetime,   // 7
 	)
 	if err != nil {
 		return 0, err

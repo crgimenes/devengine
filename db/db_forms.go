@@ -119,16 +119,63 @@ func sortByZOrder(elements []FormElement) {
 // CreateForm creates a new form.
 func (s *SQLite) CreateForm(machineName, label, description string, eavEntityTypeID *int64) (*Form, error) {
 	refID := utils.NewOpaqueID()
-	const sqlInsert = `
-		INSERT INTO forms (reference_id, machine_name, label, description, eav_entity_type_id, hide_submit_button, hide_cancel_button, hide_title, show_system_info)
-		VALUES (?, ?, ?, ?, ?, 0, 0, 0, 0)
-		RETURNING id, reference_id, machine_name, label, description, eav_entity_type_id, hide_submit_button, hide_cancel_button, hide_title, show_system_info, created_at, updated_at
+	const sqlInsert = `INSERT INTO forms (
+		reference_id,       -- 1
+		machine_name,       -- 2
+		label,              -- 3
+		description,        -- 4
+		eav_entity_type_id, -- 5
+		hide_submit_button,
+		hide_cancel_button,
+		hide_title,
+		show_system_info
+	) VALUES (
+		?, -- 1
+		?, -- 2
+		?, -- 3
+		?, -- 4
+		?, -- 5
+		0, -- hide_submit_button
+		0, -- hide_cancel_button
+		0, -- hide_title
+		0  -- show_system_info
+	)
+	RETURNING
+		id,                 -- 1
+		reference_id,       -- 2
+		machine_name,       -- 3
+		label,              -- 4
+		description,        -- 5
+		eav_entity_type_id, -- 6
+		hide_submit_button, -- 7
+		hide_cancel_button, -- 8
+		hide_title,         -- 9
+		show_system_info,   -- 10
+		created_at,         -- 11
+		updated_at          -- 12
 	`
 
 	var f Form
-	err := s.QueryRowRW(sqlInsert, refID, machineName, label, description, eavEntityTypeID).Scan(
-		&f.ID, &f.ReferenceID, &f.MachineName, &f.Label, &f.Description,
-		&f.EAVEntityTypeID, &f.HideSubmitButton, &f.HideCancelButton, &f.HideTitle, &f.ShowSystemInfo, &f.CreatedAt, &f.UpdatedAt,
+	err := s.QueryRowRW(
+		sqlInsert,
+		refID,           // 1
+		machineName,     // 2
+		label,           // 3
+		description,     // 4
+		eavEntityTypeID, // 5
+	).Scan(
+		&f.ID,               // 1
+		&f.ReferenceID,      // 2
+		&f.MachineName,      // 3
+		&f.Label,            // 4
+		&f.Description,      // 5
+		&f.EAVEntityTypeID,  // 6
+		&f.HideSubmitButton, // 7
+		&f.HideCancelButton, // 8
+		&f.HideTitle,        // 9
+		&f.ShowSystemInfo,   // 10
+		&f.CreatedAt,        // 11
+		&f.UpdatedAt,        // 12
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create form: %w", err)
@@ -138,17 +185,44 @@ func (s *SQLite) CreateForm(machineName, label, description string, eavEntityTyp
 
 // GetFormByRefID retrieves a form by reference_id.
 func (s *SQLite) GetFormByRefID(refID string) (*Form, error) {
-	const q = `
-		SELECT id, reference_id, machine_name, label, description, eav_entity_type_id,
-		       hide_submit_button, hide_cancel_button, hide_title, show_system_info, menu_id, created_at, updated_at, deleted_at
-		FROM forms
-		WHERE reference_id = ? AND deleted_at IS NULL
-	`
+	const q = `SELECT
+		id,                 -- 1
+		reference_id,       -- 2
+		machine_name,       -- 3
+		label,              -- 4
+		description,        -- 5
+		eav_entity_type_id, -- 6
+		hide_submit_button, -- 7
+		hide_cancel_button, -- 8
+		hide_title,         -- 9
+		show_system_info,   -- 10
+		menu_id,            -- 11
+		created_at,         -- 12
+		updated_at,         -- 13
+		deleted_at          -- 14
+	FROM forms
+	WHERE reference_id = ? -- 1
+	AND deleted_at IS NULL`
 
 	var f Form
-	err := s.QueryRow(q, refID).Scan(
-		&f.ID, &f.ReferenceID, &f.MachineName, &f.Label, &f.Description,
-		&f.EAVEntityTypeID, &f.HideSubmitButton, &f.HideCancelButton, &f.HideTitle, &f.ShowSystemInfo, &f.MenuID, &f.CreatedAt, &f.UpdatedAt, &f.DeletedAt,
+	err := s.QueryRow(
+		q,
+		refID, // 1
+	).Scan(
+		&f.ID,               // 1
+		&f.ReferenceID,      // 2
+		&f.MachineName,      // 3
+		&f.Label,            // 4
+		&f.Description,      // 5
+		&f.EAVEntityTypeID,  // 6
+		&f.HideSubmitButton, // 7
+		&f.HideCancelButton, // 8
+		&f.HideTitle,        // 9
+		&f.ShowSystemInfo,   // 10
+		&f.MenuID,           // 11
+		&f.CreatedAt,        // 12
+		&f.UpdatedAt,        // 13
+		&f.DeletedAt,        // 14
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -162,17 +236,44 @@ func (s *SQLite) GetFormByRefID(refID string) (*Form, error) {
 // GetFormByMachineName retrieves a form by machine_name.
 // Returns nil, nil if not found (soft not-found to allow fallback logic).
 func (s *SQLite) GetFormByMachineName(machineName string) (*Form, error) {
-	const q = `
-		SELECT id, reference_id, machine_name, label, description, eav_entity_type_id,
-		       hide_submit_button, hide_cancel_button, hide_title, show_system_info, menu_id, created_at, updated_at, deleted_at
-		FROM forms
-		WHERE machine_name = ? AND deleted_at IS NULL
-	`
+	const q = `SELECT
+		id,                 -- 1
+		reference_id,       -- 2
+		machine_name,       -- 3
+		label,              -- 4
+		description,        -- 5
+		eav_entity_type_id, -- 6
+		hide_submit_button, -- 7
+		hide_cancel_button, -- 8
+		hide_title,         -- 9
+		show_system_info,   -- 10
+		menu_id,            -- 11
+		created_at,         -- 12
+		updated_at,         -- 13
+		deleted_at          -- 14
+	FROM forms
+	WHERE machine_name = ? -- 1
+	AND deleted_at IS NULL`
 
 	var f Form
-	err := s.QueryRow(q, machineName).Scan(
-		&f.ID, &f.ReferenceID, &f.MachineName, &f.Label, &f.Description,
-		&f.EAVEntityTypeID, &f.HideSubmitButton, &f.HideCancelButton, &f.HideTitle, &f.ShowSystemInfo, &f.MenuID, &f.CreatedAt, &f.UpdatedAt, &f.DeletedAt,
+	err := s.QueryRow(
+		q,
+		machineName, // 1
+	).Scan(
+		&f.ID,               // 1
+		&f.ReferenceID,      // 2
+		&f.MachineName,      // 3
+		&f.Label,            // 4
+		&f.Description,      // 5
+		&f.EAVEntityTypeID,  // 6
+		&f.HideSubmitButton, // 7
+		&f.HideCancelButton, // 8
+		&f.HideTitle,        // 9
+		&f.ShowSystemInfo,   // 10
+		&f.MenuID,           // 11
+		&f.CreatedAt,        // 12
+		&f.UpdatedAt,        // 13
+		&f.DeletedAt,        // 14
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -185,13 +286,23 @@ func (s *SQLite) GetFormByMachineName(machineName string) (*Form, error) {
 
 // ListForms returns all non-deleted forms.
 func (s *SQLite) ListForms() ([]Form, error) {
-	const q = `
-		SELECT id, reference_id, machine_name, label, description, eav_entity_type_id,
-		       hide_submit_button, hide_cancel_button, hide_title, show_system_info, menu_id, created_at, updated_at
-		FROM forms
-		WHERE deleted_at IS NULL
-		ORDER BY label
-	`
+	const q = `SELECT
+		id,                 -- 1
+		reference_id,       -- 2
+		machine_name,       -- 3
+		label,              -- 4
+		description,        -- 5
+		eav_entity_type_id, -- 6
+		hide_submit_button, -- 7
+		hide_cancel_button, -- 8
+		hide_title,         -- 9
+		show_system_info,   -- 10
+		menu_id,            -- 11
+		created_at,         -- 12
+		updated_at          -- 13
+	FROM forms
+	WHERE deleted_at IS NULL
+	ORDER BY label`
 
 	rows, err := s.Query(q)
 	if err != nil {
@@ -203,8 +314,19 @@ func (s *SQLite) ListForms() ([]Form, error) {
 	for rows.Next() {
 		var f Form
 		if err := rows.Scan(
-			&f.ID, &f.ReferenceID, &f.MachineName, &f.Label, &f.Description,
-			&f.EAVEntityTypeID, &f.HideSubmitButton, &f.HideCancelButton, &f.HideTitle, &f.ShowSystemInfo, &f.MenuID, &f.CreatedAt, &f.UpdatedAt,
+			&f.ID,               // 1
+			&f.ReferenceID,      // 2
+			&f.MachineName,      // 3
+			&f.Label,            // 4
+			&f.Description,      // 5
+			&f.EAVEntityTypeID,  // 6
+			&f.HideSubmitButton, // 7
+			&f.HideCancelButton, // 8
+			&f.HideTitle,        // 9
+			&f.ShowSystemInfo,   // 10
+			&f.MenuID,           // 11
+			&f.CreatedAt,        // 12
+			&f.UpdatedAt,        // 13
 		); err != nil {
 			return nil, fmt.Errorf("scan form: %w", err)
 		}
@@ -215,14 +337,33 @@ func (s *SQLite) ListForms() ([]Form, error) {
 
 // UpdateForm updates a form's basic info.
 func (s *SQLite) UpdateForm(id int64, machineName, label, description string, eavEntityTypeID *int64, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo bool, menuID *int64) error {
-	const q = `
-		UPDATE forms
-		SET machine_name = ?, label = ?, description = ?, eav_entity_type_id = ?, 
-		    hide_submit_button = ?, hide_cancel_button = ?, hide_title = ?, show_system_info = ?, menu_id = ?,
-		    updated_at = CURRENT_TIMESTAMP
-		WHERE id = ? AND deleted_at IS NULL
-	`
-	return s.Exec(q, machineName, label, description, eavEntityTypeID, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo, menuID, id)
+	const q = `UPDATE forms
+	SET
+		machine_name = ?,       -- 1
+		label = ?,              -- 2
+		description = ?,        -- 3
+		eav_entity_type_id = ?, -- 4
+		hide_submit_button = ?, -- 5
+		hide_cancel_button = ?, -- 6
+		hide_title = ?,         -- 7
+		show_system_info = ?,   -- 8
+		menu_id = ?,            -- 9
+		updated_at = CURRENT_TIMESTAMP
+	WHERE id = ?                -- 10
+	AND deleted_at IS NULL`
+	return s.Exec(
+		q,
+		machineName,      // 1
+		label,            // 2
+		description,      // 3
+		eavEntityTypeID,  // 4
+		hideSubmitButton, // 5
+		hideCancelButton, // 6
+		hideTitle,        // 7
+		showSystemInfo,   // 8
+		menuID,           // 9
+		id,               // 10
+	)
 }
 
 // SoftDeleteForm soft-deletes a form.
@@ -246,18 +387,79 @@ func (s *SQLite) CreateFormElement(
 	if colSpan < 1 || colSpan > 12 {
 		colSpan = 12
 	}
-	const sqlInsert = `
-		INSERT INTO form_elements (
-			reference_id, form_id, parent_id, machine_name, element_kind,
-			label, help_text, z_order, col_span, alignment, ui_kind, ui_meta_json,
-			eav_attribute_id, is_ui_only, is_readonly, hide_label, hide_help_text,
-			button_filo_code, button_run_save, button_js_code, button_style, button_confirm_msg
-		) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'left', ?, ?, ?, ?, ?, 0, 0, '', 0, '', 'primary', '')
-		RETURNING id, reference_id, form_id, parent_id, machine_name, element_kind,
-		          label, help_text, z_order, col_span, alignment, ui_kind, ui_meta_json,
-		          eav_attribute_id, is_ui_only, is_readonly, hide_label, hide_help_text,
-		          button_filo_code, button_run_save, button_js_code, button_style, button_confirm_msg,
-		          created_at, updated_at
+	const sqlInsert = `INSERT INTO form_elements (
+		reference_id,       -- 1
+		form_id,            -- 2
+		parent_id,          -- 3
+		machine_name,       -- 4
+		element_kind,       -- 5
+		label,              -- 6
+		help_text,          -- 7
+		z_order,            -- 8
+		col_span,           -- 9
+		alignment,
+		ui_kind,            -- 10
+		ui_meta_json,       -- 11
+		eav_attribute_id,   -- 12
+		is_ui_only,         -- 13
+		is_readonly,        -- 14
+		hide_label,
+		hide_help_text,
+		button_filo_code,
+		button_run_save,
+		button_js_code,
+		button_style,
+		button_confirm_msg
+	) VALUES (
+		?,         -- 1
+		?,         -- 2
+		?,         -- 3
+		?,         -- 4
+		?,         -- 5
+		?,         -- 6
+		?,         -- 7
+		?,         -- 8
+		?,         -- 9
+		'left',    -- alignment
+		?,         -- 10
+		?,         -- 11
+		?,         -- 12
+		?,         -- 13
+		?,         -- 14
+		0,         -- hide_label
+		0,         -- hide_help_text
+		'',        -- button_filo_code
+		0,         -- button_run_save
+		'',        -- button_js_code
+		'primary', -- button_style
+		''         -- button_confirm_msg
+	)
+	RETURNING
+		id,                 -- 1
+		reference_id,       -- 2
+		form_id,            -- 3
+		parent_id,          -- 4
+		machine_name,       -- 5
+		element_kind,       -- 6
+		label,              -- 7
+		help_text,          -- 8
+		z_order,            -- 9
+		col_span,           -- 10
+		alignment,          -- 11
+		ui_kind,            -- 12
+		ui_meta_json,       -- 13
+		eav_attribute_id,   -- 14
+		is_ui_only,         -- 15
+		is_readonly,        -- 16
+		hide_label,         -- 17
+		hide_help_text,     -- 18
+		button_filo_code,   -- 19
+		button_run_save,    -- 20
+		button_js_code,     -- 21
+		button_style,       -- 22
+		button_confirm_msg, -- 23
+		created_at,         -- 24
+		updated_at          -- 25
 	`
 
 	var e FormElement
@@ -273,15 +475,48 @@ func (s *SQLite) CreateFormElement(
 	var scanParentID sql.NullInt64
 	var scanEAVAttrID sql.NullInt64
 
-	err := s.QueryRowRW(sqlInsert,
-		refID, formID, parentIDVal, machineName, elementKind, label, helpText, zOrder, colSpan,
-		uiKind, uiMetaJSON, eavAttrIDVal, boolToInt(isUIOnly), boolToInt(isReadonly),
+	err := s.QueryRowRW(
+		sqlInsert,
+		refID,                 // 1
+		formID,                // 2
+		parentIDVal,           // 3
+		machineName,           // 4
+		elementKind,           // 5
+		label,                 // 6
+		helpText,              // 7
+		zOrder,                // 8
+		colSpan,               // 9
+		uiKind,                // 10
+		uiMetaJSON,            // 11
+		eavAttrIDVal,          // 12
+		boolToInt(isUIOnly),   // 13
+		boolToInt(isReadonly), // 14
 	).Scan(
-		&e.ID, &e.ReferenceID, &e.FormID, &scanParentID, &e.MachineName, &e.ElementKind,
-		&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.Alignment, &e.UIKind, &e.UIMetaJSON,
-		&scanEAVAttrID, &e.IsUIOnly, &e.IsReadonly, &e.HideLabel, &e.HideHelpText,
-		&e.ButtonFiloCode, &e.ButtonRunSave, &e.ButtonJSCode, &e.ButtonStyle, &e.ButtonConfirmMsg,
-		&e.CreatedAt, &e.UpdatedAt,
+		&e.ID,               // 1
+		&e.ReferenceID,      // 2
+		&e.FormID,           // 3
+		&scanParentID,       // 4
+		&e.MachineName,      // 5
+		&e.ElementKind,      // 6
+		&e.Label,            // 7
+		&e.HelpText,         // 8
+		&e.ZOrder,           // 9
+		&e.ColSpan,          // 10
+		&e.Alignment,        // 11
+		&e.UIKind,           // 12
+		&e.UIMetaJSON,       // 13
+		&scanEAVAttrID,      // 14
+		&e.IsUIOnly,         // 15
+		&e.IsReadonly,       // 16
+		&e.HideLabel,        // 17
+		&e.HideHelpText,     // 18
+		&e.ButtonFiloCode,   // 19
+		&e.ButtonRunSave,    // 20
+		&e.ButtonJSCode,     // 21
+		&e.ButtonStyle,      // 22
+		&e.ButtonConfirmMsg, // 23
+		&e.CreatedAt,        // 24
+		&e.UpdatedAt,        // 25
 	)
 	if err != nil {
 		return nil, fmt.Errorf("create form element: %w", err)
@@ -299,18 +534,41 @@ func (s *SQLite) CreateFormElement(
 
 // ListFormElements returns all non-deleted elements for a form, ordered by z_order.
 func (s *SQLite) ListFormElements(formID int64) ([]FormElement, error) {
-	const q = `
-		SELECT id, reference_id, form_id, parent_id, machine_name, element_kind,
-		       label, help_text, z_order, col_span, alignment, ui_kind, ui_meta_json,
-		       eav_attribute_id, is_ui_only, is_readonly, hide_label, hide_help_text,
-		       button_filo_code, button_run_save, button_js_code, button_style, button_confirm_msg,
-		       created_at, updated_at
-		FROM form_elements
-		WHERE form_id = ? AND deleted_at IS NULL
-		ORDER BY COALESCE(parent_id, 0), z_order, id
-	`
+	const q = `SELECT
+		id,                 -- 1
+		reference_id,       -- 2
+		form_id,            -- 3
+		parent_id,          -- 4
+		machine_name,       -- 5
+		element_kind,       -- 6
+		label,              -- 7
+		help_text,          -- 8
+		z_order,            -- 9
+		col_span,           -- 10
+		alignment,          -- 11
+		ui_kind,            -- 12
+		ui_meta_json,       -- 13
+		eav_attribute_id,   -- 14
+		is_ui_only,         -- 15
+		is_readonly,        -- 16
+		hide_label,         -- 17
+		hide_help_text,     -- 18
+		button_filo_code,   -- 19
+		button_run_save,    -- 20
+		button_js_code,     -- 21
+		button_style,       -- 22
+		button_confirm_msg, -- 23
+		created_at,         -- 24
+		updated_at          -- 25
+	FROM form_elements
+	WHERE form_id = ?       -- 1
+	AND deleted_at IS NULL
+	ORDER BY COALESCE(parent_id, 0), z_order, id`
 
-	rows, err := s.Query(q, formID)
+	rows, err := s.Query(
+		q,
+		formID, // 1
+	)
 	if err != nil {
 		return nil, fmt.Errorf("list form elements: %w", err)
 	}
@@ -323,11 +581,31 @@ func (s *SQLite) ListFormElements(formID int64) ([]FormElement, error) {
 		var eavAttrID sql.NullInt64
 
 		if err := rows.Scan(
-			&e.ID, &e.ReferenceID, &e.FormID, &parentID, &e.MachineName, &e.ElementKind,
-			&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.Alignment, &e.UIKind, &e.UIMetaJSON,
-			&eavAttrID, &e.IsUIOnly, &e.IsReadonly, &e.HideLabel, &e.HideHelpText,
-			&e.ButtonFiloCode, &e.ButtonRunSave, &e.ButtonJSCode, &e.ButtonStyle, &e.ButtonConfirmMsg,
-			&e.CreatedAt, &e.UpdatedAt,
+			&e.ID,               // 1
+			&e.ReferenceID,      // 2
+			&e.FormID,           // 3
+			&parentID,           // 4
+			&e.MachineName,      // 5
+			&e.ElementKind,      // 6
+			&e.Label,            // 7
+			&e.HelpText,         // 8
+			&e.ZOrder,           // 9
+			&e.ColSpan,          // 10
+			&e.Alignment,        // 11
+			&e.UIKind,           // 12
+			&e.UIMetaJSON,       // 13
+			&eavAttrID,          // 14
+			&e.IsUIOnly,         // 15
+			&e.IsReadonly,       // 16
+			&e.HideLabel,        // 17
+			&e.HideHelpText,     // 18
+			&e.ButtonFiloCode,   // 19
+			&e.ButtonRunSave,    // 20
+			&e.ButtonJSCode,     // 21
+			&e.ButtonStyle,      // 22
+			&e.ButtonConfirmMsg, // 23
+			&e.CreatedAt,        // 24
+			&e.UpdatedAt,        // 25
 		); err != nil {
 			return nil, fmt.Errorf("scan form element: %w", err)
 		}
@@ -346,26 +624,69 @@ func (s *SQLite) ListFormElements(formID int64) ([]FormElement, error) {
 
 // GetFormElementByRefID retrieves a form element by reference_id.
 func (s *SQLite) GetFormElementByRefID(refID string) (*FormElement, error) {
-	const q = `
-		SELECT id, reference_id, form_id, parent_id, machine_name, element_kind,
-		       label, help_text, z_order, col_span, alignment, ui_kind, ui_meta_json,
-		       eav_attribute_id, is_ui_only, is_readonly, hide_label, hide_help_text,
-		       button_filo_code, button_run_save, button_js_code, button_style, button_confirm_msg,
-		       created_at, updated_at
-		FROM form_elements
-		WHERE reference_id = ? AND deleted_at IS NULL
-	`
+	const q = `SELECT
+		id,                 -- 1
+		reference_id,       -- 2
+		form_id,            -- 3
+		parent_id,          -- 4
+		machine_name,       -- 5
+		element_kind,       -- 6
+		label,              -- 7
+		help_text,          -- 8
+		z_order,            -- 9
+		col_span,           -- 10
+		alignment,          -- 11
+		ui_kind,            -- 12
+		ui_meta_json,       -- 13
+		eav_attribute_id,   -- 14
+		is_ui_only,         -- 15
+		is_readonly,        -- 16
+		hide_label,         -- 17
+		hide_help_text,     -- 18
+		button_filo_code,   -- 19
+		button_run_save,    -- 20
+		button_js_code,     -- 21
+		button_style,       -- 22
+		button_confirm_msg, -- 23
+		created_at,         -- 24
+		updated_at          -- 25
+	FROM form_elements
+	WHERE reference_id = ? -- 1
+	AND deleted_at IS NULL`
 
 	var e FormElement
 	var parentID sql.NullInt64
 	var eavAttrID sql.NullInt64
 
-	err := s.QueryRow(q, refID).Scan(
-		&e.ID, &e.ReferenceID, &e.FormID, &parentID, &e.MachineName, &e.ElementKind,
-		&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.Alignment, &e.UIKind, &e.UIMetaJSON,
-		&eavAttrID, &e.IsUIOnly, &e.IsReadonly, &e.HideLabel, &e.HideHelpText,
-		&e.ButtonFiloCode, &e.ButtonRunSave, &e.ButtonJSCode, &e.ButtonStyle, &e.ButtonConfirmMsg,
-		&e.CreatedAt, &e.UpdatedAt,
+	err := s.QueryRow(
+		q,
+		refID, // 1
+	).Scan(
+		&e.ID,               // 1
+		&e.ReferenceID,      // 2
+		&e.FormID,           // 3
+		&parentID,           // 4
+		&e.MachineName,      // 5
+		&e.ElementKind,      // 6
+		&e.Label,            // 7
+		&e.HelpText,         // 8
+		&e.ZOrder,           // 9
+		&e.ColSpan,          // 10
+		&e.Alignment,        // 11
+		&e.UIKind,           // 12
+		&e.UIMetaJSON,       // 13
+		&eavAttrID,          // 14
+		&e.IsUIOnly,         // 15
+		&e.IsReadonly,       // 16
+		&e.HideLabel,        // 17
+		&e.HideHelpText,     // 18
+		&e.ButtonFiloCode,   // 19
+		&e.ButtonRunSave,    // 20
+		&e.ButtonJSCode,     // 21
+		&e.ButtonStyle,      // 22
+		&e.ButtonConfirmMsg, // 23
+		&e.CreatedAt,        // 24
+		&e.UpdatedAt,        // 25
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -410,31 +731,31 @@ func (s *SQLite) UpdateFormElement(
 	if buttonStyle == "" {
 		buttonStyle = "primary"
 	}
-	const q = `
-		UPDATE form_elements SET
-			parent_id = ?,
-			machine_name = ?,
-			element_kind = ?,
-			label = ?,
-			help_text = ?,
-			z_order = ?,
-			col_span = ?,
-			alignment = ?,
-			ui_kind = ?,
-			ui_meta_json = ?,
-			eav_attribute_id = ?,
-			is_ui_only = ?,
-			is_readonly = ?,
-			hide_label = ?,
-			hide_help_text = ?,
-			button_filo_code = ?,
-			button_run_save = ?,
-			button_js_code = ?,
-			button_style = ?,
-			button_confirm_msg = ?,
-			updated_at = CURRENT_TIMESTAMP
-		WHERE id = ? AND deleted_at IS NULL
-	`
+	const q = `UPDATE form_elements
+	SET
+		parent_id = ?,          -- 1
+		machine_name = ?,       -- 2
+		element_kind = ?,       -- 3
+		label = ?,              -- 4
+		help_text = ?,          -- 5
+		z_order = ?,            -- 6
+		col_span = ?,           -- 7
+		alignment = ?,          -- 8
+		ui_kind = ?,            -- 9
+		ui_meta_json = ?,       -- 10
+		eav_attribute_id = ?,   -- 11
+		is_ui_only = ?,         -- 12
+		is_readonly = ?,        -- 13
+		hide_label = ?,         -- 14
+		hide_help_text = ?,     -- 15
+		button_filo_code = ?,   -- 16
+		button_run_save = ?,    -- 17
+		button_js_code = ?,     -- 18
+		button_style = ?,       -- 19
+		button_confirm_msg = ?, -- 20
+		updated_at = CURRENT_TIMESTAMP
+	WHERE id = ?                -- 21
+	AND deleted_at IS NULL`
 
 	var parentIDVal sql.NullInt64
 	if parentID != nil {
@@ -445,28 +766,65 @@ func (s *SQLite) UpdateFormElement(
 		eavAttrIDVal = sql.NullInt64{Int64: *eavAttributeID, Valid: true}
 	}
 
-	return s.Exec(q,
-		parentIDVal, machineName, elementKind, label, helpText,
-		zOrder, colSpan, alignment, uiKind, uiMetaJSON, eavAttrIDVal,
-		boolToInt(isUIOnly), boolToInt(isReadonly), boolToInt(hideLabel), boolToInt(hideHelpText),
-		buttonFiloCode, boolToInt(buttonRunSave), buttonJSCode, buttonStyle, buttonConfirmMsg,
-		id,
+	return s.Exec(
+		q,
+		parentIDVal,              // 1
+		machineName,              // 2
+		elementKind,              // 3
+		label,                    // 4
+		helpText,                 // 5
+		zOrder,                   // 6
+		colSpan,                  // 7
+		alignment,                // 8
+		uiKind,                   // 9
+		uiMetaJSON,               // 10
+		eavAttrIDVal,             // 11
+		boolToInt(isUIOnly),      // 12
+		boolToInt(isReadonly),    // 13
+		boolToInt(hideLabel),     // 14
+		boolToInt(hideHelpText),  // 15
+		buttonFiloCode,           // 16
+		boolToInt(buttonRunSave), // 17
+		buttonJSCode,             // 18
+		buttonStyle,              // 19
+		buttonConfirmMsg,         // 20
+		id,                       // 21
 	)
 }
 
 // ListGroupElements returns elements that can be parents (groups, accordions, cards, tabs).
 func (s *SQLite) ListGroupElements(formID int64) ([]FormElement, error) {
-	const q = `
-		SELECT id, reference_id, form_id, parent_id, machine_name, element_kind,
-		       label, help_text, z_order, col_span, alignment, ui_kind, ui_meta_json,
-		       eav_attribute_id, is_ui_only, is_readonly, hide_label, hide_help_text, created_at, updated_at
-		FROM form_elements
-		WHERE form_id = ? AND deleted_at IS NULL
-		  AND element_kind IN ('group', 'accordion', 'card', 'tabs')
-		ORDER BY z_order, id
-	`
+	const q = `SELECT
+		id,               -- 1
+		reference_id,     -- 2
+		form_id,          -- 3
+		parent_id,        -- 4
+		machine_name,     -- 5
+		element_kind,     -- 6
+		label,            -- 7
+		help_text,        -- 8
+		z_order,          -- 9
+		col_span,         -- 10
+		alignment,        -- 11
+		ui_kind,          -- 12
+		ui_meta_json,     -- 13
+		eav_attribute_id, -- 14
+		is_ui_only,       -- 15
+		is_readonly,      -- 16
+		hide_label,       -- 17
+		hide_help_text,   -- 18
+		created_at,       -- 19
+		updated_at        -- 20
+	FROM form_elements
+	WHERE form_id = ?     -- 1
+	AND deleted_at IS NULL
+	AND element_kind IN ('group', 'accordion', 'card', 'tabs')
+	ORDER BY z_order, id`
 
-	rows, err := s.Query(q, formID)
+	rows, err := s.Query(
+		q,
+		formID, // 1
+	)
 	if err != nil {
 		return nil, fmt.Errorf("list group elements: %w", err)
 	}
@@ -479,9 +837,26 @@ func (s *SQLite) ListGroupElements(formID int64) ([]FormElement, error) {
 		var eavAttrID sql.NullInt64
 
 		if err := rows.Scan(
-			&e.ID, &e.ReferenceID, &e.FormID, &parentID, &e.MachineName, &e.ElementKind,
-			&e.Label, &e.HelpText, &e.ZOrder, &e.ColSpan, &e.Alignment, &e.UIKind, &e.UIMetaJSON,
-			&eavAttrID, &e.IsUIOnly, &e.IsReadonly, &e.HideLabel, &e.HideHelpText, &e.CreatedAt, &e.UpdatedAt,
+			&e.ID,           // 1
+			&e.ReferenceID,  // 2
+			&e.FormID,       // 3
+			&parentID,       // 4
+			&e.MachineName,  // 5
+			&e.ElementKind,  // 6
+			&e.Label,        // 7
+			&e.HelpText,     // 8
+			&e.ZOrder,       // 9
+			&e.ColSpan,      // 10
+			&e.Alignment,    // 11
+			&e.UIKind,       // 12
+			&e.UIMetaJSON,   // 13
+			&eavAttrID,      // 14
+			&e.IsUIOnly,     // 15
+			&e.IsReadonly,   // 16
+			&e.HideLabel,    // 17
+			&e.HideHelpText, // 18
+			&e.CreatedAt,    // 19
+			&e.UpdatedAt,    // 20
 		); err != nil {
 			return nil, fmt.Errorf("scan group element: %w", err)
 		}
@@ -518,8 +893,18 @@ func (s *SQLite) MoveElementUp(elementID int64) error {
 	var formID int64
 	var currentZOrder int
 	var parentID sql.NullInt64
-	const qCurrent = `SELECT form_id, z_order, parent_id FROM form_elements WHERE id = ? AND deleted_at IS NULL`
-	if err := tx.QueryRow(qCurrent, elementID).Scan(&formID, &currentZOrder, &parentID); err != nil {
+	const qCurrent = `SELECT
+		form_id,   -- 1
+		z_order,   -- 2
+		parent_id  -- 3
+	FROM form_elements
+	WHERE id = ?   -- 1
+	AND deleted_at IS NULL`
+	if err := tx.QueryRow(qCurrent, elementID).Scan(
+		&formID,        // 1
+		&currentZOrder, // 2
+		&parentID,      // 3
+	); err != nil {
 		return fmt.Errorf("get current element: %w", err)
 	}
 
@@ -529,17 +914,32 @@ func (s *SQLite) MoveElementUp(elementID int64) error {
 	var qPrev string
 	var args []any
 	if parentID.Valid {
-		qPrev = `SELECT id, z_order FROM form_elements 
-			WHERE form_id = ? AND parent_id = ? AND z_order < ? AND deleted_at IS NULL
-			ORDER BY z_order DESC LIMIT 1`
+		qPrev = `SELECT
+			id,      -- 1
+			z_order  -- 2
+		FROM form_elements
+		WHERE form_id = ?   -- 1
+		AND parent_id = ?   -- 2
+		AND z_order < ?     -- 3
+		AND deleted_at IS NULL
+		ORDER BY z_order DESC LIMIT 1`
 		args = []any{formID, parentID.Int64, currentZOrder}
 	} else {
-		qPrev = `SELECT id, z_order FROM form_elements 
-			WHERE form_id = ? AND parent_id IS NULL AND z_order < ? AND deleted_at IS NULL
-			ORDER BY z_order DESC LIMIT 1`
+		qPrev = `SELECT
+			id,      -- 1
+			z_order  -- 2
+		FROM form_elements
+		WHERE form_id = ?   -- 1
+		AND parent_id IS NULL
+		AND z_order < ?     -- 2
+		AND deleted_at IS NULL
+		ORDER BY z_order DESC LIMIT 1`
 		args = []any{formID, currentZOrder}
 	}
-	if err := tx.QueryRow(qPrev, args...).Scan(&prevID, &prevZOrder); err != nil {
+	if err := tx.QueryRow(qPrev, args...).Scan(
+		&prevID,     // 1
+		&prevZOrder, // 2
+	); err != nil {
 		if err == sql.ErrNoRows {
 			return nil // Already at top
 		}
@@ -547,7 +947,12 @@ func (s *SQLite) MoveElementUp(elementID int64) error {
 	}
 
 	// Swap z_order values
-	const qUpdate = `UPDATE form_elements SET z_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+	const qUpdate = `UPDATE form_elements
+	SET
+		z_order = ?,  -- 1
+		updated_at = CURRENT_TIMESTAMP
+	WHERE id = ?      -- 2
+	`
 	if err := tx.Exec(qUpdate, prevZOrder, elementID); err != nil {
 		return fmt.Errorf("update current z_order: %w", err)
 	}
@@ -570,8 +975,18 @@ func (s *SQLite) MoveElementDown(elementID int64) error {
 	var formID int64
 	var currentZOrder int
 	var parentID sql.NullInt64
-	const qCurrent = `SELECT form_id, z_order, parent_id FROM form_elements WHERE id = ? AND deleted_at IS NULL`
-	if err := tx.QueryRow(qCurrent, elementID).Scan(&formID, &currentZOrder, &parentID); err != nil {
+	const qCurrent = `SELECT
+		form_id,   -- 1
+		z_order,   -- 2
+		parent_id  -- 3
+	FROM form_elements
+	WHERE id = ?   -- 1
+	AND deleted_at IS NULL`
+	if err := tx.QueryRow(qCurrent, elementID).Scan(
+		&formID,        // 1
+		&currentZOrder, // 2
+		&parentID,      // 3
+	); err != nil {
 		return fmt.Errorf("get current element: %w", err)
 	}
 
@@ -581,17 +996,32 @@ func (s *SQLite) MoveElementDown(elementID int64) error {
 	var qNext string
 	var args []any
 	if parentID.Valid {
-		qNext = `SELECT id, z_order FROM form_elements 
-			WHERE form_id = ? AND parent_id = ? AND z_order > ? AND deleted_at IS NULL
-			ORDER BY z_order ASC LIMIT 1`
+		qNext = `SELECT
+			id,      -- 1
+			z_order  -- 2
+		FROM form_elements
+		WHERE form_id = ?   -- 1
+		AND parent_id = ?   -- 2
+		AND z_order > ?     -- 3
+		AND deleted_at IS NULL
+		ORDER BY z_order ASC LIMIT 1`
 		args = []any{formID, parentID.Int64, currentZOrder}
 	} else {
-		qNext = `SELECT id, z_order FROM form_elements 
-			WHERE form_id = ? AND parent_id IS NULL AND z_order > ? AND deleted_at IS NULL
-			ORDER BY z_order ASC LIMIT 1`
+		qNext = `SELECT
+			id,      -- 1
+			z_order  -- 2
+		FROM form_elements
+		WHERE form_id = ?   -- 1
+		AND parent_id IS NULL
+		AND z_order > ?     -- 2
+		AND deleted_at IS NULL
+		ORDER BY z_order ASC LIMIT 1`
 		args = []any{formID, currentZOrder}
 	}
-	if err := tx.QueryRow(qNext, args...).Scan(&nextID, &nextZOrder); err != nil {
+	if err := tx.QueryRow(qNext, args...).Scan(
+		&nextID,     // 1
+		&nextZOrder, // 2
+	); err != nil {
 		if err == sql.ErrNoRows {
 			return nil // Already at bottom
 		}
@@ -599,7 +1029,12 @@ func (s *SQLite) MoveElementDown(elementID int64) error {
 	}
 
 	// Swap z_order values
-	const qUpdate = `UPDATE form_elements SET z_order = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`
+	const qUpdate = `UPDATE form_elements
+	SET
+		z_order = ?,  -- 1
+		updated_at = CURRENT_TIMESTAMP
+	WHERE id = ?      -- 2
+	`
 	if err := tx.Exec(qUpdate, nextZOrder, elementID); err != nil {
 		return fmt.Errorf("update current z_order: %w", err)
 	}
