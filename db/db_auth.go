@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/crgimenes/devengine/mail"
+	"github.com/crgimenes/devengine/utils"
 )
 
 // GetUserByOAuthProviderID retrieves a user ID by OAuth provider and provider ID.
@@ -285,7 +285,7 @@ func (s *SQLite) CreateMinimalUserForOAuthFallback(
 		return nil, errors.New("email is required for fallback user creation")
 	}
 
-	email, err := mail.CanonicalizeEmail(email)
+	email, err := utils.CanonicalizeEmail(email)
 	if err != nil {
 		return nil, err
 	}

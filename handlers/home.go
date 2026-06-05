@@ -22,16 +22,24 @@ type FileUtilities struct {
 	NewFilename  func() string
 }
 
+// MagicLinkSender is an optional hook invoked after devengine generates and
+// persists a magic-link token. The application decides how to deliver the
+// link (email, messaging, etc.). When nil, devengine just generates the link
+// and exposes it for the administrator to deliver manually.
+type MagicLinkSender func(email, link string) error
+
 type Dependencies struct {
-	Config        *config.Config
-	Templates     TemplateExecutor
-	FileUtilities FileUtilities
+	Config          *config.Config
+	Templates       TemplateExecutor
+	FileUtilities   FileUtilities
+	MagicLinkSender MagicLinkSender
 }
 
 type Handlers struct {
-	cfg       *config.Config
-	templates TemplateExecutor
-	files     FileUtilities
+	cfg             *config.Config
+	templates       TemplateExecutor
+	files           FileUtilities
+	magicLinkSender MagicLinkSender
 }
 
 func New(deps Dependencies) *Handlers {
@@ -40,9 +48,10 @@ func New(deps Dependencies) *Handlers {
 	}
 
 	return &Handlers{
-		cfg:       deps.Config,
-		templates: deps.Templates,
-		files:     deps.FileUtilities,
+		cfg:             deps.Config,
+		templates:       deps.Templates,
+		files:           deps.FileUtilities,
+		magicLinkSender: deps.MagicLinkSender,
 	}
 }
 

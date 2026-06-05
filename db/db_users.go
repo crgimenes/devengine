@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/crgimenes/devengine/mail"
+	"github.com/crgimenes/devengine/utils"
 )
 
 // GetUserByID retrieves a user by their ID.
@@ -59,7 +59,7 @@ func (s *SQLite) GetUserByEmail(email string) (*User, error) {
         WHERE email = ?  -- 1
         LIMIT 1;`
 
-	email, err := mail.CanonicalizeEmail(email)
+	email, err := utils.CanonicalizeEmail(email)
 	if err != nil {
 		return nil, err
 	}
@@ -100,7 +100,7 @@ func (s *SQLite) GetUserOrCreateByEmail(email string) (*User, error) {
 
 	var u User
 
-	email, err := mail.CanonicalizeEmail(email)
+	email, err := utils.CanonicalizeEmail(email)
 	if err != nil {
 		return nil, err
 	}

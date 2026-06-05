@@ -3,23 +3,15 @@ package config
 import "time"
 
 type Config struct {
-	Addrs               string
-	BaseURL             string
-	DBFile              string
-	DataPath            string //  procesed files storage path
-	DiscordClientID     string
-	DiscordClientSecret string
-	DiscordOAuthEnabled bool
-	EmailDomain         string
-	GitHubClientID      string
-	GitHubClientSecret  string
-	GitTag              string
-	GithubOAuthEnabled  bool
-	ResendAPIKey        string
-	SessionDuration     time.Duration
-	SiteDescription     string
-	SiteTitle           string
-	UploadPath          string // file upload storage path (temporary before processing)
+	Addrs           string
+	BaseURL         string
+	DBFile          string
+	DataPath        string // processed files storage path
+	GitTag          string
+	SessionDuration time.Duration
+	SiteDescription string
+	SiteTitle       string
+	UploadPath      string // file upload storage path (temporary before processing)
 }
 
 var Cfg = &Config{
