@@ -13,6 +13,7 @@ import (
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/eav/ui"
 	"github.com/crgimenes/devengine/filodb"
 	"github.com/crgimenes/devengine/filolog"
 	"github.com/crgimenes/devengine/utils"
@@ -1045,7 +1046,6 @@ func parseFormAttributes(r *http.Request, elements []db.FormElement, attributes 
 		fieldName := el.MachineName
 		rawValue := r.FormValue(fieldName)
 
-		// Validate required fields immediately (before any scripts run)
 		if rawValue == "" {
 			if attr.IsRequired {
 				return nil, fmt.Errorf("campo obrigatório: %s", attr.Label)
@@ -1054,27 +1054,53 @@ func parseFormAttributes(r *http.Request, elements []db.FormElement, attributes 
 			continue
 		}
 
-		// Parse based on primitive kind
-		switch attr.PrimitiveKind {
-		case "BOOL":
-			parsedValues[attr.MachineName] = rawValue == "true" || rawValue == "1"
-		case "INT":
-			if v, err := strconv.ParseInt(rawValue, 10, 64); err == nil {
-				parsedValues[attr.MachineName] = v
-			} else {
-				parsedValues[attr.MachineName] = rawValue
-			}
-		case "REAL":
-			if v, err := strconv.ParseFloat(rawValue, 64); err == nil {
-				parsedValues[attr.MachineName] = v
-			} else {
-				parsedValues[attr.MachineName] = rawValue
-			}
-		default:
-			parsedValues[attr.MachineName] = rawValue
+		v, err := parseElementValue(el, attr, rawValue)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", attr.Label, err)
 		}
+		parsedValues[attr.MachineName] = v
 	}
 	return parsedValues, nil
+}
+
+// parseElementValue prefers a registered ui.FieldUI for the element's UIKind
+// and falls back to the primitive-kind switch when no plugin is registered.
+// This is the only interpretation point of raw form values during create/update.
+func parseElementValue(el db.FormElement, attr *db.EAVAttribute, raw string) (any, error) {
+	plugin, ok := ui.Get(el.UIKind)
+	if ok {
+		if !plugin.HasPersistence() {
+			return raw, nil
+		}
+		opts := plugin.ParseOptions(el.UIMetaJSON)
+		v, err := plugin.Parse(raw, opts)
+		if err != nil {
+			return nil, err
+		}
+		err = plugin.Validate(v, opts)
+		if err != nil {
+			return nil, err
+		}
+		return v, nil
+	}
+
+	switch attr.PrimitiveKind {
+	case "BOOL":
+		return raw == "true" || raw == "1", nil
+	case "INT":
+		v, err := strconv.ParseInt(raw, 10, 64)
+		if err != nil {
+			return raw, nil
+		}
+		return v, nil
+	case "REAL":
+		v, err := strconv.ParseFloat(raw, 64)
+		if err != nil {
+			return raw, nil
+		}
+		return v, nil
+	}
+	return raw, nil
 }
 
 // insertRecordTx handles the creation of a new record within a transaction.
