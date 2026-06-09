@@ -2,12 +2,12 @@ package handlers
 
 import "net/http"
 
-// Routes registra as rotas de páginas no mux.
+// Routes registers the engine's built-in pages on the mux. Authentication
+// routes (login, signup, invite acceptance) are NOT registered here — they
+// are application-side and must be wired separately (e.g. by importing
+// devengine/auth/basic and calling basic.Routes).
 func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("/", h.Home)
-	mux.HandleFunc("GET /login", h.LoginPage)
-	mux.HandleFunc("POST /login/magic_link", h.LoginMagic)
-	mux.HandleFunc("GET /link/{token}", h.MagicLink)
 	mux.HandleFunc("GET /me", h.Profile)
 	mux.HandleFunc("POST /me", h.Profile)
 	mux.HandleFunc("GET /tools", h.Tools)

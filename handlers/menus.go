@@ -68,6 +68,7 @@ func (h *Handlers) ToolsMenus(w http.ResponseWriter, r *http.Request) {
 
 	err = h.templates(w, "tools_menu_editor.go.tmpl", data)
 	if err != nil {
+		log.Printf("template error: %v", err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }
@@ -112,6 +113,7 @@ func (h *Handlers) ToolsMenusNew(w http.ResponseWriter, r *http.Request) {
 
 	err = h.templates(w, "tools_menu_editor_new.go.tmpl", data)
 	if err != nil {
+		log.Printf("template error: %v", err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }
@@ -309,6 +311,7 @@ func (h *Handlers) ToolsMenusEdit(w http.ResponseWriter, r *http.Request) {
 
 	err = h.templates(w, "tools_menu_editor_edit.go.tmpl", data)
 	if err != nil {
+		log.Printf("template error: %v", err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }
@@ -741,6 +744,7 @@ func (h *Handlers) ToolsMenusPreview(w http.ResponseWriter, r *http.Request) {
 
 	err = h.templates(w, "tools_menu_editor_preview.go.tmpl", data)
 	if err != nil {
+		log.Printf("template error: %v", err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }

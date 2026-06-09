@@ -5,6 +5,7 @@ CREATE TABLE users (
     reference_id TEXT NOT NULL DEFAULT '' UNIQUE, -- a trigger will set this to a UUID
     username TEXT UNIQUE COLLATE NOCASE,
     email TEXT UNIQUE COLLATE NOCASE,
+    password_hash TEXT, -- nullable; populated by basic auth, may stay NULL when other methods are used
     enabled INTEGER NOT NULL DEFAULT 0 CHECK (enabled IN (0,1)),
     sysop INTEGER NOT NULL DEFAULT 0 CHECK (sysop IN (0,1)),
     avatar_url TEXT,
@@ -19,35 +20,12 @@ CREATE INDEX idx_users_email_nocase
 CREATE INDEX idx_users_enabled ON users(enabled);
 CREATE INDEX idx_users_reference_id ON users(reference_id);
 
-CREATE TABLE identities (
-    id INTEGER PRIMARY KEY,
-    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    provider TEXT NOT NULL,
-    provider_uid TEXT NOT NULL,
-    avatar_url TEXT,
-    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE(provider, provider_uid)
-);
-
-CREATE INDEX idx_identities_user_id ON identities(user_id);
-
 CREATE TRIGGER users_set_updated_at
 AFTER UPDATE ON users
 FOR EACH ROW
 WHEN NEW.updated_at = OLD.updated_at
 BEGIN
         UPDATE users
-        SET updated_at = CURRENT_TIMESTAMP
-        WHERE id = NEW.id;
-END;
-
-CREATE TRIGGER identities_set_updated_at
-AFTER UPDATE ON identities
-FOR EACH ROW
-WHEN NEW.updated_at = OLD.updated_at
-BEGIN
-        UPDATE identities
         SET updated_at = CURRENT_TIMESTAMP
         WHERE id = NEW.id;
 END;

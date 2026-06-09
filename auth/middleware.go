@@ -107,13 +107,13 @@ func Prelude(
 
 	sid, ok := sessions.GetCookie(r)
 	if !ok {
-		http.Redirect(w, r, config.Cfg.BaseURL+"/login", http.StatusFound)
+		http.Redirect(w, r, config.Cfg.BaseURL+config.Cfg.LoginURL, http.StatusFound)
 		return nil, "", false, nil
 	}
 
 	su, ok := sessions.Get(sid)
 	if !ok {
-		http.Redirect(w, r, config.Cfg.BaseURL+"/login", http.StatusFound)
+		http.Redirect(w, r, config.Cfg.BaseURL+config.Cfg.LoginURL, http.StatusFound)
 		return nil, "", false, nil
 	}
 

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"io"
+	"log"
 	"mime/multipart"
 	"net/http"
 
@@ -22,24 +23,16 @@ type FileUtilities struct {
 	NewFilename  func() string
 }
 
-// MagicLinkSender is an optional hook invoked after devengine generates and
-// persists a magic-link token. The application decides how to deliver the
-// link (email, messaging, etc.). When nil, devengine just generates the link
-// and exposes it for the administrator to deliver manually.
-type MagicLinkSender func(email, link string) error
-
 type Dependencies struct {
-	Config          *config.Config
-	Templates       TemplateExecutor
-	FileUtilities   FileUtilities
-	MagicLinkSender MagicLinkSender
+	Config        *config.Config
+	Templates     TemplateExecutor
+	FileUtilities FileUtilities
 }
 
 type Handlers struct {
-	cfg             *config.Config
-	templates       TemplateExecutor
-	files           FileUtilities
-	magicLinkSender MagicLinkSender
+	cfg       *config.Config
+	templates TemplateExecutor
+	files     FileUtilities
 }
 
 func New(deps Dependencies) *Handlers {
@@ -48,10 +41,9 @@ func New(deps Dependencies) *Handlers {
 	}
 
 	return &Handlers{
-		cfg:             deps.Config,
-		templates:       deps.Templates,
-		files:           deps.FileUtilities,
-		magicLinkSender: deps.MagicLinkSender,
+		cfg:       deps.Config,
+		templates: deps.Templates,
+		files:     deps.FileUtilities,
 	}
 }
 
@@ -124,6 +116,7 @@ func (h *Handlers) Home(w http.ResponseWriter, r *http.Request) {
 
 	err = h.templates(w, templateName, data)
 	if err != nil {
+		log.Printf("template error: %v", err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }
@@ -173,6 +166,7 @@ func (h *Handlers) Tools(w http.ResponseWriter, r *http.Request) {
 
 	err = h.templates(w, "tools.go.tmpl", data)
 	if err != nil {
+		log.Printf("template error: %v", err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }
@@ -278,6 +272,7 @@ func (h *Handlers) ToolsDatabaseSchema(w http.ResponseWriter, r *http.Request) {
 
 	err = h.templates(w, "tools_database_schema.go.tmpl", data)
 	if err != nil {
+		log.Printf("template error: %v", err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }
@@ -327,6 +322,7 @@ func (h *Handlers) ToolsUsers(w http.ResponseWriter, r *http.Request) {
 
 	err = h.templates(w, "tools_users.go.tmpl", data)
 	if err != nil {
+		log.Printf("template error: %v", err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }
@@ -376,6 +372,7 @@ func (h *Handlers) ToolsSearchForms(w http.ResponseWriter, r *http.Request) {
 
 	err = h.templates(w, "tools_search_forms.go.tmpl", data)
 	if err != nil {
+		log.Printf("template error: %v", err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }
@@ -425,6 +422,7 @@ func (h *Handlers) ToolsFilo(w http.ResponseWriter, r *http.Request) {
 
 	err = h.templates(w, "tools_filo.go.tmpl", data)
 	if err != nil {
+		log.Printf("template error: %v", err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }
@@ -583,6 +581,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 
 	err = h.templates(w, "tools_database_schema_eav_new.go.tmpl", data)
 	if err != nil {
+		log.Printf("template error: %v", err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }
@@ -737,6 +736,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 
 	err = h.templates(w, "tools_database_schema_eav_edit.go.tmpl", data)
 	if err != nil {
+		log.Printf("template error: %v", err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }

@@ -4,6 +4,7 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -49,6 +50,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 		}
 		err := h.templates(w, "me.go.tmpl", data)
 		if err != nil {
+			log.Printf("template error: %v", err)
 			http.Error(w, "template error", http.StatusInternalServerError)
 		}
 		return

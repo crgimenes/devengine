@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 
@@ -83,6 +84,7 @@ func (h *Handlers) ToolsForms(w http.ResponseWriter, r *http.Request) {
 
 	err = h.templates(w, "tools_forms.go.tmpl", data)
 	if err != nil {
+		log.Printf("template error: %v", err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }

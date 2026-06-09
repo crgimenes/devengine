@@ -18,13 +18,14 @@ type File struct {
 }
 
 type User struct {
-	ID          int64     `json:"id"`
-	ReferenceID string    `json:"reference_id"`
-	Username    string    `json:"username"`
-	Email       string    `json:"email"`
-	Enabled     bool      `json:"enabled"`
-	Sysop       bool      `json:"sysop"`
-	AvatarURL   string    `json:"avatar_url,omitempty"`
-	CreatedAt   time.Time `json:"created_at,omitzero"`
-	UpdatedAt   time.Time `json:"updated_at,omitzero"`
+	ID           int64     `json:"id"`
+	ReferenceID  string    `json:"reference_id"`
+	Username     string    `json:"username"`
+	Email        string    `json:"email"`
+	PasswordHash string    `json:"-"`
+	Enabled      bool      `json:"enabled"`
+	Sysop        bool      `json:"sysop"`
+	AvatarURL    string    `json:"avatar_url,omitempty"`
+	CreatedAt    time.Time `json:"created_at,omitzero"`
+	UpdatedAt    time.Time `json:"updated_at,omitzero"`
 }

@@ -12,7 +12,7 @@
             <div class="col-md-5">
                 <div class="card">
                     <div class="card-body">
-                        <h1 class="card-title text-center mb-4">Entrar</h1>
+                        <h1 class="card-title text-center mb-4">Aceitar convite</h1>
 
                         {{if .Error}}
                         <div class="alert alert-danger" role="alert">
@@ -20,14 +20,16 @@
                         </div>
                         {{end}}
 
-                        <form method="post" action="/login" autocomplete="on">
+                        <form method="post" action="/signup/{{.Token}}" autocomplete="off">
                             <div class="mb-3">
-                                <label for="username" class="form-label">Usuário</label>
+                                <label for="username" class="form-label">Nome de usuário</label>
                                 <input type="text"
                                        class="form-control"
                                        id="username"
                                        name="username"
                                        autocomplete="username"
+                                       minlength="3"
+                                       maxlength="30"
                                        required>
                             </div>
                             <div class="mb-3">
@@ -36,23 +38,26 @@
                                        class="form-control"
                                        id="password"
                                        name="password"
-                                       autocomplete="current-password"
+                                       autocomplete="new-password"
+                                       minlength="8"
+                                       required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="password_confirm" class="form-label">Confirmar senha</label>
+                                <input type="password"
+                                       class="form-control"
+                                       id="password_confirm"
+                                       name="password_confirm"
+                                       autocomplete="new-password"
+                                       minlength="8"
                                        required>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">
-                                Entrar
+                                Criar conta
                             </button>
                         </form>
-
-                        <p class="text-center text-muted mt-4 small mb-0">
-                            Acesso somente por convite. Solicite um link ao administrador.
-                        </p>
                     </div>
                 </div>
-
-                <p class="text-center text-muted mt-4 small">
-                    <a href="/" class="text-decoration-none">Voltar a home</a>
-                </p>
             </div>
         </div>
     </main>

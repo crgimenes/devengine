@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"log"
 	"net/http"
 	"strconv"
 	"strings"
@@ -48,6 +49,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeNew(w http.ResponseWriter, r *
 
 	err = h.templates(w, "tools_database_schema_eav_attribute_form.go.tmpl", data)
 	if err != nil {
+		log.Printf("template error: %v", err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }
@@ -104,6 +106,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeEdit(w http.ResponseWriter, r 
 
 	err = h.templates(w, "tools_database_schema_eav_attribute_form.go.tmpl", data)
 	if err != nil {
+		log.Printf("template error: %v", err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }

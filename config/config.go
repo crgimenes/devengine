@@ -8,6 +8,7 @@ type Config struct {
 	DBFile          string
 	DataPath        string // processed files storage path
 	GitTag          string
+	LoginURL        string // path the engine redirects unauthenticated requests to (relative to BaseURL)
 	SessionDuration time.Duration
 	SiteDescription string
 	SiteTitle       string
@@ -21,6 +22,7 @@ var Cfg = &Config{
 	SiteDescription: "devengine",
 	GitTag:          "dev",
 	DBFile:          "devengine.db",
+	LoginURL:        "/login",
 	SessionDuration: 10 * 24 * time.Hour, // 10 days
 	UploadPath:      "./uploads",
 	DataPath:        "./data",
