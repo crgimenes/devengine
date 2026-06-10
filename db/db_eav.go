@@ -1420,3 +1420,150 @@ func (s *SQLite) ListEAVRecordsByAttributeValue(entityTypeID, attributeID int64,
 	}
 	return out, rows.Err()
 }
+
+// ====================================================================
+// Value conversion helpers
+// ====================================================================
+
+// UnwrapEAVValue picks the right typed column based on the attribute's
+// primitive kind and returns a Go value suitable for rendering.
+func UnwrapEAVValue(primitive string, v EAVValue) any {
+	switch primitive {
+	case "BOOL":
+		if v.VBool != nil {
+			return *v.VBool
+		}
+	case "INT":
+		if v.VInt != nil {
+			return *v.VInt
+		}
+	case "REAL":
+		if v.VReal != nil {
+			return *v.VReal
+		}
+	case "TEXT":
+		if v.VText != nil {
+			return *v.VText
+		}
+	case "DATETIME":
+		if v.VDatetime != nil {
+			return *v.VDatetime
+		}
+	}
+	return nil
+}
+
+// FormatEAVValue returns a display string for the first value matching attrID,
+// falling back to the given string when no value matches.
+func FormatEAVValue(kind string, values []EAVValue, attrID int64, fallback string) string {
+	for _, v := range values {
+		if v.AttributeID != attrID {
+			continue
+		}
+		switch kind {
+		case "TEXT":
+			if v.VText != nil {
+				return *v.VText
+			}
+		case "INT":
+			if v.VInt != nil {
+				return fmt.Sprintf("%d", *v.VInt)
+			}
+		case "REAL":
+			if v.VReal != nil {
+				return fmt.Sprintf("%g", *v.VReal)
+			}
+		case "BOOL":
+			if v.VBool != nil {
+				if *v.VBool {
+					return "true"
+				}
+				return "false"
+			}
+		case "DATETIME":
+			if v.VDatetime != nil {
+				return *v.VDatetime
+			}
+		}
+	}
+	return fallback
+}
+
+// ====================================================================
+// Transaction-level value saver
+// ====================================================================
+
+// SaveEAVValuesTx iterates over the provided values and upserts each one.
+// Computed attributes are skipped.
+func (t *Transaction) SaveEAVValuesTx(recordID int64, attributes []EAVAttribute, values EAVRecordValues) error {
+	for machineName, rawValue := range values {
+		var attr *EAVAttribute
+		for i := range attributes {
+			if attributes[i].MachineName == machineName {
+				attr = &attributes[i]
+				break
+			}
+		}
+		if attr == nil || attr.IsComputed {
+			continue
+		}
+
+		var vBool, vInt, vReal, vText, vDatetime any
+		switch attr.PrimitiveKind {
+		case "BOOL":
+			if b, ok := rawValue.(bool); ok {
+				vBool = b
+			}
+		case "INT":
+			if i, ok := rawValue.(int64); ok {
+				vInt = i
+			}
+		case "REAL":
+			if f, ok := rawValue.(float64); ok {
+				vReal = f
+			}
+		case "DATETIME":
+			if s, ok := rawValue.(string); ok && s != "" {
+				vDatetime = s
+			}
+		default: // TEXT
+			if s, ok := rawValue.(string); ok {
+				vText = s
+			}
+		}
+
+		if err := t.UpsertEAVValueInTx(recordID, attr.ID, vBool, vInt, vReal, vText, vDatetime); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// ====================================================================
+// Lookup helpers
+// ====================================================================
+
+// LookupEAVEntityTypeAndAttribute resolves an entity type (by machine_name)
+// and an attribute (by machine_name) in one call.
+func (s *SQLite) LookupEAVEntityTypeAndAttribute(entityName, attrName string) (*EAVEntityType, *EAVAttribute, error) {
+	et, err := s.GetEAVEntityTypeByMachineName(entityName)
+	if err != nil {
+		if errors.Is(err, ErrNotFound) {
+			return nil, nil, nil
+		}
+		return nil, nil, err
+	}
+	if et == nil {
+		return nil, nil, nil
+	}
+	attrs, err := s.ListEAVAttributesByEntityTypeID(et.ID)
+	if err != nil {
+		return et, nil, err
+	}
+	for i := range attrs {
+		if attrs[i].MachineName == attrName {
+			return et, &attrs[i], nil
+		}
+	}
+	return et, nil, nil
+}

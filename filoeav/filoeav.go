@@ -117,7 +117,7 @@ func (c *Context) countWhere(_ context.Context, args []filo.Value) (filo.Value, 
 		return filo.Value{}, fmt.Errorf("eav-count-where: attribute must be string: %w", err)
 	}
 
-	et, attr, err := c.resolveAttr(entityName, attrName)
+	et, attr, err := c.storage.LookupEAVEntityTypeAndAttribute(entityName, attrName)
 	if err != nil {
 		return filo.Value{}, err
 	}
@@ -154,7 +154,7 @@ func (c *Context) getValue(_ context.Context, args []filo.Value) (filo.Value, er
 		return filo.Value{}, fmt.Errorf("eav-get-value: attribute must be string: %w", err)
 	}
 
-	et, attr, err := c.resolveAttr(entityName, attrName)
+	et, attr, err := c.storage.LookupEAVEntityTypeAndAttribute(entityName, attrName)
 	if err != nil {
 		return filo.Value{}, err
 	}
@@ -185,28 +185,7 @@ func (c *Context) getValue(_ context.Context, args []filo.Value) (filo.Value, er
 	return filo.VString(""), nil
 }
 
-func (c *Context) resolveAttr(entityName, attrName string) (*db.EAVEntityType, *db.EAVAttribute, error) {
-	et, err := c.storage.GetEAVEntityTypeByMachineName(entityName)
-	if err != nil {
-		if errors.Is(err, db.ErrNotFound) {
-			return nil, nil, nil
-		}
-		return nil, nil, err
-	}
-	if et == nil {
-		return nil, nil, nil
-	}
-	attrs, err := c.storage.ListEAVAttributesByEntityTypeID(et.ID)
-	if err != nil {
-		return et, nil, err
-	}
-	for i := range attrs {
-		if attrs[i].MachineName == attrName {
-			return et, &attrs[i], nil
-		}
-	}
-	return et, nil, nil
-}
+
 
 // matchValueColumn returns the v_* column name and a Go-typed value that
 // fits the attribute's primitive kind, given the raw Filo value the caller

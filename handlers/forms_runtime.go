@@ -850,7 +850,7 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 
 		// Setup DB context for Filo using the SAME TRANSACTION
 		dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
-		dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
+		dbCtxWithTx := filodb.NewContext(dbAdapter, tx)
 
 		// Register builtins (including DB ops attached to this TX)
 		filostrings.RegisterBuiltins(eng)
@@ -1127,7 +1127,7 @@ func insertRecordTx(tx *db.Transaction, entityType *db.EAVEntityType, attributes
 	// Execute pre_save script with transaction context
 	if entityType.PreSave != "" {
 		dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
-		dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
+		dbCtxWithTx := filodb.NewContext(dbAdapter, tx)
 
 		scriptSetup := func(eng *filo.Engine) {
 			filostrings.RegisterBuiltins(eng)
@@ -1151,7 +1151,7 @@ func insertRecordTx(tx *db.Transaction, entityType *db.EAVEntityType, attributes
 	}
 
 	// Save values
-	if err := saveValuesTx(tx, recordID, attributes, values); err != nil {
+	if err := tx.SaveEAVValuesTx(recordID, attributes, values); err != nil {
 		return 0, "", err
 	}
 
@@ -1164,7 +1164,7 @@ func updateRecordTx(tx *db.Transaction, entityType *db.EAVEntityType, record *db
 	// Execute pre_save script
 	if entityType.PreSave != "" {
 		dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
-		dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
+		dbCtxWithTx := filodb.NewContext(dbAdapter, tx)
 
 		scriptSetup := func(eng *filo.Engine) {
 			filostrings.RegisterBuiltins(eng)
@@ -1186,50 +1186,5 @@ func updateRecordTx(tx *db.Transaction, entityType *db.EAVEntityType, record *db
 	}
 
 	// Save values
-	return saveValuesTx(tx, record.ID, attributes, values)
-}
-
-// saveValuesTx inserts or replaces values for a record within a transaction.
-func saveValuesTx(tx *db.Transaction, recordID int64, attributes []db.EAVAttribute, values db.EAVRecordValues) error {
-	for machineName, rawValue := range values {
-		var attr *db.EAVAttribute
-		for i := range attributes {
-			if attributes[i].MachineName == machineName {
-				attr = &attributes[i]
-				break
-			}
-		}
-		if attr == nil || attr.IsComputed {
-			continue
-		}
-
-		var vBool, vInt, vReal, vText, vDatetime any
-		switch attr.PrimitiveKind {
-		case "BOOL":
-			if b, ok := rawValue.(bool); ok {
-				vBool = b
-			}
-		case "INT":
-			if i, ok := rawValue.(int64); ok {
-				vInt = i
-			}
-		case "REAL":
-			if f, ok := rawValue.(float64); ok {
-				vReal = f
-			}
-		case "DATETIME":
-			if s, ok := rawValue.(string); ok && s != "" {
-				vDatetime = s
-			}
-		default: // TEXT
-			if s, ok := rawValue.(string); ok {
-				vText = s
-			}
-		}
-
-		if err := tx.UpsertEAVValueInTx(recordID, attr.ID, vBool, vInt, vReal, vText, vDatetime); err != nil {
-			return fmt.Errorf("erro ao salvar valor: %w", err)
-		}
-	}
-	return nil
+	return tx.SaveEAVValuesTx(record.ID, attributes, values)
 }

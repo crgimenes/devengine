@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"maps"
@@ -23,26 +22,7 @@ type RecordWithValues struct {
 	Values map[string]any // attribute machine_name -> value
 }
 
-// txAdapter adapts *db.Transaction to filodb.DBTransaction interface
-type txAdapter struct {
-	tx *db.Transaction
-}
 
-func (a *txAdapter) Query(query string, args ...any) (*sql.Rows, error) {
-	return a.tx.Query(query, args...)
-}
-
-func (a *txAdapter) Exec(query string, args ...any) error {
-	return a.tx.Exec(query, args...)
-}
-
-func (a *txAdapter) Commit() error {
-	return a.tx.Commit()
-}
-
-func (a *txAdapter) Rollback() error {
-	return a.tx.Rollback()
-}
 
 // ToolsDatabaseSchemaEAVRecords shows list of records with card-based UI
 func (h *Handlers) ToolsDatabaseSchemaEAVRecords(w http.ResponseWriter, r *http.Request) {
@@ -478,7 +458,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 
 	// Create filodb context with transaction for pre_save script
 	dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
-	dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
+	dbCtxWithTx := filodb.NewContext(dbAdapter, tx)
 
 	// Execute pre_save script with transaction context
 	if entityType.PreSave != "" {
@@ -839,7 +819,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 
 		// Create filodb context with transaction for pre_save script
 		dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
-		dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
+		dbCtxWithTx := filodb.NewContext(dbAdapter, tx)
 
 		scriptSetup := func(eng *filo.Engine) {
 			filostrings.RegisterBuiltins(eng)

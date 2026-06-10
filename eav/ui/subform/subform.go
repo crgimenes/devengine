@@ -20,7 +20,6 @@ package subform
 
 import (
 	"encoding/json"
-	"strconv"
 
 	"github.com/crgimenes/devengine/db"
 	"github.com/crgimenes/devengine/eav/ui"
@@ -102,7 +101,7 @@ func recordsFor(targetEntity, targetAttr, parentRef, displayAttr string) []templ
 		if displayID != 0 {
 			vals, err := db.Storage.GetEAVValuesByRecordID(rec.ID)
 			if err == nil {
-				label = formatDisplay(displayKind, vals, displayID, rec.ReferenceID)
+				label = db.FormatEAVValue(displayKind, vals, displayID, rec.ReferenceID)
 			}
 		}
 		out = append(out, templates.SubformRecord{ReferenceID: rec.ReferenceID, Label: label})
@@ -110,25 +109,4 @@ func recordsFor(targetEntity, targetAttr, parentRef, displayAttr string) []templ
 	return out
 }
 
-func formatDisplay(kind string, values []db.EAVValue, attrID int64, fallback string) string {
-	for _, v := range values {
-		if v.AttributeID != attrID {
-			continue
-		}
-		switch kind {
-		case "TEXT":
-			if v.VText != nil {
-				return *v.VText
-			}
-		case "INT":
-			if v.VInt != nil {
-				return strconv.FormatInt(*v.VInt, 10)
-			}
-		case "DATETIME":
-			if v.VDatetime != nil {
-				return *v.VDatetime
-			}
-		}
-	}
-	return fallback
-}
+
