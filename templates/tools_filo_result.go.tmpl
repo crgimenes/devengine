@@ -1,0 +1,48 @@
+<div class="card p-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 class="mb-0">Resultado</h5>
+        <small class="text-muted">{{printf "%.2f" .ElapsedMS}} ms</small>
+    </div>
+
+    {{if .SysError}}
+    <div class="alert alert-danger mb-3" role="alert">
+        <strong>Erro de execução:</strong><br>
+        <pre class="mb-0 small">{{.SysError}}</pre>
+    </div>
+    {{end}}
+
+    {{if .UserError}}
+    <div class="alert alert-warning mb-3" role="alert">
+        <strong>Erro (script):</strong> {{.UserError}}
+    </div>
+    {{end}}
+
+    {{if and (not .SysError) (not .UserError)}}
+    <div class="mb-3">
+        <label class="form-label small text-muted mb-1">Valor de retorno <span class="badge bg-secondary">{{.ResultKind}}</span></label>
+        <pre class="bg-dark text-light p-3 mb-0 rounded font-monospace small">{{.Result}}</pre>
+    </div>
+    {{end}}
+
+    {{if .Globals}}
+    <div>
+        <label class="form-label small text-muted mb-1">Globals após execução</label>
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered mb-0">
+                <thead>
+                    <tr><th>Chave</th><th>Valor</th><th>Tipo</th></tr>
+                </thead>
+                <tbody>
+                {{range .Globals}}
+                <tr>
+                    <td><code>{{.Key}}</code></td>
+                    <td><span class="font-monospace small">{{.Value}}</span></td>
+                    <td><span class="badge bg-secondary">{{.Kind}}</span></td>
+                </tr>
+                {{end}}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {{end}}
+</div>
