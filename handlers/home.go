@@ -278,7 +278,6 @@ func (h *Handlers) ToolsDatabaseSchema(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-
 func (h *Handlers) ToolsSearchForms(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
@@ -328,7 +327,6 @@ func (h *Handlers) ToolsSearchForms(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }
-
 
 func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
@@ -428,7 +426,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 					PosLoad:     posLoad,
 				},
 			}
-			h.templates(w, "tools_database_schema_eav_new.go.tmpl", data)
+			h.render(w, "tools_database_schema_eav_new.go.tmpl", data)
 			return
 		}
 
@@ -456,7 +454,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 					PosLoad:     posLoad,
 				},
 			}
-			h.templates(w, "tools_database_schema_eav_new.go.tmpl", data)
+			h.render(w, "tools_database_schema_eav_new.go.tmpl", data)
 			return
 		}
 
@@ -574,7 +572,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 				EntityType:  entityType,
 				Attributes:  attributes,
 			}
-			h.templates(w, "tools_database_schema_eav_edit.go.tmpl", data)
+			h.render(w, "tools_database_schema_eav_edit.go.tmpl", data)
 			return
 		}
 
@@ -601,7 +599,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 				EntityType:  entityType,
 				Attributes:  attributes,
 			}
-			h.templates(w, "tools_database_schema_eav_edit.go.tmpl", data)
+			h.render(w, "tools_database_schema_eav_edit.go.tmpl", data)
 			return
 		}
 

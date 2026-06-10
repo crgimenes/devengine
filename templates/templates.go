@@ -1,10 +1,12 @@
 package templates
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"html/template"
+	"io"
 	"io/fs"
 	"maps"
 	"reflect"
@@ -211,8 +213,10 @@ func loadTemplates() *template.Template {
 			}
 			return string(s[0])
 		},
+		// safeHTML is the deliberate opt-in for embedding trusted markup;
+		// callers own the responsibility of never passing user input.
 		"safeHTML": func(s string) template.HTML {
-			return template.HTML(s)
+			return template.HTML(s) // #nosec G203 -- explicit trusted-content escape hatch
 		},
 		// seq generates a slice of integers from start to end (inclusive)
 		"seq": func(start, end int) []int {
@@ -418,6 +422,20 @@ func ensureTemplatesLoaded() {
 	loadOnce.Do(func() {
 		tpl = loadTemplates()
 	})
+}
+
+// executeBuffered renders into a buffer and only writes to w on success.
+// Writing straight to the ResponseWriter means an error halfway through
+// execution ships a partial page with a 200 status, and the handler's
+// http.Error afterwards becomes a no-op (superfluous WriteHeader).
+func executeBuffered(w io.Writer, templateName string, data any) error {
+	var buf bytes.Buffer
+	err := tpl.ExecuteTemplate(&buf, templateName, data)
+	if err != nil {
+		return err
+	}
+	_, err = w.Write(buf.Bytes())
+	return err
 }
 
 // fmtDatetime formats a stored datetime for human display (dd/mm/yyyy HH:MM).

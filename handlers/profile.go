@@ -57,7 +57,10 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	err = r.ParseMultipartForm(10 << 20)
+	// Bound the request body so a hostile client cannot stream an unbounded
+	// upload; 10 MB avatar plus multipart overhead slack.
+	r.Body = http.MaxBytesReader(w, r.Body, 12<<20)
+	err = r.ParseMultipartForm(10 << 20) // #nosec G120 -- bounded by MaxBytesReader above
 	if err != nil {
 		http.Error(w, "bad request", http.StatusBadRequest)
 		return
@@ -74,7 +77,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 	}
 	defer func() {
 		if file != nil {
-			file.Close()
+			_ = file.Close()
 		}
 	}()
 
@@ -139,7 +142,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 		fileExt := strings.ToLower(filepath.Ext(fh.Filename))
 		avatarPath := filepath.Join(uploadsDir, h.files.NewFilename()+fileExt)
 
-		err = os.WriteFile(avatarPath, avatarData, 0600)
+		err = os.WriteFile(avatarPath, avatarData, 0600) // #nosec G703 G304 -- filename is a server-generated opaque ID; filepath.Ext cannot contain separators
 		if err != nil {
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return

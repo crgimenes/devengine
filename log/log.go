@@ -46,7 +46,7 @@ type Logger struct {
 }
 
 func init() {
-	isTerminal = term.IsTerminal(int(os.Stdout.Fd()))
+	isTerminal = term.IsTerminal(int(os.Stdout.Fd())) // #nosec G115 -- stdout fd is small, conversion safe
 }
 
 func newConfigured(w io.Writer) *Logger {
@@ -73,7 +73,7 @@ func (l *Logger) SetOutput(w io.Writer) {
 func (l *Logger) Writer() io.Writer    { return l.out.Writer() }
 func (l *Logger) SetPrefix(p string)   { l.prefix.Store(p) }
 func (l *Logger) Prefix() string       { v, _ := l.prefix.Load().(string); return v }
-func (l *Logger) SetFlags(flag int)    { l.flags.Store(int32(flag)) }
+func (l *Logger) SetFlags(flag int)    { l.flags.Store(int32(flag)) } // #nosec G115 -- stdlog flag bitmask fits int32
 func (l *Logger) Flags() int           { return int(l.flags.Load()) }
 func (l *Logger) SetLevel(level Level) { l.level.Store(int32(level)) }
 func (l *Logger) SetUTC(enable bool)   { l.useUTC.Store(enable) }

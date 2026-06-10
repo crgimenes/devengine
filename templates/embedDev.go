@@ -13,5 +13,5 @@ var (
 
 func ExecuteTemplate(w io.Writer, templateName string, data any) error {
 	tpl = loadTemplates()
-	return tpl.ExecuteTemplate(w, templateName, data)
+	return executeBuffered(w, templateName, data)
 }

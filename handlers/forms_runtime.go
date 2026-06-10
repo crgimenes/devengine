@@ -334,7 +334,7 @@ func (h *Handlers) FormsRuntimeCreate(w http.ResponseWriter, r *http.Request) {
 	committed := false
 	defer func() {
 		if !committed {
-			tx.Rollback()
+			_ = tx.Rollback()
 		}
 	}()
 
@@ -640,7 +640,7 @@ func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 	committed := false
 	defer func() {
 		if !committed {
-			tx.Rollback()
+			_ = tx.Rollback()
 		}
 	}()
 
@@ -718,9 +718,10 @@ func (h *Handlers) FormsRuntimeButtonAction(w http.ResponseWriter, r *http.Reque
 
 func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.Request, user *db.User, form *db.Form, button *db.FormElement, elements []db.FormElement) {
 	// Parse form data - handle both URL-encoded and multipart (from JavaScript FormData)
+	r.Body = http.MaxBytesReader(w, r.Body, 12<<20)
 	contentType := r.Header.Get("Content-Type")
 	if strings.HasPrefix(contentType, "multipart/form-data") {
-		if err := r.ParseMultipartForm(10 << 20); err != nil { // 10MB max
+		if err := r.ParseMultipartForm(10 << 20); err != nil { // #nosec G120 -- bounded by MaxBytesReader above
 			jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Failed to parse multipart form: " + err.Error()})
 			return
 		}
@@ -806,7 +807,7 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 	defer func() {
 		if !committed {
 			log.Printf("[ROLLBACK] Button action '%s' on form '%s': transaction rolled back", button.MachineName, form.MachineName)
-			tx.Rollback()
+			_ = tx.Rollback()
 		}
 	}()
 
@@ -985,7 +986,10 @@ func jsonResponse(w http.ResponseWriter, status int, data any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	enc := json.NewEncoder(w)
-	enc.Encode(data)
+	err := enc.Encode(data)
+	if err != nil {
+		log.Printf("jsonResponse encode: %v", err)
+	}
 }
 
 // FormsRuntimeActionsJS serves the dynamically generated JavaScript for button actions.
@@ -1038,7 +1042,7 @@ func (h *Handlers) FormsRuntimeActionsJS(w http.ResponseWriter, r *http.Request)
 
 	js.WriteString("\n};\n")
 
-	w.Write([]byte(js.String()))
+	_, _ = w.Write([]byte(js.String()))
 }
 
 // Unused import placeholder

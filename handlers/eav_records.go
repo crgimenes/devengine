@@ -12,6 +12,7 @@ import (
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
 	"github.com/crgimenes/devengine/filodb"
+	"github.com/crgimenes/devengine/log"
 	"github.com/crgimenes/devengine/utils"
 	"github.com/crgimenes/filo"
 	"github.com/crgimenes/filo/filostrings"
@@ -283,12 +284,15 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordsAPI(w http.ResponseWriter, r *ht
 
 	// Return JSON
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(map[string]any{
+	err = json.NewEncoder(w).Encode(map[string]any{
 		"records": recordsWithValues,
 		"offset":  offset + 100,
 		"hasMore": hasMore,
 		"total":   total,
 	})
+	if err != nil {
+		log.Printf("records api encode: %v", err)
+	}
 }
 
 // ToolsDatabaseSchemaEAVRecordNew shows create form
@@ -472,7 +476,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 	committed := false
 	defer func() {
 		if !committed {
-			tx.Rollback()
+			_ = tx.Rollback()
 		}
 	}()
 
@@ -847,7 +851,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 		committed := false
 		defer func() {
 			if !committed {
-				tx.Rollback()
+				_ = tx.Rollback()
 			}
 		}()
 

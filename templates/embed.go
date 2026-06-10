@@ -14,5 +14,5 @@ var (
 
 func ExecuteTemplate(w io.Writer, templateName string, data any) error {
 	ensureTemplatesLoaded()
-	return tpl.ExecuteTemplate(w, templateName, data)
+	return executeBuffered(w, templateName, data)
 }

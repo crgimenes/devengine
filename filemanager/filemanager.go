@@ -36,13 +36,15 @@ func GetFileByUserReferenceIDAndFilename(
 
 // ensureDir creates the given directory path if it does not exist.
 // It behaves like "mkdir -p", creating all necessary parent directories.
+// Paths handed to ensureDir originate from server configuration plus
+// server-generated opaque IDs, never raw request input.
 func ensureDir(path string) (string, error) {
-	absPath, err := filepath.Abs(path)
+	absPath, err := filepath.Abs(path) // #nosec G703 -- config-derived path, not request input
 	if err != nil {
 		return "", err
 	}
 
-	info, err := os.Stat(absPath)
+	info, err := os.Stat(absPath) // #nosec G703 -- config-derived path, not request input
 	if err == nil {
 		if info.IsDir() {
 			return absPath, nil
@@ -51,7 +53,7 @@ func ensureDir(path string) (string, error) {
 	}
 
 	if os.IsNotExist(err) {
-		err = os.MkdirAll(absPath, 0o700)
+		err = os.MkdirAll(absPath, 0o700) // #nosec G703 -- config-derived path, not request input
 		if err != nil {
 			return "", err
 		}

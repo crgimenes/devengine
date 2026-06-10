@@ -318,8 +318,10 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	// POST: Process file upload
 	if r.Method == http.MethodPost {
-		// Parse form with max 500 MB
-		err := r.ParseMultipartForm(500 << 20)
+		// Parse form with max 500 MB; MaxBytesReader bounds the wire so the
+		// limit is enforced before buffering, not after.
+		r.Body = http.MaxBytesReader(w, r.Body, 510<<20)
+		err := r.ParseMultipartForm(500 << 20) // #nosec G120 -- bounded by MaxBytesReader above
 		if err != nil {
 			// CSRF validation (double-submit cookie)
 			if !session.ValidateCSRF(r) {
@@ -348,7 +350,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 				Error:  "Por favor, selecione um arquivo",
 				Config: *config.Cfg,
 			}
-			templates.ExecuteTemplate(w, "filemanager_upload.go.tmpl", data)
+			renderOr500(w, "filemanager_upload.go.tmpl", data)
 			return
 		}
 		defer file.Close()
@@ -391,7 +393,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 				Error:  "Arquivo inválido: " + err.Error(),
 				Config: *config.Cfg,
 			}
-			templates.ExecuteTemplate(w, "filemanager_upload.go.tmpl", data)
+			renderOr500(w, "filemanager_upload.go.tmpl", data)
 			return
 		}
 
@@ -479,7 +481,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 				Error:  "Categorias invalidas: " + nerr.Error(),
 				Config: *config.Cfg,
 			}
-			templates.ExecuteTemplate(w, "filemanager_upload.go.tmpl", data)
+			renderOr500(w, "filemanager_upload.go.tmpl", data)
 			return
 		}
 
@@ -616,7 +618,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 				Config:    *config.Cfg,
 				Csrf:      session.GenerateCSRFToken(w, r),
 			}
-			templates.ExecuteTemplate(w, "filemanager_edit.go.tmpl", data)
+			renderOr500(w, "filemanager_edit.go.tmpl", data)
 			return
 		}
 
@@ -907,8 +909,14 @@ func serveFileHandler(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
+	// Filename is server-generated, but refuse anything that could escape the
+	// owner directory in case the DB is ever tampered with.
+	if !filepath.IsLocal(fileMeta.Filename) {
+		http.Error(w, "invalid filename", http.StatusBadRequest)
+		return
+	}
 	absPath := filepath.Join(ownerPath, fileMeta.Filename)
-	f, err := os.Open(absPath)
+	f, err := os.Open(absPath) // #nosec G304 -- name validated local, rooted in the owner's data dir
 	if err != nil {
 		log.Printf("error opening file for serve: %v", err)
 		http.Error(w, "internal server error", http.StatusInternalServerError)

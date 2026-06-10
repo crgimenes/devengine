@@ -200,7 +200,7 @@ func Deserialize(b []byte) error {
 }
 
 func LoadFromGobFile(filename string) error {
-	bb, err := os.ReadFile(filename)
+	bb, err := os.ReadFile(filename) // #nosec G304 -- path comes from application config, not request input
 	if err != nil {
 		if os.IsNotExist(err) {
 			log.Printf("No existing session file found, starting fresh")
@@ -321,7 +321,7 @@ func SetCookie(w http.ResponseWriter, value string, maxAge time.Duration) {
 	if !secure {
 		name = insecureSessCookieName
 	}
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ // #nosec G124 -- Secure=false only in explicit localhost dev mode (EnableInsecureCookie)
 		Name:     name,
 		Value:    value,
 		Path:     "/",
@@ -370,7 +370,7 @@ func GenerateCSRFToken(w http.ResponseWriter, r *http.Request) string {
 	_, _ = rand.Read(buf)
 	token := base64.RawURLEncoding.EncodeToString(buf)
 
-	http.SetCookie(w, &http.Cookie{
+	http.SetCookie(w, &http.Cookie{ // #nosec G124 -- Secure=false only in explicit localhost dev mode (EnableInsecureCookie)
 		Name:     name,
 		Value:    token,
 		Path:     "/",

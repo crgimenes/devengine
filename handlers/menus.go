@@ -166,7 +166,7 @@ func (h *Handlers) ToolsMenusCreate(w http.ResponseWriter, r *http.Request) {
 			Csrf:        csrf,
 			FormData:    struct{ MachineName, Label, Description string }{machineName, label, description},
 		}
-		h.templates(w, "tools_menu_editor_new.go.tmpl", data)
+		h.render(w, "tools_menu_editor_new.go.tmpl", data)
 		return
 	}
 
@@ -190,7 +190,7 @@ func (h *Handlers) ToolsMenusCreate(w http.ResponseWriter, r *http.Request) {
 			Csrf:        csrf,
 			FormData:    struct{ MachineName, Label, Description string }{machineName, label, description},
 		}
-		h.templates(w, "tools_menu_editor_new.go.tmpl", data)
+		h.render(w, "tools_menu_editor_new.go.tmpl", data)
 		return
 	}
 
@@ -936,5 +936,5 @@ func (h *Handlers) MenuActionsJS(w http.ResponseWriter, r *http.Request) {
 
 	js.WriteString("\n};\n")
 
-	w.Write([]byte(js.String()))
+	_, _ = w.Write([]byte(js.String()))
 }
