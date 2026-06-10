@@ -97,10 +97,7 @@ func (c *Context) count(_ context.Context, args []filo.Value) (filo.Value, error
 		return filo.VNum(0), nil
 	}
 
-	var n int64
-	const q = `SELECT COUNT(*) FROM eav_records
-		WHERE entity_type_id = ? AND deleted_at IS NULL`
-	err = c.storage.QueryRow(q, et.ID).Scan(&n)
+	n, err := c.storage.CountEAVRecords(et.ID)
 	if err != nil {
 		return filo.Value{}, err
 	}
@@ -128,19 +125,12 @@ func (c *Context) countWhere(_ context.Context, args []filo.Value) (filo.Value, 
 		return filo.VNum(0), nil
 	}
 
-	col, param, err := matchValueColumn(attr.PrimitiveKind, args[2])
+	_, param, err := matchValueColumn(attr.PrimitiveKind, args[2])
 	if err != nil {
 		return filo.Value{}, fmt.Errorf("eav-count-where: %w", err)
 	}
 
-	q := `SELECT COUNT(*) FROM eav_records r
-		JOIN eav_values v ON v.record_id = r.id
-		WHERE r.entity_type_id = ?
-		AND v.attribute_id = ?
-		AND r.deleted_at IS NULL
-		AND v.` + col + ` = ?`
-	var n int64
-	err = c.storage.QueryRow(q, et.ID, attr.ID, param).Scan(&n)
+	n, err := c.storage.CountEAVRecordsWhere(et.ID, attr.ID, attr.PrimitiveKind, param)
 	if err != nil {
 		return filo.Value{}, err
 	}

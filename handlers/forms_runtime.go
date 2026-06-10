@@ -1145,10 +1145,7 @@ func insertRecordTx(tx *db.Transaction, entityType *db.EAVEntityType, attributes
 
 	// Create record
 	refID := utils.NewOpaqueID()
-	var recordID int64
-	var recordRefID string
-	err := tx.QueryRow(`INSERT INTO eav_records (reference_id, entity_type_id, status, rev) VALUES (?, ?, 'active', 1) RETURNING id, reference_id`,
-		refID, entityType.ID).Scan(&recordID, &recordRefID)
+	recordID, recordRefID, err := tx.CreateEAVRecordInTx(refID, entityType.ID, "active")
 	if err != nil {
 		return 0, "", fmt.Errorf("erro ao criar registro: %w", err)
 	}
@@ -1184,8 +1181,7 @@ func updateRecordTx(tx *db.Transaction, entityType *db.EAVEntityType, record *db
 	}
 
 	// Update record rev
-	err := tx.Exec(`UPDATE eav_records SET rev = rev + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, record.ID)
-	if err != nil {
+	if err := tx.UpdateEAVRecordRevInTx(record.ID); err != nil {
 		return fmt.Errorf("erro ao atualizar registro: %w", err)
 	}
 
@@ -1231,10 +1227,7 @@ func saveValuesTx(tx *db.Transaction, recordID int64, attributes []db.EAVAttribu
 			}
 		}
 
-		err := tx.Exec(`INSERT OR REPLACE INTO eav_values (record_id, attribute_id, v_bool, v_int, v_real, v_text, v_datetime)
-			VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			recordID, attr.ID, vBool, vInt, vReal, vText, vDatetime)
-		if err != nil {
+		if err := tx.UpsertEAVValueInTx(recordID, attr.ID, vBool, vInt, vReal, vText, vDatetime); err != nil {
 			return fmt.Errorf("erro ao salvar valor: %w", err)
 		}
 	}

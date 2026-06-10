@@ -1306,3 +1306,117 @@ func (s *SQLite) GetEAVValuesByRecordID(recordID int64) ([]EAVValue, error) {
 	}
 	return list, rows.Err()
 }
+
+// ====================================================================
+// Transaction-level helpers (EAV operations within an existing tx)
+// ====================================================================
+
+// CreateEAVRecordInTx creates a new record inside the given transaction.
+func (t *Transaction) CreateEAVRecordInTx(refID string, entityTypeID int64, status string) (recordID int64, recordRefID string, err error) {
+	const sqlInsert = `INSERT INTO eav_records (reference_id, entity_type_id, status, rev) VALUES (?, ?, ?, 1) RETURNING id, reference_id`
+	err = t.QueryRow(sqlInsert, refID, entityTypeID, status).Scan(&recordID, &recordRefID)
+	if err != nil {
+		return 0, "", err
+	}
+	return recordID, recordRefID, nil
+}
+
+// UpdateEAVRecordRevInTx bumps the rev inside the given transaction.
+func (t *Transaction) UpdateEAVRecordRevInTx(recordID int64) error {
+	return t.Exec(`UPDATE eav_records SET rev = rev + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, recordID)
+}
+
+// ActivateEAVRecordInTx sets status to 'active' and bumps rev inside the given transaction.
+func (t *Transaction) ActivateEAVRecordInTx(recordID int64) error {
+	return t.Exec(`UPDATE eav_records SET status = 'active', rev = rev + 1 WHERE id = ?`, recordID)
+}
+
+// UpsertEAVValueInTx inserts or replaces a value for a (record, attribute) pair inside the given transaction.
+func (t *Transaction) UpsertEAVValueInTx(recordID, attributeID int64, vBool, vInt, vReal, vText, vDatetime any) error {
+	return t.Exec(`INSERT INTO eav_values (record_id, attribute_id, v_bool, v_int, v_real, v_text, v_datetime)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(record_id, attribute_id) DO UPDATE SET
+			v_bool = excluded.v_bool,
+			v_int = excluded.v_int,
+			v_real = excluded.v_real,
+			v_text = excluded.v_text,
+			v_datetime = excluded.v_datetime,
+			updated_at = CURRENT_TIMESTAMP`,
+		recordID, attributeID, vBool, vInt, vReal, vText, vDatetime)
+}
+
+// ====================================================================
+// Aggregation / lookup helpers
+// ====================================================================
+
+// CountEAVRecords returns the total number of non-deleted records for an entity type.
+func (s *SQLite) CountEAVRecords(entityTypeID int64) (int64, error) {
+	const q = `SELECT COUNT(*) FROM eav_records WHERE entity_type_id = ? AND deleted_at IS NULL`
+	var n int64
+	err := s.QueryRow(q, entityTypeID).Scan(&n)
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
+// CountEAVRecordsWhere counts non-deleted records whose attribute value matches.
+// The primitiveKind determines which v_* column is queried.
+func (s *SQLite) CountEAVRecordsWhere(entityTypeID, attributeID int64, primitiveKind string, value any) (int64, error) {
+	var q string
+	switch primitiveKind {
+	case "BOOL":
+		q = `SELECT COUNT(*) FROM eav_records r
+			JOIN eav_values v ON v.record_id = r.id
+			WHERE r.entity_type_id = ? AND v.attribute_id = ? AND r.deleted_at IS NULL AND v.v_bool = ?`
+	case "INT":
+		q = `SELECT COUNT(*) FROM eav_records r
+			JOIN eav_values v ON v.record_id = r.id
+			WHERE r.entity_type_id = ? AND v.attribute_id = ? AND r.deleted_at IS NULL AND v.v_int = ?`
+	case "REAL":
+		q = `SELECT COUNT(*) FROM eav_records r
+			JOIN eav_values v ON v.record_id = r.id
+			WHERE r.entity_type_id = ? AND v.attribute_id = ? AND r.deleted_at IS NULL AND v.v_real = ?`
+	case "TEXT":
+		q = `SELECT COUNT(*) FROM eav_records r
+			JOIN eav_values v ON v.record_id = r.id
+			WHERE r.entity_type_id = ? AND v.attribute_id = ? AND r.deleted_at IS NULL AND v.v_text = ?`
+	case "DATETIME":
+		q = `SELECT COUNT(*) FROM eav_records r
+			JOIN eav_values v ON v.record_id = r.id
+			WHERE r.entity_type_id = ? AND v.attribute_id = ? AND r.deleted_at IS NULL AND v.v_datetime = ?`
+	default:
+		return 0, fmt.Errorf("%w: unsupported primitive_kind %q", ErrInvalidValue, primitiveKind)
+	}
+	var n int64
+	err := s.QueryRow(q, entityTypeID, attributeID, value).Scan(&n)
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
+// ListEAVRecordsByAttributeValue returns non-deleted records (up to 200) whose
+// TEXT attribute value matches the given string, ordered by created_at DESC.
+func (s *SQLite) ListEAVRecordsByAttributeValue(entityTypeID, attributeID int64, value string) ([]EAVRecord, error) {
+	const q = `SELECT r.id, r.reference_id, r.entity_type_id, r.status, r.rev, r.created_at, r.updated_at
+		FROM eav_records r
+		JOIN eav_values v ON v.record_id = r.id
+		WHERE r.entity_type_id = ? AND v.attribute_id = ? AND v.v_text = ? AND r.deleted_at IS NULL
+		ORDER BY r.created_at DESC
+		LIMIT 200`
+	rows, err := s.Query(q, entityTypeID, attributeID, value)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []EAVRecord
+	for rows.Next() {
+		var r EAVRecord
+		if err := rows.Scan(&r.ID, &r.ReferenceID, &r.EntityTypeID, &r.Status, &r.Rev, &r.CreatedAt, &r.UpdatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}
