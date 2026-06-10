@@ -8,29 +8,52 @@
     {{template "navbar" .}}
 
     <main class="container-fluid py-4 py-md-5">
-        {{if .Message}}
-            <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
-                {{.Message}}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {{end}}
-        
         <div class="row">
             <div class="col-md-3">
                 {{template "tools_sidebar" .}}
             </div>
             <div class="col-md-9">
-                <div class="card p-4">
-                    <h2 class="mb-3">Código Filo</h2>
-                    <p>Coleção de módulos e scripts Filo para automações.</p>
-                    <p class="text-muted">Esta funcionalidade será implementada em breve.</p>
+                <div class="card p-4 mb-3">
+                    <h2 class="mb-3">Filo REPL</h2>
+                    <p class="text-muted small mb-3">
+                        Executa scripts Filo com os mesmos builtins do runtime de forms:
+                        <code>str-*</code>, <code>log-*</code>, <code>eav-*</code>, <code>file-*</code>,
+                        <code>session-*</code>. Limites: 10 mil steps, 100 niveis de recursao, 5s.
+                    </p>
+
+                    <form hx-post="/tools/filo/run"
+                          hx-target="#result-panel"
+                          hx-swap="innerHTML"
+                          hx-indicator="#busy">
+                        <div class="mb-3">
+                            <label for="script" class="form-label">Script</label>
+                            <textarea name="script" id="script" rows="10"
+                                      class="form-control font-monospace"
+                                      placeholder="(str-concat &quot;hello, &quot; field:name)"></textarea>
+                        </div>
+                        <div class="mb-3">
+                            <label for="globals" class="form-label">Globals (JSON, opcional)</label>
+                            <textarea name="globals" id="globals" rows="4"
+                                      class="form-control font-monospace"
+                                      placeholder='{"field:name": "Alice", "field:age": 30}'></textarea>
+                            <small class="form-text text-muted">
+                                Strings, numbers e booleans. Chaves comuns: <code>field:&lt;machine_name&gt;</code>,
+                                <code>error</code>.
+                            </small>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            Executar
+                            <span id="busy" class="htmx-indicator spinner-border spinner-border-sm ms-2" role="status"></span>
+                        </button>
+                    </form>
                 </div>
+
+                <div id="result-panel"></div>
             </div>
         </div>
     </main>
-    <footer>
-      {{template "footer" .}}
-    </footer>
+
+    <footer>{{template "footer" .}}</footer>
     {{template "scripts" .}}
   </body>
 </html>

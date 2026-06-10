@@ -53,6 +53,7 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /tools/users/{ref}/reset-password", h.ToolsUsersResetPassword)
 	mux.HandleFunc("GET /tools/search-forms", h.ToolsSearchForms)
 	mux.HandleFunc("GET /tools/filo", h.ToolsFilo)
+	mux.HandleFunc("POST /tools/filo/run", h.ToolsFiloRun)
 
 	// Menu Editor
 	mux.HandleFunc("GET /tools/menu-editor", h.ToolsMenus)
