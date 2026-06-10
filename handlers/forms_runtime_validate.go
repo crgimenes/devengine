@@ -11,7 +11,9 @@ import (
 
 // evaluateValidateExprs runs each element's validate_expr against the parsed
 // record values. The first failing expression wins: it returns its message as
-// userError. Expressions on UI-only elements (no EAV binding) are skipped.
+// userError joined by "; ". All elements are evaluated even if one fails so
+// the user sees every issue in a single round trip. UI-only elements (no EAV
+// binding) are skipped.
 //
 // Semantics of a validate_expr's final value:
 //   - empty string or true => field is valid
@@ -32,6 +34,7 @@ func evaluateValidateExprs(
 		attrByID[attributes[i].ID] = &attributes[i]
 	}
 
+	var msgs []string
 	for _, el := range elements {
 		if el.ValidateExpr == "" || el.EAVAttributeID == nil {
 			continue
@@ -52,9 +55,9 @@ func evaluateValidateExprs(
 		if el.Label != "" {
 			label = el.Label
 		}
-		return fmt.Sprintf("%s: %s", label, msg), nil
+		msgs = append(msgs, fmt.Sprintf("%s: %s", label, msg))
 	}
-	return "", nil
+	return strings.Join(msgs, "; "), nil
 }
 
 func runValidateExpr(

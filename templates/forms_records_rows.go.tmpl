@@ -6,7 +6,7 @@
     {{range $.Attributes}}
     <td>
         {{$v := index $values .MachineName}}
-        {{if eq $v nil}}<span class="text-muted">—</span>{{else}}{{$v}}{{end}}
+        {{if eq $v nil}}<span class="text-muted">—</span>{{else if eq .PrimitiveKind "DATETIME"}}{{fmtDatetime $v}}{{else}}{{$v}}{{end}}
     </td>
     {{end}}
     <td class="text-end">

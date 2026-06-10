@@ -44,7 +44,7 @@ func run(dbPath string) error {
 	}
 	email = strings.TrimSpace(email)
 
-	password, err := promptPassword("Password: ")
+	password, err := promptPassword(reader, "Password: ")
 	if err != nil {
 		return err
 	}
@@ -52,7 +52,7 @@ func run(dbPath string) error {
 		return errors.New("password is required")
 	}
 
-	confirm, err := promptPassword("Confirm password: ")
+	confirm, err := promptPassword(reader, "Confirm password: ")
 	if err != nil {
 		return err
 	}
@@ -83,14 +83,15 @@ func promptLine(r *bufio.Reader, prompt string) (string, error) {
 	return strings.TrimRight(line, "\r\n"), nil
 }
 
-func promptPassword(prompt string) (string, error) {
+func promptPassword(r *bufio.Reader, prompt string) (string, error) {
 	fmt.Print(prompt)
 	defer fmt.Println()
 
 	fd := int(os.Stdin.Fd()) // #nosec G115 -- stdin fd is small, conversion safe
 	if !term.IsTerminal(fd) {
-		// Non-interactive: read a line without hiding.
-		line, err := bufio.NewReader(os.Stdin).ReadString('\n')
+		// Non-interactive: reuse the same buffered reader so any bytes the
+		// previous prompts pre-buffered remain visible.
+		line, err := r.ReadString('\n')
 		if err != nil {
 			return "", fmt.Errorf("read password: %w", err)
 		}

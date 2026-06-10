@@ -177,6 +177,10 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// Prefill from ?prefill=attr=value (may repeat). Used by the subform's
+	// "Novo" link to pre-populate the reference back to the parent record.
+	applyPrefill(values, attributes, r.URL.Query()["prefill"])
+
 	// Execute pos_load script (before display) - only if entity type exists
 	var posLoadError string
 	if entityType != nil && entityType.PosLoad != "" {
@@ -1081,11 +1085,33 @@ func parseFormAttributes(r *http.Request, elements []db.FormElement, attributes 
 	return parsedValues, nil
 }
 
+// defaultUIKind maps a primitive kind to the field plugin used when an element
+// does not pin an explicit ui_kind. It mirrors the fallback in the runtime
+// template so saving and rendering agree on which plugin owns a value.
+func defaultUIKind(primitiveKind string) string {
+	switch primitiveKind {
+	case "BOOL":
+		return "bool"
+	case "INT":
+		return "int"
+	case "REAL":
+		return "decimal"
+	case "DATETIME":
+		return "datetime"
+	default:
+		return "text"
+	}
+}
+
 // parseElementValue prefers a registered ui.FieldUI for the element's UIKind
 // and falls back to the primitive-kind switch when no plugin is registered.
 // This is the only interpretation point of raw form values during create/update.
 func parseElementValue(el db.FormElement, attr *db.EAVAttribute, raw string) (any, error) {
-	plugin, ok := ui.Get(el.UIKind)
+	uiKind := el.UIKind
+	if uiKind == "" {
+		uiKind = defaultUIKind(attr.PrimitiveKind)
+	}
+	plugin, ok := ui.Get(uiKind)
 	if ok {
 		if !plugin.HasPersistence() {
 			return raw, nil
@@ -1229,6 +1255,18 @@ func saveValuesTx(tx *db.Transaction, recordID int64, attributes []db.EAVAttribu
 			if s, ok := rawValue.(string); ok {
 				vText = s
 			}
+		}
+
+		// No value set means the field is empty (e.g. an optional datetime).
+		// Storing a row with every column NULL violates the one-value CHECK, so
+		// drop any prior value and skip the insert.
+		if vBool == nil && vInt == nil && vReal == nil && vText == nil && vDatetime == nil {
+			err := tx.Exec(`DELETE FROM eav_values WHERE record_id = ? AND attribute_id = ?`,
+				recordID, attr.ID)
+			if err != nil {
+				return fmt.Errorf("erro ao limpar valor: %w", err)
+			}
+			continue
 		}
 
 		err := tx.Exec(`INSERT OR REPLACE INTO eav_values (record_id, attribute_id, v_bool, v_int, v_real, v_text, v_datetime)

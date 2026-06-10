@@ -16,6 +16,10 @@
         {{else}}
         <div class="list-group-item text-muted">Nenhum item relacionado.</div>
         {{end}}
+        <a href="/form/{{$targetEntity}}?prefill={{$targetAttr}}={{$parentRef}}"
+           class="list-group-item list-group-item-action text-primary">
+            + Novo
+        </a>
     </div>
 {{end}}
 {{end}}

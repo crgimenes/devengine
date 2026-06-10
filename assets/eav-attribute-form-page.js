@@ -1,20 +1,10 @@
-// Auto-generate machine_name from label on blur (only if empty and not editing)
+// Auto-generate machine_name from label (skipped on read-only edit forms).
 document.addEventListener('DOMContentLoaded', () => {
     const labelInput = document.getElementById('attr_label');
     const machineNameInput = document.getElementById('attr_machine_name');
 
-    if (labelInput && machineNameInput && !machineNameInput.readOnly) {
-        labelInput.addEventListener('blur', () => {
-            if (machineNameInput.value.trim() === '') {
-                const slug = labelInput.value
-                    .toLowerCase()
-                    .normalize('NFD')
-                    .replace(/[\u0300-\u036f]/g, '')
-                    .replace(/[^a-z0-9]+/g, '_')
-                    .replace(/^_+|_+$/g, '');
-                machineNameInput.value = slug;
-            }
-        });
+    if (machineNameInput && !machineNameInput.readOnly) {
+        bindAutoSlug(labelInput, machineNameInput);
     }
 
     // Show/hide max_length field based on primitive_kind

@@ -47,8 +47,9 @@
                     {{end}}
                     {{end}}
                     
-                    <form method="POST" 
+                    <form method="POST"
                           action="{{if .Record}}/form/{{.Form.MachineName}}/r/{{.Record.ReferenceID}}{{else}}/form/{{.Form.MachineName}}{{end}}"
+                          data-form-machine="{{.Form.MachineName}}"
                           class="needs-validation"
                           novalidate>
                         
@@ -112,6 +113,9 @@
     <script src="/form/{{.Form.MachineName}}/actions.js"></script>
     <script src="/assets/form-buttons.js"></script>
     {{end}}
+
+    {{/* Computed fields preview — recomputes is_computed attrs as the user types */}}
+    <script src="/assets/form-preview.js"></script>
     
     {{/* Image field support - include filemanager modal and picker script */}}
     {{$hasImages := false}}

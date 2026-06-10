@@ -1,45 +1,28 @@
-// Auto-fill form element fields from EAV attribute selection
+// Auto-fill form element fields from the selected EAV attribute, and keep
+// machine_name in sync with the label.
 document.addEventListener('DOMContentLoaded', function () {
     const eavSelect = document.getElementById('eav_attribute_select');
     const labelInput = document.getElementById('element_label');
     const machineNameInput = document.getElementById('element_machine_name');
 
-    if (!eavSelect || !labelInput || !machineNameInput) {
-        return; // Elements not found, exit gracefully
+    if (!labelInput || !machineNameInput) {
+        return;
     }
 
-    // When EAV attribute is selected, auto-fill label and machine_name
-    eavSelect.addEventListener('change', function () {
-        const selectedOption = this.options[this.selectedIndex];
-        const attrLabel = selectedOption.dataset.label || '';
-        const attrMachine = selectedOption.dataset.machine || '';
+    bindAutoSlug(labelInput, machineNameInput);
 
-        // Only fill if the fields are empty
-        if (labelInput.value.trim() === '' && attrLabel) {
-            labelInput.value = attrLabel;
-        }
-        if (machineNameInput.value.trim() === '' && attrMachine) {
-            machineNameInput.value = attrMachine;
-        }
-    });
+    if (eavSelect) {
+        eavSelect.addEventListener('change', function () {
+            const selectedOption = this.options[this.selectedIndex];
+            const attrLabel = selectedOption.dataset.label || '';
+            const attrMachine = selectedOption.dataset.machine || '';
 
-    // Auto-generate machine_name from label on blur
-    labelInput.addEventListener('blur', function () {
-        if (machineNameInput.value.trim() === '' && this.value.trim() !== '') {
-            machineNameInput.value = slugify(this.value);
-        }
-    });
-
-    function slugify(text) {
-        return text
-            .toString()
-            .toLowerCase()
-            .trim()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .replace(/[^a-z0-9\s_]/g, '')
-            .replace(/\s+/g, '_')
-            .replace(/_+/g, '_')
-            .replace(/^_|_$/g, '');
+            if (labelInput.value.trim() === '' && attrLabel) {
+                labelInput.value = attrLabel;
+            }
+            if (machineNameInput.value.trim() === '' && attrMachine) {
+                machineNameInput.value = attrMachine;
+            }
+        });
     }
 });

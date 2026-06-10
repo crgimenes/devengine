@@ -10,7 +10,7 @@
        class="form-control" 
        id="{{$name}}" 
        name="{{$name}}"
-       value="{{$value}}"
+       value="{{htmlDatetime $value $includeTime}}"
        {{if index $meta "minDate"}}min="{{index $meta "minDate"}}"{{end}}
        {{if index $meta "maxDate"}}max="{{index $meta "maxDate"}}"{{end}}
        {{if $required}}required{{end}}

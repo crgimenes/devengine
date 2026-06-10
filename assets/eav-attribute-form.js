@@ -28,6 +28,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         form.reset();
         form.classList.remove('was-validated');
+        if (machineNameInput) machineNameInput.dispatchEvent(new Event('input'));
 
         if (defaultValueInput) {
             defaultValueInput.type = 'text';
@@ -48,7 +49,10 @@ document.addEventListener('DOMContentLoaded', () => {
         const entityRefID = pathParts[pathParts.length - 2];
         form.action = `/tools/database-schema/eav/${entityRefID}/attributes/${currentAttrId}/update`;
 
-        if (machineNameInput) machineNameInput.value = btn.dataset.machineName || '';
+        if (machineNameInput) {
+            machineNameInput.value = btn.dataset.machineName || '';
+            machineNameInput.dispatchEvent(new Event('input'));
+        }
         if (labelInput) labelInput.value = btn.dataset.label || '';
         if (helpTextInput) helpTextInput.value = btn.dataset.helpText || '';
         if (primitiveKindSelect) primitiveKindSelect.value = btn.dataset.primitiveKind || '';
@@ -100,21 +104,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Auto-generate machine_name from label on blur (only if empty)
-    if (labelInput && machineNameInput) {
-        labelInput.addEventListener('blur', () => {
-            // Only auto-fill if machine_name is empty
-            if (machineNameInput.value.trim() === '') {
-                const slug = labelInput.value
-                    .toLowerCase()
-                    .normalize('NFD')
-                    .replace(/[\u0300-\u036f]/g, '')
-                    .replace(/[^a-z0-9]+/g, '_')
-                    .replace(/^_+|_+$/g, '');
-                machineNameInput.value = slug;
-            }
-        });
-    }
+    bindAutoSlug(labelInput, machineNameInput);
 
     if (primitiveKindSelect && defaultValueInput) {
         primitiveKindSelect.addEventListener('change', () => {

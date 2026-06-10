@@ -78,7 +78,7 @@
                                                 {{if eq (printf "%T" $value) "bool"}}
                                                     {{if $value}}Sim{{else}}Não{{end}}
                                                 {{else}}
-                                                    {{$value}}
+                                                    {{fmtDatetime $value}}
                                                 {{end}}
                                             </strong>
                                         </div>
@@ -87,7 +87,7 @@
 
                                 <!-- Metadata -->
                                 <div class="mb-3">
-                                    <small class="text-muted d-block">Criado: {{.Record.CreatedAt}}</small>
+                                    <small class="text-muted d-block">Criado: {{fmtDatetime .Record.CreatedAt}}</small>
                                     <small class="text-muted d-block">Rev: {{.Record.Rev}}</small>
                                 </div>
 

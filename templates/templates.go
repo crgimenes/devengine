@@ -10,6 +10,7 @@ import (
 	"reflect"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/crgimenes/devengine/log"
 )
@@ -239,6 +240,11 @@ func loadTemplates() *template.Template {
 		"mul": func(a, b int) int {
 			return a * b
 		},
+		// htmlDatetime normalizes a stored datetime into the format HTML5
+		// datetime-local / date inputs accept (no timezone suffix).
+		"htmlDatetime": htmlDatetime,
+		// fmtDatetime formats a stored datetime for human display.
+		"fmtDatetime": fmtDatetime,
 		// dict creates a map from key-value pairs for passing to templates
 		"dict": func(values ...any) map[string]any {
 			if len(values)%2 != 0 {
@@ -404,6 +410,70 @@ func ensureTemplatesLoaded() {
 	loadOnce.Do(func() {
 		tpl = loadTemplates()
 	})
+}
+
+// fmtDatetime formats a stored datetime for human display (dd/mm/yyyy HH:MM).
+// Non-strings and values that do not fully parse as a datetime are returned
+// unchanged, so it is safe to apply generically to mixed value columns.
+func fmtDatetime(value any) string {
+	if t, ok := value.(time.Time); ok {
+		return t.Format("02/01/2006 15:04")
+	}
+	s, ok := value.(string)
+	if !ok {
+		return fmt.Sprint(value)
+	}
+	trimmed := strings.TrimSpace(s)
+	if trimmed == "" {
+		return ""
+	}
+	for _, layout := range []string{
+		time.RFC3339Nano,
+		time.RFC3339,
+		"2006-01-02T15:04:05",
+		"2006-01-02T15:04",
+	} {
+		if t, err := time.Parse(layout, trimmed); err == nil {
+			return t.Format("02/01/2006 15:04")
+		}
+	}
+	return s
+}
+
+// htmlDatetime normalizes a stored datetime into the format HTML5
+// datetime-local / date inputs accept (no timezone suffix). The SQLite driver
+// reads DATETIME columns back as RFC3339 with a "Z", which those inputs reject,
+// so we reparse and reformat. includeTime defaults to true; pass false for a
+// date-only field. Returns "" when the value is empty or unparseable.
+func htmlDatetime(value any, includeTime any) string {
+	s, _ := value.(string)
+	s = strings.TrimSpace(s)
+	if s == "" {
+		return ""
+	}
+	var t time.Time
+	parsed := false
+	for _, layout := range []string{
+		time.RFC3339Nano,
+		time.RFC3339,
+		"2006-01-02T15:04:05",
+		"2006-01-02T15:04",
+		"2006-01-02 15:04:05",
+		"2006-01-02",
+	} {
+		if tt, err := time.Parse(layout, s); err == nil {
+			t = tt
+			parsed = true
+			break
+		}
+	}
+	if !parsed {
+		return ""
+	}
+	if inc, ok := includeTime.(bool); ok && !inc {
+		return t.Format("2006-01-02")
+	}
+	return t.Format("2006-01-02T15:04")
 }
 
 // renderField executes the partial named `name` against data. Falls back to

@@ -186,3 +186,32 @@ func TestValidateExprCanReadOtherFields(t *testing.T) {
 		t.Fatalf("got %q", msg)
 	}
 }
+
+func TestValidateExprAggregatesAllErrors(t *testing.T) {
+	s := newValidateTestStore(t)
+	defer s.Close()
+	setStorage(t, s)
+
+	et, _ := s.CreateEAVEntityType("Multi", "multi", "", "", "")
+	a := textAttr(t, s, et.ID, "a", "A")
+	b := textAttr(t, s, et.ID, "b", "B")
+	c := textAttr(t, s, et.ID, "c", "C")
+
+	els := []db.FormElement{
+		{ElementKind: "field", MachineName: "a", EAVAttributeID: &a.ID, Label: "Campo A",
+			ValidateExpr: `"A invalid"`},
+		{ElementKind: "field", MachineName: "b", EAVAttributeID: &b.ID, Label: "Campo B",
+			ValidateExpr: `""`}, // valid
+		{ElementKind: "field", MachineName: "c", EAVAttributeID: &c.ID, Label: "Campo C",
+			ValidateExpr: `"C invalid"`},
+	}
+	values := db.EAVRecordValues{"a": "x", "b": "y", "c": "z"}
+
+	msg, err := evaluateValidateExprs(context.Background(), nil, els, []db.EAVAttribute{a, b, c}, values)
+	if err != nil {
+		t.Fatalf("evaluateValidateExprs: %v", err)
+	}
+	if msg != "Campo A: A invalid; Campo C: C invalid" {
+		t.Fatalf("got %q, want both errors joined by '; '", msg)
+	}
+}

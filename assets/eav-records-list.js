@@ -3,6 +3,16 @@ document.addEventListener('DOMContentLoaded', () => {
     const container = document.getElementById('records-container');
     const sentinel = document.getElementById('sentinel');
 
+    // Delete confirmation must run even when there is no infinite scroll
+    // (fewer records than a page means no sentinel), so wire it up first.
+    document.querySelectorAll('.delete-record-form').forEach(form => {
+        form.addEventListener('submit', event => {
+            if (!confirm('Tem certeza que deseja excluir este registro?')) {
+                event.preventDefault();
+            }
+        });
+    });
+
     if (!container || !sentinel) {
         return; // No infinite scroll needed
     }
@@ -73,6 +83,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
+    // Format an ISO datetime string as dd/mm/yyyy HH:MM. Leaves anything that
+    // is not a full ISO datetime untouched.
+    function formatDatetime(value) {
+        if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}/.test(value)) {
+            return value;
+        }
+        const d = new Date(value);
+        if (isNaN(d.getTime())) {
+            return value;
+        }
+        const pad = n => String(n).padStart(2, '0');
+        return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+    }
+
     function createRecordCard(recordWithValues, entityID) {
         const col = document.createElement('div');
         col.className = 'col-12 col-md-6 col-lg-4';
@@ -93,6 +117,8 @@ document.addEventListener('DOMContentLoaded', () => {
             let displayValue = value;
             if (typeof value === 'boolean') {
                 displayValue = value ? 'Sim' : 'Não';
+            } else {
+                displayValue = formatDatetime(value);
             }
             valuesHTML += `
                 <div class="mb-1">
@@ -113,7 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${valuesHTML}
                     </div>
                     <div class="mb-3">
-                        <small class="text-muted d-block">Criado: ${record.CreatedAt}</small>
+                        <small class="text-muted d-block">Criado: ${formatDatetime(record.CreatedAt)}</small>
                         <small class="text-muted d-block">Rev: ${record.Rev}</small>
                     </div>
                     <div class="btn-group w-100" role="group">
@@ -144,14 +170,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
         return col;
     }
-
-    // Delete confirmation for existing records
-    const deleteForms = document.querySelectorAll('.delete-record-form');
-    deleteForms.forEach(form => {
-        form.addEventListener('submit', event => {
-            if (!confirm('Tem certeza que deseja excluir este registro?')) {
-                event.preventDefault();
-            }
-        });
-    });
 });

@@ -73,6 +73,7 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	// Form Runtime (public access via /form/{machineName})
 	mux.HandleFunc("GET /form/{machineName}", h.FormsRuntimeNew)
 	mux.HandleFunc("POST /form/{machineName}", h.FormsRuntimeCreate)
+	mux.HandleFunc("POST /form/{machineName}/preview", h.FormsRuntimePreview)
 	mux.HandleFunc("GET /form/{machineName}/r/{recordRef}", h.FormsRuntimeEdit)
 	mux.HandleFunc("POST /form/{machineName}/r/{recordRef}", h.FormsRuntimeUpdate)
 	mux.HandleFunc("POST /form/{machineName}/action/{buttonName}", h.FormsRuntimeButtonAction)
