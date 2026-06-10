@@ -1,0 +1,30 @@
+{{define "forms_records_rows"}}
+{{range .Rows}}
+<tr>
+    <td><code>{{.Record.ReferenceID}}</code></td>
+    {{$values := .Values}}
+    {{range $.Attributes}}
+    <td>
+        {{$v := index $values .MachineName}}
+        {{if eq $v nil}}<span class="text-muted">—</span>{{else}}{{$v}}{{end}}
+    </td>
+    {{end}}
+    <td class="text-end">
+        <a class="btn btn-sm btn-outline-primary"
+           href="/tools/database-schema/eav/{{$.EntityTypeRefID}}/records/{{.Record.ReferenceID}}/edit">Editar</a>
+    </td>
+</tr>
+{{end}}
+{{if .NextCursor}}
+<tr id="records-sentinel"
+    hx-get="/tools/forms/{{.FormRefID}}/records/rows?cursor={{.NextCursor}}{{if .Filter}}&q={{.Filter}}{{end}}"
+    hx-trigger="intersect once"
+    hx-swap="outerHTML"
+    hx-target="this">
+    <td colspan="{{.ColCount}}" class="text-center text-muted py-3">
+        <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
+        Carregando mais…
+    </td>
+</tr>
+{{end}}
+{{end}}

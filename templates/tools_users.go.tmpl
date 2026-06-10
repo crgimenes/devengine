@@ -9,28 +9,92 @@
 
     <main class="container-fluid py-4 py-md-5">
         {{if .Message}}
-            <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
-                {{.Message}}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+        <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+            {{.Message}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
         {{end}}
-        
+        {{if .Error}}
+        <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
+            {{.Error}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {{end}}
+
         <div class="row">
             <div class="col-md-3">
                 {{template "tools_sidebar" .}}
             </div>
             <div class="col-md-9">
                 <div class="card p-4">
-                    <h2 class="mb-3">Users</h2>
-                    <p>Gerenciamento de usuários do sistema.</p>
-                    <p class="text-muted">Esta funcionalidade será implementada em breve.</p>
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h2 class="mb-0">Usuários</h2>
+                        <span class="text-muted small">Total: {{.Total}}</span>
+                    </div>
+                    <p class="text-muted">Convites novos são gerados em <a href="/tools/invites">Convites</a>.</p>
+
+                    {{if .Users}}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Usuário</th>
+                                    <th>Email</th>
+                                    <th class="text-center">Sysop</th>
+                                    <th class="text-center">Ativo</th>
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {{range .Users}}
+                                <tr>
+                                    <td>
+                                        <a href="/tools/users/{{.ReferenceID}}/edit">{{.Username}}</a>
+                                        {{if eq .ReferenceID $.CurrentRefID}}
+                                        <span class="badge bg-info ms-2">você</span>
+                                        {{end}}
+                                    </td>
+                                    <td>{{if .Email}}{{.Email}}{{else}}<span class="text-muted">—</span>{{end}}</td>
+                                    <td class="text-center">
+                                        {{if .Sysop}}<span class="badge bg-warning text-dark">sysop</span>{{else}}<span class="text-muted">—</span>{{end}}
+                                    </td>
+                                    <td class="text-center">
+                                        {{if .Enabled}}<span class="badge bg-success">ativo</span>{{else}}<span class="badge bg-secondary">inativo</span>{{end}}
+                                    </td>
+                                    <td class="text-end">
+                                        <a href="/tools/users/{{.ReferenceID}}/edit" class="btn btn-sm btn-outline-primary">Editar</a>
+                                    </td>
+                                </tr>
+                                {{end}}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    {{if gt .Pages 1}}
+                    <nav>
+                        <ul class="pagination justify-content-center mt-3 mb-0">
+                            <li class="page-item {{if not .HasPrev}}disabled{{end}}">
+                                {{if .HasPrev}}<a class="page-link" href="?page={{.PrevPage}}">Anterior</a>{{else}}<span class="page-link">Anterior</span>{{end}}
+                            </li>
+                            <li class="page-item disabled">
+                                <span class="page-link">{{.Page}} / {{.Pages}}</span>
+                            </li>
+                            <li class="page-item {{if not .HasNext}}disabled{{end}}">
+                                {{if .HasNext}}<a class="page-link" href="?page={{.NextPage}}">Próxima</a>{{else}}<span class="page-link">Próxima</span>{{end}}
+                            </li>
+                        </ul>
+                    </nav>
+                    {{end}}
+
+                    {{else}}
+                    <p class="text-muted">Nenhum usuário cadastrado.</p>
+                    {{end}}
                 </div>
             </div>
         </div>
     </main>
-    <footer>
-      {{template "footer" .}}
-    </footer>
+
+    <footer>{{template "footer" .}}</footer>
     {{template "scripts" .}}
   </body>
 </html>

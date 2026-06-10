@@ -38,6 +38,8 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /tools/forms/{id}/update", h.ToolsFormsUpdate)
 	mux.HandleFunc("POST /tools/forms/{id}/delete", h.ToolsFormsDelete)
 	mux.HandleFunc("GET /tools/forms/{id}/records", h.ToolsFormsRecords)
+	mux.HandleFunc("GET /tools/forms/{id}/records/rows", h.ToolsFormsRecordsRows)
+	mux.HandleFunc("GET /tools/forms/{id}/records/export.csv", h.ToolsFormsRecordsExport)
 	mux.HandleFunc("POST /tools/forms/{id}/elements/new", h.ToolsFormsElementCreate)
 	mux.HandleFunc("GET /tools/forms/{id}/elements/{element_id}/edit", h.ToolsFormsElementEdit)
 	mux.HandleFunc("POST /tools/forms/{id}/elements/{element_id}/update", h.ToolsFormsElementUpdate)
@@ -46,6 +48,9 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /tools/forms/{id}/elements/{element_id}/down", h.ToolsFormsElementMoveDown)
 
 	mux.HandleFunc("GET /tools/users", h.ToolsUsers)
+	mux.HandleFunc("GET /tools/users/{ref}/edit", h.ToolsUsersEdit)
+	mux.HandleFunc("POST /tools/users/{ref}/update", h.ToolsUsersUpdate)
+	mux.HandleFunc("POST /tools/users/{ref}/reset-password", h.ToolsUsersResetPassword)
 	mux.HandleFunc("GET /tools/search-forms", h.ToolsSearchForms)
 	mux.HandleFunc("GET /tools/filo", h.ToolsFilo)
 

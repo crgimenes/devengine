@@ -3,12 +3,12 @@ package handlers
 import (
 	"net/http"
 	"strconv"
-
-	"github.com/crgimenes/devengine/log"
+	"strings"
 
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/log"
 )
 
 // FormWithEntityType combines a form with its linked entity type info.
@@ -872,7 +872,9 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 	http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Elemento atualizado", http.StatusSeeOther)
 }
 
-// ToolsFormsRecords shows the list of EAV records for the form's linked entity type.
+// ToolsFormsRecords shows the records of the form's linked entity_type. The
+// initial batch is rendered inline; subsequent batches arrive via HTMX
+// against ToolsFormsRecordsRows.
 func (h *Handlers) ToolsFormsRecords(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
@@ -883,73 +885,22 @@ func (h *Handlers) ToolsFormsRecords(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	formRefID := r.PathValue("id")
-	form, err := db.Storage.GetFormByRefID(formRefID)
+	form, entityType, err := loadFormAndEntity(r, w)
+	if err != nil || form == nil {
+		return
+	}
+
+	attributes, err := db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
 	if err != nil {
-		http.Error(w, "Form not found", http.StatusNotFound)
+		http.Error(w, "Failed to list attributes", http.StatusInternalServerError)
 		return
 	}
 
-	if form.EAVEntityTypeID == nil {
-		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Formulário não possui tabela EAV vinculada", http.StatusSeeOther)
-		return
-	}
-
-	entityType, err := db.Storage.GetEAVEntityTypeByID(*form.EAVEntityTypeID)
-	if err != nil {
-		http.Error(w, "Entity type not found", http.StatusInternalServerError)
-		return
-	}
-
-	// Get records for this entity type
-	records, _, err := db.Storage.ListEAVRecordsByEntityTypeID(entityType.ID, 50, 0)
+	q := strings.TrimSpace(r.URL.Query().Get("q"))
+	rows, nextCursor, err := h.fetchRecordRows(entityType.ID, 0, q, attributes)
 	if err != nil {
 		http.Error(w, "Failed to list records", http.StatusInternalServerError)
 		return
-	}
-
-	// Get attributes for column display
-	attributes, _ := db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
-
-	// Get values for each record (first few attrs as preview)
-	type RecordPreview struct {
-		Record db.EAVRecord
-		Values map[string]any
-	}
-	var recordPreviews []RecordPreview
-	for _, rec := range records {
-		vals, _ := db.Storage.GetEAVValuesByRecordID(rec.ID)
-		valMap := make(map[string]any)
-		for _, v := range vals {
-			for _, attr := range attributes {
-				if attr.ID == v.AttributeID {
-					switch attr.PrimitiveKind {
-					case "BOOL":
-						if v.VBool != nil {
-							valMap[attr.MachineName] = *v.VBool
-						}
-					case "INT":
-						if v.VInt != nil {
-							valMap[attr.MachineName] = *v.VInt
-						}
-					case "REAL":
-						if v.VReal != nil {
-							valMap[attr.MachineName] = *v.VReal
-						}
-					case "TEXT":
-						if v.VText != nil {
-							valMap[attr.MachineName] = *v.VText
-						}
-					default:
-						if v.VText != nil {
-							valMap[attr.MachineName] = *v.VText
-						}
-					}
-					break
-				}
-			}
-		}
-		recordPreviews = append(recordPreviews, RecordPreview{Record: rec, Values: valMap})
 	}
 
 	message := r.URL.Query().Get("message")
@@ -958,25 +909,35 @@ func (h *Handlers) ToolsFormsRecords(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := struct {
-		Authed      bool
-		User        db.User
-		Config      config.Config
-		CurrentPage string
-		Form        *db.Form
-		EntityType  *db.EAVEntityType
-		Records     []RecordPreview
-		Attributes  []db.EAVAttribute
-		Message     string
+		Authed          bool
+		User            db.User
+		Config          config.Config
+		CurrentPage     string
+		Form            *db.Form
+		EntityType      *db.EAVEntityType
+		Attributes      []db.EAVAttribute
+		Rows            []RecordRow
+		NextCursor      int64
+		Filter          string
+		ColCount        int
+		Message         string
+		FormRefID       string
+		EntityTypeRefID string
 	}{
-		Authed:      true,
-		User:        *user,
-		Config:      *h.cfg,
-		CurrentPage: "forms",
-		Form:        form,
-		EntityType:  entityType,
-		Records:     recordPreviews,
-		Attributes:  attributes,
-		Message:     message,
+		Authed:          true,
+		User:            *user,
+		Config:          *h.cfg,
+		CurrentPage:     "forms",
+		Form:            form,
+		EntityType:      entityType,
+		Attributes:      attributes,
+		Rows:            rows,
+		NextCursor:      nextCursor,
+		Filter:          q,
+		ColCount:        len(attributes) + 2,
+		Message:         message,
+		FormRefID:       form.ReferenceID,
+		EntityTypeRefID: entityType.ReferenceID,
 	}
 
 	err = h.templates(w, "tools_forms_records.go.tmpl", data)
@@ -984,6 +945,3 @@ func (h *Handlers) ToolsFormsRecords(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
 	}
 }
-
-// Removed unused import strconv by adding _ placeholder
-var _ = strconv.Atoi

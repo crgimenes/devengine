@@ -9,120 +9,79 @@
 
     <main class="container-fluid py-4 py-md-5">
         {{if .Message}}
-            <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
-                {{.Message}}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
+        <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+            {{.Message}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
         {{end}}
-        
+
         <div class="row">
             <div class="col-md-3">
                 {{template "tools_sidebar" .}}
             </div>
             <div class="col-md-9">
-                <!-- Header -->
-                <div class="d-flex justify-content-between align-items-center mb-4">
-                    <div>
-                        <h2 class="mb-1">{{.Form.Label}} - Registros</h2>
-                        <nav aria-label="breadcrumb">
-                            <ol class="breadcrumb mb-0">
-                                <li class="breadcrumb-item"><a href="/tools">Tools</a></li>
-                                <li class="breadcrumb-item"><a href="/tools/forms">Forms</a></li>
-                                <li class="breadcrumb-item"><a href="/tools/forms/{{.Form.ReferenceID}}/edit">{{.Form.Label}}</a></li>
-                                <li class="breadcrumb-item active">Registros</li>
-                            </ol>
-                        </nav>
-                    </div>
-                    <div class="d-flex gap-2">
-                        <a href="/tools/forms/{{.Form.ReferenceID}}/edit" class="btn btn-outline-secondary">
-                            Editar Form
-                        </a>
-                        <a href="/form/{{.Form.MachineName}}" class="btn btn-success">
-                            Novo Registro
-                        </a>
-                    </div>
-                </div>
-
-                <!-- Total count -->
-                <div class="mb-3">
-                    <p class="text-muted mb-0">Total: <strong>{{len .Records}}</strong> registro(s) | Tabela EAV: <strong>{{.EntityType.Name}}</strong></p>
-                </div>
-
-                <!-- Card Grid -->
-                <div id="records-container" class="row g-3">
-                    
-                    {{range .Records}}
-                    <div class="col-12 col-md-6 col-lg-4">
-                        <div class="card h-100">
-                            <div class="card-body">
-                                <!-- Status badge -->
-                                <div class="mb-2">
-                                    {{if eq .Record.Status "active"}}
-                                        <span class="badge bg-success">Ativo</span>
-                                    {{else}}
-                                        <span class="badge bg-warning">Rascunho</span>
-                                    {{end}}
-                                    <span class="badge bg-secondary font-monospace">{{slice .Record.ReferenceID 0 8}}</span>
-                                </div>
-
-                                <!-- Values -->
-                                <div class="mb-3">
-                                    {{range $key, $value := .Values}}
-                                        <div class="mb-1">
-                                            <small class="text-muted">{{$key}}:</small><br>
-                                            <strong>
-                                                {{if eq (printf "%T" $value) "bool"}}
-                                                    {{if $value}}Sim{{else}}Não{{end}}
-                                                {{else}}
-                                                    {{$value}}
-                                                {{end}}
-                                            </strong>
-                                        </div>
-                                    {{end}}
-                                </div>
-
-                                <!-- Metadata -->
-                                <div class="mb-3">
-                                    <small class="text-muted d-block">Criado: {{.Record.CreatedAt}}</small>
-                                    <small class="text-muted d-block">Rev: {{.Record.Rev}}</small>
-                                </div>
-
-                                <!-- Actions -->
-                                <div class="btn-group w-100" role="group">
-                                    <a href="/form/{{$.Form.MachineName}}/r/{{.Record.ReferenceID}}" 
-                                       class="btn btn-sm btn-outline-primary">
-                                        Editar
-                                    </a>
-                                    <form method="POST" 
-                                          action="/tools/database-schema/eav/{{$.EntityType.ReferenceID}}/records/{{.Record.ReferenceID}}/delete" 
-                                          style="display: inline;"
-                                          onsubmit="return confirm('Excluir este registro?')">
-                                        <button type="submit" class="btn btn-sm btn-outline-danger">
-                                            Excluir
-                                        </button>
-                                    </form>
-                                </div>
-                            </div>
+                <div class="card p-4">
+                    <div class="d-flex justify-content-between align-items-start mb-3 gap-3 flex-wrap">
+                        <div>
+                            <h2 class="mb-1">Registros de {{.Form.Label}}</h2>
+                            <p class="text-muted mb-0">
+                                Entity: <code>{{.EntityType.MachineName}}</code> · Form: <code>{{.Form.MachineName}}</code>
+                            </p>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a href="/form/{{.Form.MachineName}}" class="btn btn-success">
+                                <i class="bi bi-plus-lg"></i> Novo
+                            </a>
+                            <a href="/tools/forms/{{.Form.ReferenceID}}/records/export.csv"
+                               class="btn btn-outline-secondary">CSV</a>
+                            <a href="/tools/forms/{{.Form.ReferenceID}}/edit"
+                               class="btn btn-outline-primary">Editar form</a>
                         </div>
                     </div>
+
+                    <form method="get" action="/tools/forms/{{.Form.ReferenceID}}/records" class="mb-3">
+                        <div class="input-group">
+                            <input type="text" name="q" class="form-control"
+                                   placeholder="Buscar em campos de texto…"
+                                   value="{{.Filter}}">
+                            {{if .Filter}}
+                            <a href="/tools/forms/{{.Form.ReferenceID}}/records"
+                               class="btn btn-outline-secondary">Limpar</a>
+                            {{end}}
+                            <button type="submit" class="btn btn-primary">Buscar</button>
+                        </div>
+                    </form>
+
+                    {{if .Rows}}
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead>
+                                <tr>
+                                    <th>Ref</th>
+                                    {{range .Attributes}}
+                                    <th>{{.Label}}</th>
+                                    {{end}}
+                                    <th class="text-end">Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="records-body">
+                                {{template "forms_records_rows" .}}
+                            </tbody>
+                        </table>
+                    </div>
+                    {{else}}
+                    <p class="text-muted">
+                        {{if .Filter}}Nenhum registro corresponde a "{{.Filter}}".
+                        {{else}}Nenhum registro ainda. Use <a href="/form/{{.Form.MachineName}}">Novo</a> para criar o primeiro.
+                        {{end}}
+                    </p>
                     {{end}}
                 </div>
-
-                <!-- Empty state -->
-                {{if eq (len .Records) 0}}
-                <div class="text-center py-5">
-                    <i class="bi bi-inbox fs-1 text-muted"></i>
-                    <p class="text-muted mt-3">Nenhum registro encontrado</p>
-                    <a href="/form/{{.Form.MachineName}}" class="btn btn-success">
-                        Criar Primeiro Registro
-                    </a>
-                </div>
-                {{end}}
             </div>
         </div>
     </main>
 
-    {{template "footer" .}}
+    <footer>{{template "footer" .}}</footer>
     {{template "scripts" .}}
   </body>
 </html>

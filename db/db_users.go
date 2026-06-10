@@ -101,6 +101,95 @@ func (s *SQLite) CountUsers() (int, error) {
 	return n, nil
 }
 
+// GetUserByRefID retrieves a user by their opaque reference_id.
+func (s *SQLite) GetUserByRefID(refID string) (*User, error) {
+	sqlSelect := `SELECT ` + userSelectColumns + `
+        FROM users
+        WHERE reference_id = ?  -- 1
+        LIMIT 1;`
+
+	u, err := scanUser(s.QueryRow(
+		sqlSelect,
+		refID, // 1
+	))
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return u, nil
+}
+
+// ListUsers returns up to limit users starting at offset, ordered by id desc
+// (newest first). The second result is the total count, useful for paginated
+// admin views.
+func (s *SQLite) ListUsers(limit, offset int) ([]User, int, error) {
+	if limit <= 0 {
+		limit = 50
+	}
+	if offset < 0 {
+		offset = 0
+	}
+
+	var total int
+	err := s.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&total)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	sqlSelect := `SELECT ` + userSelectColumns + `
+        FROM users
+        ORDER BY id DESC
+        LIMIT ? OFFSET ?` // 1, 2
+
+	rows, err := s.Query(sqlSelect, limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+	defer rows.Close()
+
+	var out []User
+	for rows.Next() {
+		u, err := scanUser(rows)
+		if err != nil {
+			return nil, 0, err
+		}
+		out = append(out, *u)
+	}
+	err = rows.Err()
+	if err != nil {
+		return nil, 0, err
+	}
+	return out, total, nil
+}
+
+// UpdateUserSysop sets the sysop flag. The currentSysopID guards against an
+// admin removing their own sysop status, which would lock out the system.
+func (s *SQLite) UpdateUserSysop(userID int64, sysop bool, currentSysopID int64) error {
+	if userID == currentSysopID && !sysop {
+		return errors.New("you cannot remove your own sysop flag")
+	}
+	v := 0
+	if sysop {
+		v = 1
+	}
+	return s.Exec(`UPDATE users SET sysop = ? WHERE id = ?`, v, userID)
+}
+
+// UpdateUserEnabled toggles the enabled flag. The currentSysopID guards
+// against an admin disabling their own account.
+func (s *SQLite) UpdateUserEnabled(userID int64, enabled bool, currentSysopID int64) error {
+	if userID == currentSysopID && !enabled {
+		return errors.New("you cannot disable your own account")
+	}
+	v := 0
+	if enabled {
+		v = 1
+	}
+	return s.Exec(`UPDATE users SET enabled = ? WHERE id = ?`, v, userID)
+}
+
 // CreateUser inserts a new user row. Caller is responsible for hashing the
 // password before calling. Used by the bootstrap CLI (sysop admin) and by the
 // invite signup flow (regular user). Returns the row reloaded from disk so the
