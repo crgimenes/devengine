@@ -23,6 +23,13 @@ import (
 // We do not call t.Parallel().
 
 func setupHandler(t *testing.T) (*basic.Handlers, func()) {
+	return setupHandlerWith(t, stubTemplates)
+}
+
+// setupHandlerWith wires a Handlers over a fresh DB with the given template
+// executor: stubTemplates for behavior tests, templates.ExecuteTemplate for
+// render-contract tests.
+func setupHandlerWith(t *testing.T, tmpl basic.TemplateExecutor) (*basic.Handlers, func()) {
 	t.Helper()
 
 	s, err := db.NewWithPath(filepath.Join(t.TempDir(), "test.db"))
@@ -47,7 +54,7 @@ func setupHandler(t *testing.T) (*basic.Handlers, func()) {
 
 	session.EnableInsecureCookie()
 
-	h := basic.New(cfg, stubTemplates)
+	h := basic.New(cfg, tmpl)
 
 	cleanup := func() {
 		s.Close()

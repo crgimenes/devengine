@@ -245,6 +245,14 @@ func loadTemplates() *template.Template {
 		"htmlDatetime": htmlDatetime,
 		// fmtDatetime formats a stored datetime for human display.
 		"fmtDatetime": fmtDatetime,
+		// toJSON marshals a value to a JSON string for embedding in attributes.
+		"toJSON": func(v any) string {
+			b, err := json.Marshal(v)
+			if err != nil {
+				return "null"
+			}
+			return string(b)
+		},
 		// dict creates a map from key-value pairs for passing to templates
 		"dict": func(values ...any) map[string]any {
 			if len(values)%2 != 0 {

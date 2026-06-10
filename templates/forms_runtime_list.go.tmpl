@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="dark">
+  <head>
+    {{template "head" .}}
+  </head>
+
+  <body>
+    {{template "navbar" .}}
+
+    <main class="container py-4 py-md-5">
+        {{if .Message}}
+        <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+            {{.Message}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {{end}}
+
+        <div class="d-flex justify-content-between align-items-center mb-3 gap-3 flex-wrap">
+            <h2 class="mb-0">{{.Form.Label}}</h2>
+            <a href="/form/{{.Form.MachineName}}" class="btn btn-success">
+                <i class="bi bi-plus-lg"></i> Novo
+            </a>
+        </div>
+
+        <form method="get" action="/form/{{.Form.MachineName}}/list" class="mb-3">
+            <div class="input-group">
+                <input type="text" name="q" class="form-control"
+                       placeholder="Buscar em campos de texto…"
+                       value="{{.Filter}}">
+                {{if .Filter}}
+                <a href="/form/{{.Form.MachineName}}/list" class="btn btn-outline-secondary">Limpar</a>
+                {{end}}
+                <button type="submit" class="btn btn-primary">Buscar</button>
+            </div>
+        </form>
+
+        {{if .Rows}}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        {{range .Attributes}}
+                        <th>{{.Label}}</th>
+                        {{end}}
+                        <th class="text-end">Ações</th>
+                    </tr>
+                </thead>
+                <tbody id="records-body">
+                    {{template "forms_runtime_list_rows" .}}
+                </tbody>
+            </table>
+        </div>
+        {{else}}
+        <p class="text-muted">
+            {{if .Filter}}Nenhum registro corresponde a "{{.Filter}}".
+            {{else}}Nenhum registro ainda. Use <a href="/form/{{.Form.MachineName}}">Novo</a> para criar o primeiro.
+            {{end}}
+        </p>
+        {{end}}
+    </main>
+
+    <footer>{{template "footer" .}}</footer>
+    {{template "scripts" .}}
+  </body>
+</html>

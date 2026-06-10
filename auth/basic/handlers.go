@@ -161,6 +161,8 @@ func (h *Handlers) SignupPage(w http.ResponseWriter, r *http.Request) {
 	// new helper. For simplicity we just render the form; an invalid token
 	// will be rejected on submit.
 	data := struct {
+		Authed bool
+		User   db.User
 		Token  string
 		Error  string
 		Config config.Config
@@ -202,6 +204,8 @@ func (h *Handlers) SignupSubmit(w http.ResponseWriter, r *http.Request) {
 
 	renderError := func(message string) {
 		data := struct {
+			Authed bool
+			User   db.User
 			Token  string
 			Error  string
 			Config config.Config
@@ -288,17 +292,19 @@ func (h *Handlers) InvitesPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	data := struct {
-		Authed     bool
-		User       db.User
-		Config     config.Config
-		CreatedURL string
-		Error      string
+		Authed      bool
+		User        db.User
+		Config      config.Config
+		CurrentPage string
+		CreatedURL  string
+		Error       string
 	}{
-		Authed:     true,
-		User:       *u,
-		Config:     *h.cfg,
-		CreatedURL: r.URL.Query().Get("created"),
-		Error:      r.URL.Query().Get("error"),
+		Authed:      true,
+		User:        *u,
+		Config:      *h.cfg,
+		CurrentPage: "invites",
+		CreatedURL:  r.URL.Query().Get("created"),
+		Error:       r.URL.Query().Get("error"),
 	}
 
 	err = h.templates(w, "tools_invites.go.tmpl", data)

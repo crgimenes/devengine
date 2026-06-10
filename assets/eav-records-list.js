@@ -22,6 +22,13 @@ document.addEventListener('DOMContentLoaded', () => {
     let hasMore = container.dataset.hasMore === 'true';
     let loading = false;
 
+    let attributes = [];
+    try {
+        attributes = JSON.parse(container.dataset.attributes || '[]');
+    } catch (e) {
+        attributes = [];
+    }
+
     // Intersection Observer for infinite scroll
     const observer = new IntersectionObserver((entries) => {
         const entry = entries[0];
@@ -111,18 +118,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const refIDBadge = `<span class="badge bg-secondary font-monospace">${record.ReferenceID.substring(0, 8)}</span>`;
 
-        // Values display
+        // Values display: iterate every attribute so cards keep a uniform height
+        const attrList = attributes.length
+            ? attributes
+            : Object.keys(values).map(k => ({ machine_name: k, label: k }));
         let valuesHTML = '';
-        for (const [key, value] of Object.entries(values)) {
-            let displayValue = value;
-            if (typeof value === 'boolean') {
+        for (const attr of attrList) {
+            const value = values[attr.machine_name];
+            let displayValue;
+            if (value === undefined || value === null) {
+                displayValue = '<span class="text-muted">—</span>';
+            } else if (typeof value === 'boolean') {
                 displayValue = value ? 'Sim' : 'Não';
             } else {
                 displayValue = formatDatetime(value);
             }
             valuesHTML += `
                 <div class="mb-1">
-                    <small class="text-muted">${key}:</small><br>
+                    <small class="text-muted">${attr.label}:</small><br>
                     <strong>${displayValue}</strong>
                 </div>
             `;

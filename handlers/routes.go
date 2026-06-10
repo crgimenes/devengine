@@ -70,7 +70,9 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /tools/menu-editor/{id}/items/{item_id}/up", h.ToolsMenusItemMoveUp)
 	mux.HandleFunc("POST /tools/menu-editor/{id}/items/{item_id}/down", h.ToolsMenusItemMoveDown)
 
-	// Form Runtime (public access via /form/{machineName})
+	// Form Runtime (any authenticated user via /form/{machineName})
+	mux.HandleFunc("GET /form/{machineName}/list", h.FormsRuntimeList)
+	mux.HandleFunc("GET /form/{machineName}/list/rows", h.FormsRuntimeListRows)
 	mux.HandleFunc("GET /form/{machineName}", h.FormsRuntimeNew)
 	mux.HandleFunc("POST /form/{machineName}", h.FormsRuntimeCreate)
 	mux.HandleFunc("POST /form/{machineName}/preview", h.FormsRuntimePreview)

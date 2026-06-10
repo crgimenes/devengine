@@ -74,9 +74,11 @@ func (h *Handlers) ToolsFormsRecordsRows(w http.ResponseWriter, r *http.Request)
 		ColCount:        len(attributes) + 2,
 	}
 
-	err = h.templates(w, "forms_records_rows.go.tmpl", data)
+	// The file is define-only; executing it by filename renders nothing, so
+	// address the defined template directly.
+	err = h.templates(w, "forms_records_rows", data)
 	if err != nil {
-		log.Printf("template error in forms_records_rows.go.tmpl: %v", err)
+		log.Printf("template error in forms_records_rows: %v", err)
 		http.Error(w, "template error", http.StatusInternalServerError)
 	}
 }

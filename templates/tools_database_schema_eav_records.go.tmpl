@@ -49,9 +49,10 @@
                 </div>
 
                 <!-- Card Grid -->
-                <div id="records-container" 
-                     class="row g-3" 
+                <div id="records-container"
+                     class="row g-3"
                      data-entity-id="{{.EntityType.ReferenceID}}"
+                     data-attributes="{{toJSON .Attributes}}"
                      data-offset="{{.Offset}}"
                      data-has-more="{{.HasMore}}">
                     
@@ -69,17 +70,18 @@
                                     <span class="badge bg-secondary font-monospace">{{slice .Record.ReferenceID 0 8}}</span>
                                 </div>
 
-                                <!-- Values -->
+                                <!-- Values: render every attribute so cards keep a uniform height -->
                                 <div class="mb-3">
-                                    {{range $key, $value := .Values}}
+                                    {{$values := .Values}}
+                                    {{range $.Attributes}}
+                                        {{$v := index $values .MachineName}}
                                         <div class="mb-1">
-                                            <small class="text-muted">{{$key}}:</small><br>
+                                            <small class="text-muted">{{.Label}}:</small><br>
                                             <strong>
-                                                {{if eq (printf "%T" $value) "bool"}}
-                                                    {{if $value}}Sim{{else}}Não{{end}}
-                                                {{else}}
-                                                    {{fmtDatetime $value}}
-                                                {{end}}
+                                                {{if eq $v nil}}<span class="text-muted">—</span>
+                                                {{else if eq .PrimitiveKind "BOOL"}}{{if $v}}Sim{{else}}Não{{end}}
+                                                {{else if eq .PrimitiveKind "DATETIME"}}{{fmtDatetime $v}}
+                                                {{else}}{{$v}}{{end}}
                                             </strong>
                                         </div>
                                     {{end}}
