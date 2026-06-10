@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"io"
-	"log"
 	"mime/multipart"
 	"net/http"
+
+	"github.com/crgimenes/devengine/log"
 
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"

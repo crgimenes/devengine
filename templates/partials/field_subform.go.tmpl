@@ -1,0 +1,21 @@
+{{define "field_subform"}}
+{{$meta := .Meta}}
+{{$parentRef := .RecordRefID}}
+{{$targetEntity := index $meta "target_entity"}}
+{{$targetAttr := index $meta "target_attr"}}
+{{$display := index $meta "display"}}
+
+{{if not $parentRef}}
+<div class="text-muted small">Salve o registro primeiro para gerenciar os itens relacionados.</div>
+{{else}}
+    {{$records := eavSubformRecords $targetEntity $targetAttr $parentRef $display}}
+    <div class="list-group">
+        {{range $records}}
+        <a href="/form/{{$targetEntity}}/r/{{.ReferenceID}}"
+           class="list-group-item list-group-item-action">{{.Label}}</a>
+        {{else}}
+        <div class="list-group-item text-muted">Nenhum item relacionado.</div>
+        {{end}}
+    </div>
+{{end}}
+{{end}}

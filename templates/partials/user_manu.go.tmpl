@@ -19,7 +19,7 @@
         {{end}}
     </a>
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-      <li><span class="dropdown-item-text">{{.User.Email}}</span></li>
+      <li><span class="dropdown-item-text">{{.User.Username}}{{if .User.Email}} - {{.User.Email}}{{end}}</span></li>
       <li><hr class="dropdown-divider"></li>
       <li><a class="dropdown-item" href="/me">Meu Perfil</a></li>
       <li><a class="dropdown-item" href="/files">Meus Arquivos</a></li>

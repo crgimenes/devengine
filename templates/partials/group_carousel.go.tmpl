@@ -4,6 +4,7 @@
 {{$depth := .Depth}}
 {{$meta := .Meta}}
 {{$form := .Form}}
+{{$recordRef := .RecordRefID}}
 {{$showControls := index $meta "show_controls"}}
 {{$showIndicators := index $meta "show_indicators"}}
 {{$interval := index $meta "interval"}}
@@ -39,7 +40,7 @@
                         {{if $child.Element.HelpText}}<p class="text-muted">{{$child.Element.HelpText}}</p>{{end}}
                         <div class="row">
                             {{range $child.Children}}
-                                {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 2) "Form" $form)}}
+                                {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 2) "Form" $form "RecordRefID" $recordRef)}}
                             {{end}}
                         </div>
                     </div>

@@ -251,13 +251,15 @@ func IsValidUsername(username string) error {
 	return nil
 }
 
-// UpdateUserProfile updates username and avatar_url; enables the user once
-// both username and email are present. Validates uniqueness of username
-// case-insensitively.
+// UpdateUserProfile updates username, avatar_url and email. Username is
+// required and validated; email is optional and, when non-empty, is
+// canonicalized and checked for uniqueness. Both username and email are
+// matched case-insensitively against other users.
 func (s *SQLite) UpdateUserProfile(
 	userID int64,
 	username string,
 	avatarURL string,
+	email string,
 ) (*User, error) {
 
 	if userID == 0 {
@@ -275,14 +277,12 @@ func (s *SQLite) UpdateUserProfile(
 	}
 
 	avatarURL = strings.TrimSpace(avatarURL)
-
-	currentUser, err := s.GetUserByID(userID)
-	if err != nil {
-		return nil, err
-	}
-
-	if currentUser.Email == "" {
-		return nil, errors.New("user has no email; cannot enable account")
+	email = strings.TrimSpace(email)
+	if email != "" {
+		email, err = utils.CanonicalizeEmail(email)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	const sqlCheckUsername = `SELECT COUNT(*)
@@ -300,18 +300,35 @@ func (s *SQLite) UpdateUserProfile(
 		return nil, errors.New("username is already in use")
 	}
 
+	if email != "" {
+		const sqlCheckEmail = `SELECT COUNT(*)
+            FROM users
+            WHERE LOWER(email) = LOWER(?)
+            AND id != ?
+            LIMIT 1;`
+		err = s.QueryRow(sqlCheckEmail, email, userID).Scan(&count)
+		if err != nil {
+			return nil, err
+		}
+		if count > 0 {
+			return nil, errors.New("email is already in use")
+		}
+	}
+
 	const sqlUpdate = `UPDATE users
         SET
-            username = ?,    -- 1
-            avatar_url = ?,  -- 2
+            username = ?,           -- 1
+            avatar_url = ?,         -- 2
+            email = NULLIF(?, ''),  -- 3
             enabled = 1
-        WHERE id = ?         -- 3`
+        WHERE id = ?                -- 4`
 
 	err = s.Exec(
 		sqlUpdate,
 		username,  // 1
 		avatarURL, // 2
-		userID,    // 3
+		email,     // 3
+		userID,    // 4
 	)
 	if err != nil {
 		return nil, err

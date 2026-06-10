@@ -2,13 +2,16 @@ package templates
 
 import (
 	"encoding/json"
+	"errors"
+	"fmt"
 	"html/template"
 	"io/fs"
-	"log"
 	"maps"
 	"reflect"
 	"strings"
 	"sync"
+
+	"github.com/crgimenes/devengine/log"
 )
 
 var (
@@ -22,6 +25,38 @@ var (
 // before the first render.
 func RegisterFS(fsys fs.FS) {
 	extraFS = append(extraFS, fsys)
+}
+
+// ReferenceChoice is one entry in a reference field's choice list.
+type ReferenceChoice struct {
+	Value string
+	Label string
+}
+
+// referenceChoicesFn is the lookup hook installed by the reference plugin.
+// Templates expose it as `eavReferenceChoices`. When unset the function
+// returns an empty list so partials still render.
+var referenceChoicesFn func(entity, displayAttr string) []ReferenceChoice
+
+// RegisterReferenceChoicesProvider installs the lookup used to populate
+// reference field selects.
+func RegisterReferenceChoicesProvider(fn func(entity, displayAttr string) []ReferenceChoice) {
+	referenceChoicesFn = fn
+}
+
+// SubformRecord is one row in a subform listing: the related record's
+// reference_id (used for the edit link) and the formatted label.
+type SubformRecord struct {
+	ReferenceID string
+	Label       string
+}
+
+var subformRecordsFn func(targetEntity, targetAttr, parentRef, displayAttr string) []SubformRecord
+
+// RegisterSubformRecordsProvider installs the lookup used to populate
+// subform listings.
+func RegisterSubformRecordsProvider(fn func(targetEntity, targetAttr, parentRef, displayAttr string) []SubformRecord) {
+	subformRecordsFn = fn
 }
 
 // SetAppTemplatesFS configures an optional filesystem containing
@@ -233,6 +268,35 @@ func loadTemplates() *template.Template {
 			maps.Copy(defaults, meta)
 			return defaults
 		},
+		"renderField": renderField,
+		// eavReferenceChoices returns the list of choices for a reference
+		// field. Accepts any-typed args so it composes cleanly with
+		// `(index .Meta "...")` from the partial.
+		"eavReferenceChoices": func(entity, displayAttr any) []ReferenceChoice {
+			if referenceChoicesFn == nil {
+				return nil
+			}
+			e, _ := entity.(string)
+			d, _ := displayAttr.(string)
+			if e == "" {
+				return nil
+			}
+			return referenceChoicesFn(e, d)
+		},
+		// eavSubformRecords returns the related records for a subform field.
+		"eavSubformRecords": func(targetEntity, targetAttr, parentRef, displayAttr any) []SubformRecord {
+			if subformRecordsFn == nil {
+				return nil
+			}
+			te, _ := targetEntity.(string)
+			ta, _ := targetAttr.(string)
+			pr, _ := parentRef.(string)
+			da, _ := displayAttr.(string)
+			if te == "" || ta == "" || pr == "" {
+				return nil
+			}
+			return subformRecordsFn(te, ta, pr, da)
+		},
 		// parseFieldMeta parses ui_meta_json with defaults for field plugins
 		"parseFieldMeta": func(jsonStr string, uiKind string) map[string]any {
 			defaults := getFieldDefaults(uiKind)
@@ -340,4 +404,26 @@ func ensureTemplatesLoaded() {
 	loadOnce.Do(func() {
 		tpl = loadTemplates()
 	})
+}
+
+// renderField executes the partial named `name` against data. Falls back to
+// field_text when `name` is unknown so a form with an unregistered ui_kind
+// still renders something usable.
+func renderField(name string, data any) (template.HTML, error) {
+	if tpl == nil {
+		return "", errors.New("templates not loaded")
+	}
+	t := tpl.Lookup(name)
+	if t == nil {
+		t = tpl.Lookup("field_text")
+	}
+	if t == nil {
+		return "", fmt.Errorf("template %q not found and field_text fallback missing", name)
+	}
+	var buf strings.Builder
+	err := t.Execute(&buf, data)
+	if err != nil {
+		return "", err
+	}
+	return template.HTML(buf.String()), nil // #nosec G203 -- buf was produced by html/template which already escaped untrusted values
 }

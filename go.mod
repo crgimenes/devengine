@@ -3,9 +3,9 @@ module github.com/crgimenes/devengine
 go 1.26
 
 require (
+	github.com/crgimenes/filo v0.0.9
 	github.com/gomarkdown/markdown v0.0.0-20260417124207-7d523f7318df
 	github.com/microcosm-cc/bluemonday v1.0.27
-	golang.org/x/oauth2 v0.36.0
 	golang.org/x/term v0.43.0
 	golang.org/x/text v0.37.0
 	modernc.org/sqlite v1.51.0

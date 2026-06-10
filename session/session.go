@@ -10,11 +10,12 @@ import (
 	"crypto/subtle"
 	"encoding/base64"
 	"encoding/gob"
-	"log"
 	"net/http"
 	"os"
 	"sync"
 	"time"
+
+	"github.com/crgimenes/devengine/log"
 
 	"github.com/crgimenes/devengine/db"
 )

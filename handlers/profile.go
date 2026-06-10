@@ -4,12 +4,13 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"io"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
+
+	"github.com/crgimenes/devengine/log"
 
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
@@ -63,6 +64,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	username := r.FormValue("username")
+	email := r.FormValue("email")
 	avatarURL := u.AvatarURL
 
 	file, fh, err := r.FormFile("avatar_file")
@@ -166,7 +168,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 		avatarURL = "/file/" + u.ReferenceID + "/" + fileMeta.Filename
 	}
 
-	updatedUser, err := db.Storage.UpdateUserProfile(u.ID, username, avatarURL)
+	updatedUser, err := db.Storage.UpdateUserProfile(u.ID, username, avatarURL, email)
 	if err != nil {
 		data := struct {
 			Authed  bool

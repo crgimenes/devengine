@@ -42,12 +42,12 @@
                             enctype="multipart/form-data"
                             novalidate>
 
-                            <!-- Email (read-only) -->
+                            <!-- Email (opcional) -->
                             <div class="mb-3">
                                 <label for="email" class="form-label">Email</label>
-                                <input type="email" class="form-control" id="email" name="email" 
-                                    value="{{.User.Email}}" readonly>
-                                <small class="form-text text-muted">Email nao pode ser alterado</small>
+                                <input type="email" class="form-control" id="email" name="email"
+                                    value="{{.User.Email}}" autocomplete="email">
+                                <small class="form-text text-muted">Opcional. Usado para receber convites e notificacoes.</small>
                             </div>
 
                             <!-- Username -->

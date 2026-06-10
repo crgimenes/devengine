@@ -4,11 +4,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"log"
 	"maps"
 	"net/http"
 	"strconv"
 	"strings"
+
+	"github.com/crgimenes/devengine/log"
 
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
@@ -250,7 +251,7 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 
 // FormsRuntimeCreate handles form submission to create a new record.
 func (h *Handlers) FormsRuntimeCreate(w http.ResponseWriter, r *http.Request) {
-	_, _, authed, err := auth.Prelude(w, r,
+	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
 		true, false, true,
 	)
@@ -299,6 +300,24 @@ func (h *Handlers) FormsRuntimeCreate(w http.ResponseWriter, r *http.Request) {
 	parsedValues, err := parseFormAttributes(r, elements, attributes)
 	if err != nil {
 		http.Redirect(w, r, "/form/"+machineName+"?message="+err.Error(), http.StatusSeeOther)
+		return
+	}
+
+	parsedValues, err = applyComputedExprs(r.Context(), user, attributes, parsedValues)
+	if err != nil {
+		log.Printf("computed_expr system error: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	userErr, sysErr := evaluateValidateExprs(r.Context(), user, elements, attributes, parsedValues)
+	if sysErr != nil {
+		log.Printf("validate_expr system error: %v", sysErr)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	if userErr != "" {
+		http.Redirect(w, r, "/form/"+machineName+"?message="+userErr, http.StatusSeeOther)
 		return
 	}
 
@@ -532,7 +551,7 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 
 // FormsRuntimeUpdate handles form submission to update an existing record.
 func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
-	_, _, authed, err := auth.Prelude(w, r,
+	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
 		true, false, true,
 	)
@@ -587,6 +606,24 @@ func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 	parsedValues, err := parseFormAttributes(r, elements, attributes)
 	if err != nil {
 		http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message="+err.Error(), http.StatusSeeOther)
+		return
+	}
+
+	parsedValues, err = applyComputedExprs(r.Context(), user, attributes, parsedValues)
+	if err != nil {
+		log.Printf("computed_expr system error: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	userErr, sysErr := evaluateValidateExprs(r.Context(), user, elements, attributes, parsedValues)
+	if sysErr != nil {
+		log.Printf("validate_expr system error: %v", sysErr)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+	if userErr != "" {
+		http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message="+userErr, http.StatusSeeOther)
 		return
 	}
 
@@ -778,7 +815,7 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 
 		// Add Form/EAV values (Strict Types)
 		for k, v := range parsedValues {
-			globals["field:"+k] = goToFiloValue(v)
+			globals["field:"+k] = goToFilo(v)
 		}
 
 		// Add form metadata
@@ -937,25 +974,6 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 	committed = true
 
 	jsonResponse(w, http.StatusOK, response)
-}
-
-// goToFiloValue converts a Go value to a Filo Value for button action scripts.
-func goToFiloValue(v any) filo.Value {
-	if v == nil {
-		return filo.VString("")
-	}
-	switch val := v.(type) {
-	case bool:
-		return filo.VBool(val)
-	case int64:
-		return filo.VNum(float64(val))
-	case float64:
-		return filo.VNum(val)
-	case string:
-		return filo.VString(val)
-	default:
-		return filo.VString(strconv.FormatFloat(0, 'f', -1, 64))
-	}
 }
 
 // jsonResponse writes a JSON response with the given status code.

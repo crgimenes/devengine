@@ -137,6 +137,54 @@ func (s *SQLite) GetFileByUserIDAndFilename(
 	return &f, nil
 }
 
+// GetFileByFilename retrieves a non-deleted file by its opaque filename. The
+// filename column is globally unique so no user scoping is needed.
+func (s *SQLite) GetFileByFilename(filename string) (*File, error) {
+	const sqlSelect = `SELECT
+            id,                    -- 1
+            user_id,               -- 2
+            original_filename,     -- 3
+            filename,              -- 4
+            filesize,              -- 5
+            filetype,              -- 6
+            filehash,              -- 7
+            filetag,               -- 8
+            filedescription,       -- 9
+            processed,             -- 10
+            created_at,            -- 11
+            updated_at             -- 12
+    FROM filemanager_files
+    WHERE filename = ?    -- 1
+    AND deleted = 0
+        LIMIT 1;`
+
+	var f File
+	err := s.QueryRow(
+		sqlSelect,
+		filename, // 1
+	).Scan(
+		&f.ID,               // 1
+		&f.UserID,           // 2
+		&f.OriginalFilename, // 3
+		&f.Filename,         // 4
+		&f.Filesize,         // 5
+		&f.Filetype,         // 6
+		&f.Filehash,         // 7
+		&f.Filetag,          // 8
+		&f.Filedescription,  // 9
+		&f.Processed,        // 10
+		&f.CreatedAt,        // 11
+		&f.UpdatedAt,        // 12
+	)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &f, nil
+}
+
 // GetFileByUserReferenceIDAndFilename retrieves a file by user reference ID and filename.
 func (s *SQLite) GetFileByUserReferenceIDAndFilename(
 	userRefID string,

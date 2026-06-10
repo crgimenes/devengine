@@ -2,10 +2,11 @@ package basic
 
 import (
 	"io"
-	"log"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/crgimenes/devengine/log"
 
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"

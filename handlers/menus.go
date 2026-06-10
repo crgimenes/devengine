@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"log"
 	"net/http"
 	"strings"
+
+	"github.com/crgimenes/devengine/log"
 
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"

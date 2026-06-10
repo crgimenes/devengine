@@ -3,6 +3,7 @@ package templates
 import (
 	"encoding/json"
 	"maps"
+	"strings"
 	"testing"
 )
 
@@ -233,5 +234,48 @@ func TestParseFieldMetaIntegration(t *testing.T) {
 					tc.checkKey, tc.expected, tc.expected, val, val)
 			}
 		})
+	}
+}
+
+func TestRenderFieldDispatches(t *testing.T) {
+	ensureTemplatesLoaded()
+
+	data := map[string]any{
+		"Meta":     map[string]any{},
+		"Name":     "alpha",
+		"Value":    "hello",
+		"Required": false,
+		"Readonly": false,
+	}
+
+	got, err := renderField("field_text", data)
+	if err != nil {
+		t.Fatalf("renderField(field_text): %v", err)
+	}
+	if !strings.Contains(string(got), `name="alpha"`) {
+		t.Errorf("output missing name=alpha: %s", got)
+	}
+	if !strings.Contains(string(got), `value="hello"`) {
+		t.Errorf("output missing value=hello: %s", got)
+	}
+}
+
+func TestRenderFieldFallsBackToText(t *testing.T) {
+	ensureTemplatesLoaded()
+
+	data := map[string]any{
+		"Meta":     map[string]any{},
+		"Name":     "alpha",
+		"Value":    "fallback",
+		"Required": false,
+		"Readonly": false,
+	}
+
+	got, err := renderField("field_does_not_exist", data)
+	if err != nil {
+		t.Fatalf("renderField(unknown): %v", err)
+	}
+	if !strings.Contains(string(got), `value="fallback"`) {
+		t.Errorf("fallback to field_text did not render the value: %s", got)
 	}
 }

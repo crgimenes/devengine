@@ -4,6 +4,7 @@
 {{$depth := .Depth}}
 {{$meta := .Meta}}
 {{$form := .Form}}
+{{$recordRef := .RecordRefID}}
 {{$showHeader := index $meta "show_header"}}
 {{$headerBg := index $meta "header_bg"}}
 <div class="col-12 col-md-{{$node.Element.ColSpan}}">
@@ -17,7 +18,7 @@
             {{if $node.Element.HelpText}}<p class="card-text text-muted">{{$node.Element.HelpText}}</p>{{end}}
             <div class="row">
                 {{range $node.Children}}
-                    {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 1) "Form" $form)}}
+                    {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 1) "Form" $form "RecordRefID" $recordRef)}}
                 {{end}}
             </div>
         </div>

@@ -69,9 +69,11 @@
                         {{end}}
 
                         {{/* Render hierarchical elements using ElementsTree */}}
+                        {{$recordRef := ""}}
+                        {{if .Record}}{{$recordRef = .Record.ReferenceID}}{{end}}
                         <div class="row">
                             {{range .ElementsTree}}
-                                {{template "render_element" (dict "Node" . "Values" $.Values "Depth" 0 "Form" $.Form)}}
+                                {{template "render_element" (dict "Node" . "Values" $.Values "Depth" 0 "Form" $.Form "RecordRefID" $recordRef)}}
                             {{end}}
                         </div>
 
@@ -143,24 +145,25 @@
     {{$values := .Values}}
     {{$depth := .Depth}}
     {{$form := .Form}}
+    {{$recordRef := .RecordRefID}}
     
     {{if eq $node.Element.ElementKind "divider"}}
         <div class="col-12"><hr class="my-4"></div>
     
     {{else if eq $node.Element.ElementKind "group"}}
-        {{template "group_fieldset" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "Meta" (parseGroupMeta $node.Element.UIMetaJSON "group"))}}
+        {{template "group_fieldset" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "RecordRefID" $recordRef "Meta" (parseGroupMeta $node.Element.UIMetaJSON "group"))}}
     
     {{else if eq $node.Element.ElementKind "accordion"}}
-        {{template "group_accordion" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "Meta" (parseGroupMeta $node.Element.UIMetaJSON "accordion"))}}
+        {{template "group_accordion" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "RecordRefID" $recordRef "Meta" (parseGroupMeta $node.Element.UIMetaJSON "accordion"))}}
     
     {{else if eq $node.Element.ElementKind "card"}}
-        {{template "group_card" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "Meta" (parseGroupMeta $node.Element.UIMetaJSON "card"))}}
+        {{template "group_card" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "RecordRefID" $recordRef "Meta" (parseGroupMeta $node.Element.UIMetaJSON "card"))}}
     
     {{else if eq $node.Element.ElementKind "tabs"}}
-        {{template "group_tabs" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "Meta" (parseGroupMeta $node.Element.UIMetaJSON "tabs"))}}
+        {{template "group_tabs" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "RecordRefID" $recordRef "Meta" (parseGroupMeta $node.Element.UIMetaJSON "tabs"))}}
     
     {{else if eq $node.Element.ElementKind "carousel"}}
-        {{template "group_carousel" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "Meta" (parseGroupMeta $node.Element.UIMetaJSON "carousel"))}}
+        {{template "group_carousel" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "RecordRefID" $recordRef "Meta" (parseGroupMeta $node.Element.UIMetaJSON "carousel"))}}
     
     {{else if eq $node.Element.ElementKind "button"}}
         {{/* Button element */}}
@@ -193,28 +196,7 @@
             </label>
             {{end}}
             
-            {{if eq $uiKind "bool"}}
-                {{template "field_bool" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly)}}
-            {{else if eq $uiKind "int"}}
-                {{template "field_int" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly)}}
-            {{else if eq $uiKind "decimal"}}
-                {{template "field_decimal" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly)}}
-            {{else if eq $uiKind "datetime"}}
-                {{template "field_datetime" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly)}}
-            {{else if eq $uiKind "textarea"}}
-                {{template "field_textarea" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly)}}
-            {{else if eq $uiKind "select"}}
-                {{template "field_select" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly)}}
-            {{else if eq $uiKind "image"}}
-                {{template "field_image" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly)}}
-            {{else if eq $uiKind "video"}}
-                {{template "field_video" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly)}}
-            {{else if eq $uiKind "audio"}}
-                {{template "field_audio" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly)}}
-            {{else}}
-                {{/* Default: text */}}
-                {{template "field_text" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly)}}
-            {{end}}
+            {{renderField (printf "field_%s" $uiKind) (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly "RecordRefID" $recordRef "FormMachineName" $form.MachineName)}}
             
             {{if not $node.Element.HideHelpText}}
             {{if $node.Element.HelpText}}
@@ -238,27 +220,7 @@
             </label>
             {{end}}
             
-            {{if eq $uiKind "bool"}}
-                {{template "field_bool" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly)}}
-            {{else if eq $uiKind "int"}}
-                {{template "field_int" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly)}}
-            {{else if eq $uiKind "decimal"}}
-                {{template "field_decimal" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly)}}
-            {{else if eq $uiKind "datetime"}}
-                {{template "field_datetime" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly)}}
-            {{else if eq $uiKind "textarea"}}
-                {{template "field_textarea" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly)}}
-            {{else if eq $uiKind "select"}}
-                {{template "field_select" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly)}}
-            {{else if eq $uiKind "image"}}
-                {{template "field_image" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly)}}
-            {{else if eq $uiKind "video"}}
-                {{template "field_video" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly)}}
-            {{else if eq $uiKind "audio"}}
-                {{template "field_audio" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly)}}
-            {{else}}
-                {{template "field_text" (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly)}}
-            {{end}}
+            {{renderField (printf "field_%s" $uiKind) (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly "RecordRefID" $recordRef "FormMachineName" $form.MachineName)}}
             
             {{if not $node.Element.HideHelpText}}
             {{if $node.Element.HelpText}}
