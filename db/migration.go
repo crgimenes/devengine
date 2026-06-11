@@ -3,6 +3,7 @@ package db
 import (
 	"embed"
 	"fmt"
+	"hash/fnv"
 	"io/fs"
 	"sort"
 	"strings"
@@ -274,12 +275,49 @@ func RunMigrationOn(s *SQLite) error {
 	}
 	tx = nil
 
+	checkSchemaDrift(s, allMigrations)
+
 	if appliedCount == 0 {
 		log.Printf("no new migrations to apply")
 		return nil
 	}
 	log.Printf("applied %d migration(s)", appliedCount)
 	return nil
+}
+
+// checkSchemaDrift warns when the embedded migration files changed after this
+// database applied them. Early development edits migrations in place, so an
+// already-migrated database silently keeps the old schema and fails later
+// with confusing SQL errors. The fingerprint lives in PRAGMA user_version and
+// is refreshed after warning, so the warning fires once per change.
+func checkSchemaDrift(s *SQLite, migrations []migrationEntry) {
+	h := fnv.New32a()
+	for _, m := range migrations {
+		content, err := fs.ReadFile(m.fsys, m.filename)
+		if err != nil {
+			return
+		}
+		_, _ = h.Write([]byte(m.id))
+		_, _ = h.Write(content)
+	}
+	// Mask to a positive int32 so the PRAGMA round-trips unchanged.
+	fingerprint := int64(h.Sum32() & 0x7fffffff)
+
+	var stored int64
+	err := s.QueryRow(`PRAGMA user_version`).Scan(&stored)
+	if err != nil {
+		return
+	}
+	if stored == fingerprint {
+		return
+	}
+	if stored != 0 {
+		log.Printf("WARNING: migration files changed after this database applied them (in-place edits during early development); the schema may be outdated. Recreate the database file to pick up the changes.")
+	}
+	err = s.Exec(fmt.Sprintf("PRAGMA user_version = %d", fingerprint))
+	if err != nil {
+		log.Printf("schema fingerprint: %v", err)
+	}
 }
 
 func findMigrationFile(fsys fs.FS, version int) (string, error) {
