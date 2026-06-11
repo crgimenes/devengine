@@ -28,13 +28,13 @@ func evaluateValidateExprs(
 	elements []db.FormElement,
 	attributes []db.EAVAttribute,
 	values db.EAVRecordValues,
-) (string, error) {
+) (map[string]string, error) {
 	attrByID := make(map[int64]*db.EAVAttribute, len(attributes))
 	for i := range attributes {
 		attrByID[attributes[i].ID] = &attributes[i]
 	}
 
-	var msgs []string
+	fieldErrors := make(map[string]string)
 	for _, el := range elements {
 		if el.ValidateExpr == "" || el.EAVAttributeID == nil {
 			continue
@@ -46,18 +46,14 @@ func evaluateValidateExprs(
 
 		msg, err := runValidateExpr(ctx, user, el, attr, values)
 		if err != nil {
-			return "", err
+			return nil, err
 		}
 		if msg == "" {
 			continue
 		}
-		label := attr.Label
-		if el.Label != "" {
-			label = el.Label
-		}
-		msgs = append(msgs, fmt.Sprintf("%s: %s", label, msg))
+		fieldErrors[el.MachineName] = msg
 	}
-	return strings.Join(msgs, "; "), nil
+	return fieldErrors, nil
 }
 
 func runValidateExpr(

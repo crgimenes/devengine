@@ -49,6 +49,13 @@ func New(deps Dependencies) *Handlers {
 }
 
 func (h *Handlers) Home(w http.ResponseWriter, r *http.Request) {
+	// "/" is the mux catch-all: any path no other handler claims lands here
+	// and must answer 404, not the home page.
+	if r.URL.Path != "/" {
+		h.notFound(w, r)
+		return
+	}
+
 	_, _, _, err := auth.Prelude(w, r,
 		[]string{
 			http.MethodGet,
@@ -59,7 +66,7 @@ func (h *Handlers) Home(w http.ResponseWriter, r *http.Request) {
 		true,  // prevent cache
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "Home", err)
 		return
 	}
 
@@ -82,7 +89,7 @@ func (h *Handlers) Home(w http.ResponseWriter, r *http.Request) {
 
 	message := r.URL.Query().Get("message")
 	if len(message) > 200 {
-		http.Error(w, "message too long", http.StatusBadRequest)
+		h.errorPage(w, r, http.StatusBadRequest, "message too long")
 		return
 	}
 
@@ -126,7 +133,7 @@ func (h *Handlers) Tools(w http.ResponseWriter, r *http.Request) {
 		true,  // prevent cache
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "Tools", err)
 		return
 	}
 
@@ -136,13 +143,13 @@ func (h *Handlers) Tools(w http.ResponseWriter, r *http.Request) {
 
 	// Sysop-only check
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	message := r.URL.Query().Get("message")
 	if len(message) > 200 {
-		http.Error(w, "message too long", http.StatusBadRequest)
+		h.errorPage(w, r, http.StatusBadRequest, "message too long")
 		return
 	}
 
@@ -172,7 +179,7 @@ func (h *Handlers) ToolsDatabaseSchema(w http.ResponseWriter, r *http.Request) {
 		true,  // prevent cache
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsDatabaseSchema", err)
 		return
 	}
 
@@ -182,27 +189,27 @@ func (h *Handlers) ToolsDatabaseSchema(w http.ResponseWriter, r *http.Request) {
 
 	// Sysop-only check
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	message := r.URL.Query().Get("message")
 	if len(message) > 200 {
-		http.Error(w, "message too long", http.StatusBadRequest)
+		h.errorPage(w, r, http.StatusBadRequest, "message too long")
 		return
 	}
 
 	// Fetch relational tables
 	relTables, err := db.Storage.ListRelationalTables()
 	if err != nil {
-		http.Error(w, "failed to list relational tables", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to list relational tables", err)
 		return
 	}
 
 	// Fetch EAV entity types
 	eavTypes, err := db.Storage.ListEAVEntityTypes()
 	if err != nil {
-		http.Error(w, "failed to list EAV entity types", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to list EAV entity types", err)
 		return
 	}
 
@@ -264,7 +271,7 @@ func (h *Handlers) ToolsSearchForms(w http.ResponseWriter, r *http.Request) {
 		true,  // prevent cache
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsSearchForms", err)
 		return
 	}
 
@@ -274,13 +281,13 @@ func (h *Handlers) ToolsSearchForms(w http.ResponseWriter, r *http.Request) {
 
 	// Sysop-only check
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	message := r.URL.Query().Get("message")
 	if len(message) > 200 {
-		http.Error(w, "message too long", http.StatusBadRequest)
+		h.errorPage(w, r, http.StatusBadRequest, "message too long")
 		return
 	}
 
@@ -310,7 +317,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 		true,  // prevent cache
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsDatabaseSchemaEAVNew", err)
 		return
 	}
 
@@ -320,7 +327,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 
 	// Sysop-only check
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -419,7 +426,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 				User:        *user,
 				Config:      *h.cfg,
 				CurrentPage: "database-schema",
-				Error:       "Erro ao criar tabela EAV: " + err.Error(),
+				Error:       "Erro ao criar tabela EAV (ref " + logRef("CreateEAVEntityType", err) + ")",
 				FormData: FormData{
 					Name:        name,
 					MachineName: machineName,
@@ -465,7 +472,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 		true,  // prevent cache
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsDatabaseSchemaEAVEdit", err)
 		return
 	}
 
@@ -475,14 +482,14 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 
 	// Sysop-only check
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	// Get the reference ID from URL path
 	id := r.PathValue("id")
 	if id == "" {
-		http.Error(w, "missing entity type ID", http.StatusBadRequest)
+		h.errorPage(w, r, http.StatusBadRequest, "missing entity type ID")
 		return
 	}
 
@@ -490,17 +497,17 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 	entityType, err := db.Storage.GetEAVEntityTypeByRefID(id)
 	if err != nil {
 		if err == db.ErrNotFound {
-			http.Error(w, "Entity type not found", http.StatusNotFound)
+			h.notFound(w, r)
 			return
 		}
-		http.Error(w, "failed to fetch entity type", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to fetch entity type", err)
 		return
 	}
 
 	// Fetch attributes for this entity type
 	attributes, err := db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
 	if err != nil {
-		http.Error(w, "failed to fetch attributes", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to fetch attributes", err)
 		return
 	}
 
@@ -562,7 +569,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 			}{
 				Authed:      true,
 				User:        *user,
-				Error:       "Erro ao atualizar tabela: " + err.Error(),
+				Error:       "Erro ao atualizar tabela (ref " + logRef("UpdateEAVEntityType", err) + ")",
 				Config:      *h.cfg,
 				CurrentPage: "database-schema",
 				EntityID:    id,

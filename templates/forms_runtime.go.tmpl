@@ -201,7 +201,11 @@
             {{end}}
             
             {{renderField (printf "field_%s" $uiKind) (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly "RecordRefID" $recordRef "FormMachineName" $form.MachineName)}}
-            
+
+            {{with $node.FieldError}}
+                <div class="text-danger small mt-1">{{.}}</div>
+            {{end}}
+
             {{if not $node.Element.HideHelpText}}
             {{if $node.Element.HelpText}}
                 <div class="form-text">{{$node.Element.HelpText}}</div>

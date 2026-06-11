@@ -26,7 +26,7 @@ func (h *Handlers) ToolsForms(w http.ResponseWriter, r *http.Request) {
 		true,  // prevent cache
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsForms", err)
 		return
 	}
 
@@ -36,20 +36,20 @@ func (h *Handlers) ToolsForms(w http.ResponseWriter, r *http.Request) {
 
 	// Sysop-only check
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	message := r.URL.Query().Get("message")
 	if len(message) > 200 {
-		http.Error(w, "message too long", http.StatusBadRequest)
+		h.errorPage(w, r, http.StatusBadRequest, "message too long")
 		return
 	}
 
 	// Get all forms
 	forms, err := db.Storage.ListForms()
 	if err != nil {
-		http.Error(w, "failed to list forms: "+err.Error(), http.StatusInternalServerError)
+		h.serverError(w, r, "list forms", err)
 		return
 	}
 
@@ -93,7 +93,7 @@ func (h *Handlers) ToolsFormsNew(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -105,7 +105,7 @@ func (h *Handlers) ToolsFormsNew(w http.ResponseWriter, r *http.Request) {
 	// Get entity types for dropdown
 	entityTypes, err := db.Storage.ListEAVEntityTypes()
 	if err != nil {
-		http.Error(w, "failed to list entity types", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to list entity types", err)
 		return
 	}
 
@@ -136,7 +136,7 @@ func (h *Handlers) ToolsFormsCreate(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -165,7 +165,8 @@ func (h *Handlers) ToolsFormsCreate(w http.ResponseWriter, r *http.Request) {
 	// Create form
 	form, err := db.Storage.CreateForm(machineName, label, description, eavEntityTypeID)
 	if err != nil {
-		http.Redirect(w, r, "/tools/forms/new?message=Erro ao criar formulário: "+err.Error(), http.StatusSeeOther)
+		ref := logRef("ToolsFormsCreate", err)
+		http.Redirect(w, r, "/tools/forms/new?message=Erro ao criar formulário (ref "+ref+")", http.StatusSeeOther)
 		return
 	}
 
@@ -179,14 +180,14 @@ func (h *Handlers) ToolsFormsEdit(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	formRefID := r.PathValue("id")
 	form, err := db.Storage.GetFormByRefID(formRefID)
 	if err != nil {
-		http.Error(w, "Form not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
@@ -307,14 +308,14 @@ func (h *Handlers) ToolsFormsUpdate(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	formRefID := r.PathValue("id")
 	form, err := db.Storage.GetFormByRefID(formRefID)
 	if err != nil {
-		http.Error(w, "Form not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
@@ -359,7 +360,8 @@ func (h *Handlers) ToolsFormsUpdate(w http.ResponseWriter, r *http.Request) {
 	// Update form
 	err = db.Storage.UpdateForm(form.ID, machineName, label, description, eavEntityTypeID, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo, menuID)
 	if err != nil {
-		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Erro ao atualizar: "+err.Error(), http.StatusSeeOther)
+		ref := logRef("ToolsFormsUpdate", err)
+		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Erro ao atualizar (ref "+ref+")", http.StatusSeeOther)
 		return
 	}
 
@@ -373,20 +375,21 @@ func (h *Handlers) ToolsFormsDelete(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	formRefID := r.PathValue("id")
 	form, err := db.Storage.GetFormByRefID(formRefID)
 	if err != nil {
-		http.Error(w, "Form not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
 	err = db.Storage.SoftDeleteForm(form.ID)
 	if err != nil {
-		http.Redirect(w, r, "/tools/forms?message=Erro ao excluir: "+err.Error(), http.StatusSeeOther)
+		ref := logRef("ToolsFormsDelete", err)
+		http.Redirect(w, r, "/tools/forms?message=Erro ao excluir (ref "+ref+")", http.StatusSeeOther)
 		return
 	}
 
@@ -400,14 +403,14 @@ func (h *Handlers) ToolsFormsElementCreate(w http.ResponseWriter, r *http.Reques
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	formRefID := r.PathValue("id")
 	form, err := db.Storage.GetFormByRefID(formRefID)
 	if err != nil {
-		http.Error(w, "Form not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
@@ -445,7 +448,8 @@ func (h *Handlers) ToolsFormsElementCreate(w http.ResponseWriter, r *http.Reques
 		zOrder, 12, uiKind, "", eavAttrID, isUIOnly, false,
 	)
 	if err != nil {
-		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Erro ao criar elemento: "+err.Error(), http.StatusSeeOther)
+		ref := logRef("ToolsFormsElementCreate", err)
+		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Erro ao criar elemento (ref "+ref+")", http.StatusSeeOther)
 		return
 	}
 
@@ -459,7 +463,7 @@ func (h *Handlers) ToolsFormsElementDelete(w http.ResponseWriter, r *http.Reques
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -468,13 +472,13 @@ func (h *Handlers) ToolsFormsElementDelete(w http.ResponseWriter, r *http.Reques
 
 	element, err := db.Storage.GetFormElementByRefID(elementRefID)
 	if err != nil {
-		http.Error(w, "Elemento não encontrado", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
 	err = db.Storage.DeleteFormElement(element.ID)
 	if err != nil {
-		http.Error(w, "Erro ao excluir: "+err.Error(), http.StatusInternalServerError)
+		h.serverError(w, r, "delete element", err)
 		return
 	}
 
@@ -494,7 +498,7 @@ func (h *Handlers) ToolsFormsElementMoveUp(w http.ResponseWriter, r *http.Reques
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -503,12 +507,12 @@ func (h *Handlers) ToolsFormsElementMoveUp(w http.ResponseWriter, r *http.Reques
 
 	element, err := db.Storage.GetFormElementByRefID(elementRefID)
 	if err != nil {
-		http.Error(w, "Elemento não encontrado", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
 	if err := db.Storage.MoveElementUp(element.ID); err != nil {
-		http.Error(w, "Erro ao mover: "+err.Error(), http.StatusInternalServerError)
+		h.serverError(w, r, "move element", err)
 		return
 	}
 
@@ -528,7 +532,7 @@ func (h *Handlers) ToolsFormsElementMoveDown(w http.ResponseWriter, r *http.Requ
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -537,12 +541,12 @@ func (h *Handlers) ToolsFormsElementMoveDown(w http.ResponseWriter, r *http.Requ
 
 	element, err := db.Storage.GetFormElementByRefID(elementRefID)
 	if err != nil {
-		http.Error(w, "Elemento não encontrado", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
 	if err := db.Storage.MoveElementDown(element.ID); err != nil {
-		http.Error(w, "Erro ao mover: "+err.Error(), http.StatusInternalServerError)
+		h.serverError(w, r, "move element", err)
 		return
 	}
 
@@ -634,7 +638,7 @@ func (h *Handlers) ToolsFormsElementEdit(w http.ResponseWriter, r *http.Request)
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -643,19 +647,19 @@ func (h *Handlers) ToolsFormsElementEdit(w http.ResponseWriter, r *http.Request)
 
 	form, err := db.Storage.GetFormByRefID(formRefID)
 	if err != nil {
-		http.Error(w, "Form not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
 	element, err := db.Storage.GetFormElementByRefID(elementRefID)
 	if err != nil {
-		http.Error(w, "Element not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
 	// Verify element belongs to this form
 	if element.FormID != form.ID {
-		http.Error(w, "Element does not belong to this form", http.StatusBadRequest)
+		h.errorPage(w, r, http.StatusBadRequest, "Element does not belong to this form")
 		return
 	}
 
@@ -752,7 +756,7 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -761,13 +765,13 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 
 	form, err := db.Storage.GetFormByRefID(formRefID)
 	if err != nil {
-		http.Error(w, "Form not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
 	element, err := db.Storage.GetFormElementByRefID(elementRefID)
 	if err != nil {
-		http.Error(w, "Element not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
@@ -856,7 +860,8 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 		buttonFiloCode, buttonRunSave, buttonJSCode, buttonStyle, buttonConfirmMsg,
 	)
 	if err != nil {
-		http.Redirect(w, r, "/tools/forms/"+formRefID+"/elements/"+elementRefID+"/edit?message=Erro ao atualizar: "+err.Error(), http.StatusSeeOther)
+		ref := logRef("ToolsFormsElementUpdate", err)
+		http.Redirect(w, r, "/tools/forms/"+formRefID+"/elements/"+elementRefID+"/edit?message=Erro ao atualizar (ref "+ref+")", http.StatusSeeOther)
 		return
 	}
 
@@ -872,7 +877,7 @@ func (h *Handlers) ToolsFormsRecords(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -883,14 +888,14 @@ func (h *Handlers) ToolsFormsRecords(w http.ResponseWriter, r *http.Request) {
 
 	attributes, err := db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
 	if err != nil {
-		http.Error(w, "Failed to list attributes", http.StatusInternalServerError)
+		h.serverError(w, r, "Failed to list attributes", err)
 		return
 	}
 
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	rows, nextCursor, err := h.fetchRecordRows(entityType.ID, 0, q, attributes)
 	if err != nil {
-		http.Error(w, "Failed to list records", http.StatusInternalServerError)
+		h.serverError(w, r, "Failed to list records", err)
 		return
 	}
 	resolveReferenceDisplays(form, attributes, rows)

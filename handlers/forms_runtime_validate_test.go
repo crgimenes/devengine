@@ -53,12 +53,12 @@ func TestValidateExprPassesOnEmpty(t *testing.T) {
 	}
 	values := db.EAVRecordValues{"name": "anything"}
 
-	msg, err := evaluateValidateExprs(context.Background(), nil, []db.FormElement{el}, []db.EAVAttribute{attr}, values)
+	errs, err := evaluateValidateExprs(context.Background(), nil, []db.FormElement{el}, []db.EAVAttribute{attr}, values)
 	if err != nil {
 		t.Fatalf("evaluateValidateExprs: %v", err)
 	}
-	if msg != "" {
-		t.Fatalf("got %q, want empty", msg)
+	if len(errs) != 0 {
+		t.Fatalf("got %v, want empty", errs)
 	}
 }
 
@@ -79,12 +79,12 @@ func TestValidateExprRejectsWithStringResult(t *testing.T) {
 	}
 	values := db.EAVRecordValues{"name": "forbidden"}
 
-	msg, err := evaluateValidateExprs(context.Background(), nil, []db.FormElement{el}, []db.EAVAttribute{attr}, values)
+	errs, err := evaluateValidateExprs(context.Background(), nil, []db.FormElement{el}, []db.EAVAttribute{attr}, values)
 	if err != nil {
 		t.Fatalf("evaluateValidateExprs: %v", err)
 	}
-	if msg != "Nome: valor proibido" {
-		t.Fatalf("got %q", msg)
+	if errs["name"] != "valor proibido" {
+		t.Fatalf("got %v", errs)
 	}
 }
 
@@ -104,12 +104,12 @@ func TestValidateExprPassesWhenStringEmpty(t *testing.T) {
 	}
 	values := db.EAVRecordValues{"name": "allowed"}
 
-	msg, err := evaluateValidateExprs(context.Background(), nil, []db.FormElement{el}, []db.EAVAttribute{attr}, values)
+	errs, err := evaluateValidateExprs(context.Background(), nil, []db.FormElement{el}, []db.EAVAttribute{attr}, values)
 	if err != nil {
 		t.Fatalf("evaluateValidateExprs: %v", err)
 	}
-	if msg != "" {
-		t.Fatalf("got %q, want empty", msg)
+	if len(errs) != 0 {
+		t.Fatalf("got %v, want empty", errs)
 	}
 }
 
@@ -130,12 +130,12 @@ func TestValidateExprErrorGlobalWins(t *testing.T) {
 	}
 	values := db.EAVRecordValues{"name": "x"}
 
-	msg, err := evaluateValidateExprs(context.Background(), nil, []db.FormElement{el}, []db.EAVAttribute{attr}, values)
+	errs, err := evaluateValidateExprs(context.Background(), nil, []db.FormElement{el}, []db.EAVAttribute{attr}, values)
 	if err != nil {
 		t.Fatalf("evaluateValidateExprs: %v", err)
 	}
-	if msg != "Nome: via global" {
-		t.Fatalf("got %q", msg)
+	if errs["name"] != "via global" {
+		t.Fatalf("got %v", errs)
 	}
 }
 
@@ -150,12 +150,12 @@ func TestValidateExprSkipsUIOnly(t *testing.T) {
 		EAVAttributeID: nil,
 		ValidateExpr:   `"this should be skipped"`,
 	}
-	msg, err := evaluateValidateExprs(context.Background(), nil, []db.FormElement{el}, nil, nil)
+	errs, err := evaluateValidateExprs(context.Background(), nil, []db.FormElement{el}, nil, nil)
 	if err != nil {
 		t.Fatalf("evaluateValidateExprs: %v", err)
 	}
-	if msg != "" {
-		t.Fatalf("UI-only element ran validate_expr, got %q", msg)
+	if len(errs) != 0 {
+		t.Fatalf("UI-only element ran validate_expr, got %v", errs)
 	}
 }
 
@@ -178,12 +178,12 @@ func TestValidateExprCanReadOtherFields(t *testing.T) {
 	}
 	values := db.EAVRecordValues{"a": "same", "b": "same"}
 
-	msg, err := evaluateValidateExprs(context.Background(), nil, []db.FormElement{el}, []db.EAVAttribute{a, b}, values)
+	errs, err := evaluateValidateExprs(context.Background(), nil, []db.FormElement{el}, []db.EAVAttribute{a, b}, values)
 	if err != nil {
 		t.Fatalf("evaluateValidateExprs: %v", err)
 	}
-	if msg != "B: a and b cannot be equal" {
-		t.Fatalf("got %q", msg)
+	if errs["b"] != "a and b cannot be equal" {
+		t.Fatalf("got %v", errs)
 	}
 }
 
@@ -207,11 +207,15 @@ func TestValidateExprAggregatesAllErrors(t *testing.T) {
 	}
 	values := db.EAVRecordValues{"a": "x", "b": "y", "c": "z"}
 
-	msg, err := evaluateValidateExprs(context.Background(), nil, els, []db.EAVAttribute{a, b, c}, values)
+	errs, err := evaluateValidateExprs(context.Background(), nil, els, []db.EAVAttribute{a, b, c}, values)
 	if err != nil {
 		t.Fatalf("evaluateValidateExprs: %v", err)
 	}
-	if msg != "Campo A: A invalid; Campo C: C invalid" {
-		t.Fatalf("got %q, want both errors joined by '; '", msg)
+	if errs["a"] != "A invalid" || errs["c"] != "C invalid" || len(errs) != 2 {
+		t.Fatalf("got %v, want errors for a and c", errs)
+	}
+	joined := joinFieldErrors(els, errs)
+	if joined != "Campo A: A invalid; Campo C: C invalid" {
+		t.Fatalf("joined = %q", joined)
 	}
 }

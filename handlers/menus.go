@@ -23,7 +23,7 @@ func (h *Handlers) ToolsMenus(w http.ResponseWriter, r *http.Request) {
 		true,  // prevent cache
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsMenus", err)
 		return
 	}
 
@@ -32,19 +32,19 @@ func (h *Handlers) ToolsMenus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	message := r.URL.Query().Get("message")
 	if len(message) > 200 {
-		http.Error(w, "message too long", http.StatusBadRequest)
+		h.errorPage(w, r, http.StatusBadRequest, "message too long")
 		return
 	}
 
 	menus, err := db.Storage.ListMenus()
 	if err != nil {
-		http.Error(w, "failed to fetch menus", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to fetch menus", err)
 		return
 	}
 
@@ -76,13 +76,13 @@ func (h *Handlers) ToolsMenusNew(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil || !authed {
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "ToolsMenusNew", err)
 		}
 		return
 	}
 
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -117,18 +117,18 @@ func (h *Handlers) ToolsMenusCreate(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil || !authed {
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "ToolsMenusCreate", err)
 		}
 		return
 	}
 
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	if !session.ValidateCSRF(r) {
-		http.Error(w, "invalid CSRF token", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -174,7 +174,7 @@ func (h *Handlers) ToolsMenusCreate(w http.ResponseWriter, r *http.Request) {
 		}{
 			Authed:      true,
 			User:        *user,
-			Error:       "Erro ao criar menu: " + err.Error(),
+			Error:       "Erro ao criar menu (ref " + logRef("CreateMenu", err) + ")",
 			Config:      *h.cfg,
 			CurrentPage: "menu-editor",
 			Csrf:        csrf,
@@ -195,31 +195,31 @@ func (h *Handlers) ToolsMenusEdit(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil || !authed {
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "ToolsMenusEdit", err)
 		}
 		return
 	}
 
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	id := r.PathValue("id")
 	if id == "" {
-		http.Error(w, "missing menu ID", http.StatusBadRequest)
+		h.errorPage(w, r, http.StatusBadRequest, "missing menu ID")
 		return
 	}
 
 	menu, err := db.Storage.GetMenuByRefID(id)
 	if err != nil {
-		http.Error(w, "menu not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
 	items, err := db.Storage.ListMenuItems(menu.ID)
 	if err != nil {
-		http.Error(w, "failed to fetch items", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to fetch items", err)
 		return
 	}
 
@@ -311,25 +311,25 @@ func (h *Handlers) ToolsMenusUpdate(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil || !authed {
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "ToolsMenusUpdate", err)
 		}
 		return
 	}
 
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	if !session.ValidateCSRF(r) {
-		http.Error(w, "invalid CSRF token", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	id := r.PathValue("id")
 	menu, err := db.Storage.GetMenuByRefID(id)
 	if err != nil {
-		http.Error(w, "menu not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
@@ -354,20 +354,20 @@ func (h *Handlers) ToolsMenusDelete(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil || !authed {
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "ToolsMenusDelete", err)
 		}
 		return
 	}
 
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	id := r.PathValue("id")
 	menu, err := db.Storage.GetMenuByRefID(id)
 	if err != nil {
-		http.Error(w, "menu not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
@@ -388,25 +388,25 @@ func (h *Handlers) ToolsMenusItemCreate(w http.ResponseWriter, r *http.Request) 
 	)
 	if err != nil || !authed {
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "ToolsMenusItemCreate", err)
 		}
 		return
 	}
 
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	if !session.ValidateCSRF(r) {
-		http.Error(w, "invalid CSRF token", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	id := r.PathValue("id")
 	menu, err := db.Storage.GetMenuByRefID(id)
 	if err != nil {
-		http.Error(w, "menu not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
@@ -442,7 +442,8 @@ func (h *Handlers) ToolsMenusItemCreate(w http.ResponseWriter, r *http.Request) 
 
 	_, err = db.Storage.CreateMenuItem(menu.ID, parentID, machineName, label, icon, "link", "", "", "", maxZOrder)
 	if err != nil {
-		http.Redirect(w, r, "/tools/menu-editor/"+id+"/edit?message=Erro+ao+criar+item:+"+err.Error(), http.StatusSeeOther)
+		ref := logRef("ToolsMenusItemCreate", err)
+		http.Redirect(w, r, "/tools/menu-editor/"+id+"/edit?message=Erro+ao+criar+item+(ref+"+ref+")", http.StatusSeeOther)
 		return
 	}
 
@@ -457,13 +458,13 @@ func (h *Handlers) ToolsMenusItemEdit(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil || !authed {
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "ToolsMenusItemEdit", err)
 		}
 		return
 	}
 
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -472,13 +473,13 @@ func (h *Handlers) ToolsMenusItemEdit(w http.ResponseWriter, r *http.Request) {
 
 	menu, err := db.Storage.GetMenuByRefID(menuID)
 	if err != nil {
-		http.Error(w, "menu not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
 	item, err := db.Storage.GetMenuItemByRefID(itemID)
 	if err != nil {
-		http.Error(w, "item not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
@@ -522,18 +523,18 @@ func (h *Handlers) ToolsMenusItemUpdate(w http.ResponseWriter, r *http.Request) 
 	)
 	if err != nil || !authed {
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "ToolsMenusItemUpdate", err)
 		}
 		return
 	}
 
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	if !session.ValidateCSRF(r) {
-		http.Error(w, "invalid CSRF token", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -542,7 +543,7 @@ func (h *Handlers) ToolsMenusItemUpdate(w http.ResponseWriter, r *http.Request) 
 
 	item, err := db.Storage.GetMenuItemByRefID(itemID)
 	if err != nil {
-		http.Error(w, "item not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
@@ -582,13 +583,13 @@ func (h *Handlers) ToolsMenusItemDelete(w http.ResponseWriter, r *http.Request) 
 	)
 	if err != nil || !authed {
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "ToolsMenusItemDelete", err)
 		}
 		return
 	}
 
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -597,7 +598,7 @@ func (h *Handlers) ToolsMenusItemDelete(w http.ResponseWriter, r *http.Request) 
 
 	item, err := db.Storage.GetMenuItemByRefID(itemID)
 	if err != nil {
-		http.Error(w, "item not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
@@ -618,13 +619,13 @@ func (h *Handlers) ToolsMenusItemMoveUp(w http.ResponseWriter, r *http.Request) 
 	)
 	if err != nil || !authed {
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "ToolsMenusItemMoveUp", err)
 		}
 		return
 	}
 
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -633,7 +634,7 @@ func (h *Handlers) ToolsMenusItemMoveUp(w http.ResponseWriter, r *http.Request) 
 
 	item, err := db.Storage.GetMenuItemByRefID(itemID)
 	if err != nil {
-		http.Error(w, "item not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
@@ -650,13 +651,13 @@ func (h *Handlers) ToolsMenusItemMoveDown(w http.ResponseWriter, r *http.Request
 	)
 	if err != nil || !authed {
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "ToolsMenusItemMoveDown", err)
 		}
 		return
 	}
 
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -665,7 +666,7 @@ func (h *Handlers) ToolsMenusItemMoveDown(w http.ResponseWriter, r *http.Request
 
 	item, err := db.Storage.GetMenuItemByRefID(itemID)
 	if err != nil {
-		http.Error(w, "item not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
@@ -682,26 +683,26 @@ func (h *Handlers) ToolsMenusPreview(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil || !authed {
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "ToolsMenusPreview", err)
 		}
 		return
 	}
 
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	id := r.PathValue("id")
 	menu, err := db.Storage.GetMenuByRefID(id)
 	if err != nil {
-		http.Error(w, "menu not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
 	items, err := db.Storage.ListMenuItems(menu.ID)
 	if err != nil {
-		http.Error(w, "failed to fetch items", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to fetch items", err)
 		return
 	}
 
@@ -737,7 +738,8 @@ func (h *Handlers) MenuItemAction(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil {
-		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		ref := logRef("MenuItemAction prelude", err)
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "erro interno (ref " + ref + ")"})
 		return
 	}
 	if !authed {

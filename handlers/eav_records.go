@@ -54,7 +54,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecords(w http.ResponseWriter, r *http.
 		true,  // prevent cache
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsDatabaseSchemaEAVRecords", err)
 		return
 	}
 
@@ -64,14 +64,14 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecords(w http.ResponseWriter, r *http.
 
 	// Sysop-only
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	// Get entity type ID from path
 	entityRefID := r.PathValue("id")
 	if entityRefID == "" {
-		http.Error(w, "missing entity type ID", http.StatusBadRequest)
+		h.errorPage(w, r, http.StatusBadRequest, "missing entity type ID")
 		return
 	}
 
@@ -79,17 +79,17 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecords(w http.ResponseWriter, r *http.
 	entityType, err := db.Storage.GetEAVEntityTypeByRefID(entityRefID)
 	if err != nil {
 		if err == db.ErrNotFound {
-			http.Error(w, "Entity type not found", http.StatusNotFound)
+			h.notFound(w, r)
 			return
 		}
-		http.Error(w, "failed to fetch entity type", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to fetch entity type", err)
 		return
 	}
 
 	// Get all attributes for this entity type
 	attributes, err := db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
 	if err != nil {
-		http.Error(w, "failed to fetch attributes", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to fetch attributes", err)
 		return
 	}
 
@@ -102,7 +102,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecords(w http.ResponseWriter, r *http.
 	// List records (100 per page, ordered by created_at DESC)
 	records, total, err := db.Storage.ListEAVRecordsByEntityTypeID(entityType.ID, 100, offset)
 	if err != nil {
-		http.Error(w, "failed to fetch records", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to fetch records", err)
 		return
 	}
 
@@ -111,7 +111,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecords(w http.ResponseWriter, r *http.
 	for _, record := range records {
 		values, err := db.Storage.GetEAVValuesByRecordID(record.ID)
 		if err != nil {
-			http.Error(w, "failed to fetch values", http.StatusInternalServerError)
+			h.serverError(w, r, "failed to fetch values", err)
 			return
 		}
 
@@ -299,20 +299,20 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordNew(w http.ResponseWriter, r *htt
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	entityRefID := r.PathValue("id")
 	entityType, err := db.Storage.GetEAVEntityTypeByRefID(entityRefID)
 	if err != nil {
-		http.Error(w, "Entity type not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
 	attributes, err := db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
 	if err != nil {
-		http.Error(w, "failed to fetch attributes", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to fetch attributes", err)
 		return
 	}
 
@@ -515,20 +515,20 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	entityRefID := r.PathValue("id")
 	entityType, err := db.Storage.GetEAVEntityTypeByRefID(entityRefID)
 	if err != nil {
-		http.Error(w, "Entity type not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
 	attributes, err := db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
 	if err != nil {
-		http.Error(w, "failed to fetch attributes", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to fetch attributes", err)
 		return
 	}
 
@@ -592,7 +592,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 		if attr.IsUnique && uniqueValue != nil {
 			isUnique, err := db.Storage.CheckEAVValueUnique(attr.ID, attr.PrimitiveKind, uniqueValue, 0)
 			if err != nil {
-				redirectBack("Erro ao validar unicidade: " + err.Error())
+				ref := logRef("ToolsDatabaseSchemaEAVRecordCreate", err)
+				redirectBack("Erro ao validar unicidade (ref " + ref + ")")
 				return
 			}
 			if !isUnique {
@@ -613,7 +614,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 				updated_at = datetime('now')
 		`, recordID, attr.ID, vBool, vInt, vReal, vText, vDatetime)
 		if err != nil {
-			redirectBack("Erro ao salvar valor: " + err.Error())
+			ref := logRef("ToolsDatabaseSchemaEAVRecordCreate", err)
+			redirectBack("Erro ao salvar valor (ref " + ref + ")")
 			return
 		}
 	}
@@ -621,13 +623,15 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 	// Activation must bump rev to satisfy the trigger constraint.
 	err = tx.Exec(`UPDATE eav_records SET status = 'active', rev = rev + 1 WHERE id = ?`, recordID)
 	if err != nil {
-		redirectBack("Erro ao ativar registro: " + err.Error())
+		ref := logRef("ToolsDatabaseSchemaEAVRecordCreate", err)
+		redirectBack("Erro ao ativar registro (ref " + ref + ")")
 		return
 	}
 
 	err = tx.Commit()
 	if err != nil {
-		redirectBack("Erro ao salvar: " + err.Error())
+		ref := logRef("ToolsDatabaseSchemaEAVRecordCreate", err)
+		redirectBack("Erro ao salvar (ref " + ref + ")")
 		return
 	}
 	committed = true
@@ -642,7 +646,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordEdit(w http.ResponseWriter, r *ht
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -651,25 +655,25 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordEdit(w http.ResponseWriter, r *ht
 
 	entityType, err := db.Storage.GetEAVEntityTypeByRefID(entityRefID)
 	if err != nil {
-		http.Error(w, "Entity type not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
 	record, err := db.Storage.GetEAVRecordByRefID(recordRefID)
 	if err != nil {
-		http.Error(w, "Record not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
 	attributes, err := db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
 	if err != nil {
-		http.Error(w, "failed to fetch attributes", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to fetch attributes", err)
 		return
 	}
 
 	values, err := db.Storage.GetEAVValuesByRecordID(record.ID)
 	if err != nil {
-		http.Error(w, "failed to fetch values", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to fetch values", err)
 		return
 	}
 
@@ -768,7 +772,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -777,19 +781,19 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 
 	entityType, err := db.Storage.GetEAVEntityTypeByRefID(entityRefID)
 	if err != nil {
-		http.Error(w, "Entity type not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
 	record, err := db.Storage.GetEAVRecordByRefID(recordRefID)
 	if err != nil {
-		http.Error(w, "Record not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
 	attributes, err := db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
 	if err != nil {
-		http.Error(w, "failed to fetch attributes", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to fetch attributes", err)
 		return
 	}
 
@@ -831,7 +835,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 		}
 		err = tx.Commit()
 		if err != nil {
-			redirectBack("Erro ao salvar script: " + err.Error())
+			ref := logRef("ToolsDatabaseSchemaEAVRecordUpdate", err)
+			redirectBack("Erro ao salvar script (ref " + ref + ")")
 			return
 		}
 		committed = true
@@ -859,7 +864,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 		if attr.IsUnique && uniqueValue != nil {
 			isUnique, err := db.Storage.CheckEAVValueUnique(attr.ID, attr.PrimitiveKind, uniqueValue, record.ID)
 			if err != nil {
-				redirectBack("Erro ao validar unicidade: " + err.Error())
+				ref := logRef("ToolsDatabaseSchemaEAVRecordUpdate", err)
+				redirectBack("Erro ao validar unicidade (ref " + ref + ")")
 				return
 			}
 			if !isUnique {
@@ -874,7 +880,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 				redirectBack("Conflito: registro foi modificado por outro usuário. Recarregue a página.")
 				return
 			}
-			redirectBack("Erro ao atualizar: " + err.Error())
+			ref := logRef("ToolsDatabaseSchemaEAVRecordUpdate", err)
+			redirectBack("Erro ao atualizar (ref " + ref + ")")
 			return
 		}
 
@@ -884,7 +891,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 
 	err = db.Storage.UpdateEAVRecordStatus(record.ID, currentRev, "active")
 	if err != nil {
-		redirectBack("Erro ao ativar registro: " + err.Error())
+		ref := logRef("ToolsDatabaseSchemaEAVRecordUpdate", err)
+		redirectBack("Erro ao ativar registro (ref " + ref + ")")
 		return
 	}
 
@@ -898,7 +906,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordDelete(w http.ResponseWriter, r *
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -913,7 +921,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordDelete(w http.ResponseWriter, r *
 
 	err = db.Storage.SoftDeleteEAVRecord(record.ID)
 	if err != nil {
-		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message=Erro ao excluir: "+err.Error(), http.StatusSeeOther)
+		ref := logRef("ToolsDatabaseSchemaEAVRecordDelete", err)
+		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message=Erro ao excluir (ref "+ref+")", http.StatusSeeOther)
 		return
 	}
 

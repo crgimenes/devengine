@@ -27,7 +27,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 		true,  // prevent cache
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "Profile", err)
 		return
 	}
 
@@ -56,7 +56,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 	r.Body = http.MaxBytesReader(w, r.Body, 12<<20)
 	err = r.ParseMultipartForm(10 << 20) // #nosec G120 -- bounded by MaxBytesReader above
 	if err != nil {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		h.errorPage(w, r, http.StatusBadRequest, "bad request")
 		return
 	}
 
@@ -66,7 +66,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 
 	file, fh, err := r.FormFile("avatar_file")
 	if err != nil && err != http.ErrMissingFile {
-		http.Error(w, "bad request", http.StatusBadRequest)
+		h.errorPage(w, r, http.StatusBadRequest, "bad request")
 		return
 	}
 	defer func() {
@@ -77,7 +77,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 
 	if file != nil {
 		if h.files.Validate == nil || h.files.DataPath == nil || h.files.SaveMetadata == nil || h.files.NewFilename == nil {
-			http.Error(w, "file utilities not configured", http.StatusInternalServerError)
+			h.serverError(w, r, "file utilities not configured", err)
 			return
 		}
 
@@ -89,24 +89,24 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 			5<<20,
 		)
 		if err != nil {
-			http.Error(w, "invalid avatar file: "+err.Error(), http.StatusBadRequest)
+			h.errorPage(w, r, http.StatusBadRequest, "invalid avatar file: "+err.Error())
 			return
 		}
 
 		seeker, ok := file.(io.Seeker)
 		if !ok {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "Profile", err)
 			return
 		}
 		_, err = seeker.Seek(0, io.SeekStart)
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "Profile", err)
 			return
 		}
 
 		avatarData, err := io.ReadAll(file)
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "Profile", err)
 			return
 		}
 
@@ -115,11 +115,11 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 
 		freshUser, gerr := db.Storage.GetUserByID(u.ID)
 		if gerr != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "Profile", err)
 			return
 		}
 		if freshUser.ReferenceID == "" {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "Profile", err)
 			return
 		}
 
@@ -129,7 +129,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 
 		uploadsDir, err := h.files.DataPath(u)
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "Profile", err)
 			return
 		}
 
@@ -138,7 +138,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 
 		err = os.WriteFile(avatarPath, avatarData, 0600) // #nosec G703 G304 -- filename is a server-generated opaque ID; filepath.Ext cannot contain separators
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "Profile", err)
 			return
 		}
 
@@ -158,7 +158,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 
 		fileMeta, err = h.files.SaveMetadata(fileMeta)
 		if err != nil {
-			http.Error(w, "internal server error", http.StatusInternalServerError)
+			h.serverError(w, r, "Profile", err)
 			return
 		}
 
@@ -176,7 +176,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 		}{
 			Authed: true,
 			User:   *u,
-			Error:  err.Error(),
+			Error:  "Erro ao atualizar perfil (ref " + logRef("UpdateUserProfile", err) + ")",
 			Config: *h.cfg,
 		}
 		h.render(w, "me.go.tmpl", data)

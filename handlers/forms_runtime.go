@@ -13,7 +13,6 @@ import (
 	"github.com/crgimenes/devengine/log"
 
 	"github.com/crgimenes/devengine/auth"
-	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
 	"github.com/crgimenes/devengine/eav/ui"
 	"github.com/crgimenes/devengine/filodb"
@@ -34,9 +33,10 @@ type FormRuntimeElement struct {
 
 // FormRuntimeNode represents a node in the hierarchical element tree.
 type FormRuntimeNode struct {
-	Element   db.FormElement
-	Attribute *db.EAVAttribute
-	Children  []FormRuntimeNode
+	Element    db.FormElement
+	Attribute  *db.EAVAttribute
+	Children   []FormRuntimeNode
+	FieldError string // per-field validation message for the re-rendered form
 }
 
 // BuildElementTree constructs a hierarchical tree from a flat list of elements.
@@ -102,72 +102,21 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "FormsRuntimeNew", err)
 		return
 	}
 	if !authed {
 		return
 	}
 
-	machineName := r.PathValue("machineName")
-	form, err := db.Storage.GetFormByMachineName(machineName)
-	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-	if form == nil {
-		http.NotFound(w, r)
+	ctx, ok := h.loadRuntimeForm(w, r, false)
+	if !ok {
 		return
 	}
 
-	// Entity type is optional - form may not be linked to EAV
-	var entityType *db.EAVEntityType
-	var attributes []db.EAVAttribute
-	attrMap := make(map[int64]*db.EAVAttribute)
-
-	if form.EAVEntityTypeID != nil {
-		entityType, err = db.Storage.GetEAVEntityTypeByID(*form.EAVEntityTypeID)
-		if err != nil {
-			http.Error(w, "EAV entity type not found", http.StatusInternalServerError)
-			return
-		}
-
-		// Get all attributes for this entity type
-		attributes, err = db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
-		if err != nil {
-			http.Error(w, "failed to list attributes", http.StatusInternalServerError)
-			return
-		}
-
-		// Build attribute map for lookup
-		for i := range attributes {
-			attrMap[attributes[i].ID] = &attributes[i]
-		}
-	}
-
-	// Get form elements
-	elements, err := db.Storage.ListFormElements(form.ID)
-	if err != nil {
-		http.Error(w, "failed to list form elements", http.StatusInternalServerError)
-		return
-	}
-
-	// Build runtime elements with attribute info
-	var runtimeElements []FormRuntimeElement
-	for _, el := range elements {
-		re := FormRuntimeElement{Element: el}
-		if el.EAVAttributeID != nil {
-			re.Attribute = attrMap[*el.EAVAttributeID]
-		}
-		runtimeElements = append(runtimeElements, re)
-	}
-
-	// Build hierarchical element tree
-	elementTree := BuildElementTree(elements, attrMap)
-
-	// Prepare initial values with defaults from attributes
+	// Initial values come from the attribute defaults.
 	values := make(map[string]any)
-	for _, attr := range attributes {
+	for _, attr := range ctx.attributes {
 		if attr.DefaultVBool != nil {
 			values[attr.MachineName] = *attr.DefaultVBool
 		} else if attr.DefaultVInt != nil {
@@ -183,12 +132,11 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 
 	// Prefill from ?prefill=attr=value (may repeat). Used by the subform's
 	// "Novo" link to pre-populate the reference back to the parent record.
-	applyPrefill(values, attributes, r.URL.Query()["prefill"])
+	applyPrefill(values, ctx.attributes, r.URL.Query()["prefill"])
 
-	// Execute pos_load script (before display) - only if entity type exists
 	var posLoadError string
-	if entityType != nil && entityType.PosLoad != "" {
-		modifiedValues, userError, execErr := db.ExecutePosLoadScript(entityType, db.EAVRecordValues(values))
+	if ctx.entityType != nil && ctx.entityType.PosLoad != "" {
+		modifiedValues, userError, execErr := db.ExecutePosLoadScript(ctx.entityType, db.EAVRecordValues(values))
 		if execErr == nil {
 			maps.Copy(values, modifiedValues)
 			posLoadError = userError
@@ -199,125 +147,58 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 	if len(message) > 200 {
 		message = ""
 	}
-
 	errorMsg := r.URL.Query().Get("error")
 	if len(errorMsg) > 200 {
 		errorMsg = ""
 	}
 
-	menuItems, menuMachineName := loadFormMenu(form)
-
-	data := struct {
-		Authed          bool
-		User            db.User
-		Config          config.Config
-		Form            *db.Form
-		EntityType      *db.EAVEntityType
-		Elements        []FormRuntimeElement
-		ElementsTree    []FormRuntimeNode
-		Record          *db.EAVRecord
-		Values          map[string]any
-		Message         string
-		Error           string
-		PosLoadError    string
-		MenuItems       []db.MenuItemNode
-		MenuMachineName string
-	}{
-		Authed:          true,
-		User:            *user,
-		Config:          *h.cfg,
-		Form:            form,
-		EntityType:      entityType,
-		Elements:        runtimeElements,
-		ElementsTree:    elementTree,
-		Record:          nil, // New record
-		Values:          values,
-		Message:         message,
-		Error:           errorMsg,
-		PosLoadError:    posLoadError,
-		MenuItems:       menuItems,
-		MenuMachineName: menuMachineName,
-	}
-
-	h.render(w, "forms_runtime.go.tmpl", data)
+	h.renderRuntimeForm(w, user, ctx, nil, values, nil, message, errorMsg, posLoadError)
 }
 
-// FormsRuntimeCreate handles form submission to create a new record.
+// FormsRuntimeCreate handles form submission to create a new record. On a
+// validation problem it re-renders the form with what the user typed and the
+// message next to each offending field.
 func (h *Handlers) FormsRuntimeCreate(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
 		true, false, true,
 	)
 	if err != nil || !authed {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
-	machineName := r.PathValue("machineName")
-	form, err := db.Storage.GetFormByMachineName(machineName)
+	ctx, ok := h.loadRuntimeForm(w, r, true)
+	if !ok {
+		return
+	}
+	machineName := ctx.form.MachineName
+
+	parsedValues, fieldErrors := parseFormAttributesLenient(r, ctx.elements, ctx.attributes)
+	if len(fieldErrors) > 0 {
+		h.renderRuntimeForm(w, user, ctx, nil, parsedValues, fieldErrors, "", "", "")
+		return
+	}
+
+	parsedValues, err = applyComputedExprs(r.Context(), user, ctx.attributes, parsedValues)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-	if form == nil {
-		http.NotFound(w, r)
+		h.serverError(w, r, "FormsRuntimeCreate", err)
 		return
 	}
 
-	if form.EAVEntityTypeID == nil {
-		http.Error(w, "Form is not linked to any EAV table", http.StatusBadRequest)
-		return
-	}
-
-	entityType, err := db.Storage.GetEAVEntityTypeByID(*form.EAVEntityTypeID)
-	if err != nil {
-		http.Error(w, "EAV entity type not found", http.StatusInternalServerError)
-		return
-	}
-
-	// Get form elements
-	elements, err := db.Storage.ListFormElements(form.ID)
-	if err != nil {
-		http.Error(w, "failed to list form elements", http.StatusInternalServerError)
-		return
-	}
-
-	// Get all attributes
-	attributes, err := db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
-	if err != nil {
-		http.Error(w, "failed to list attributes", http.StatusInternalServerError)
-		return
-	}
-
-	// Parse form values
-	parsedValues, err := parseFormAttributes(r, elements, attributes)
-	if err != nil {
-		http.Redirect(w, r, "/form/"+machineName+"?message="+err.Error(), http.StatusSeeOther)
-		return
-	}
-
-	parsedValues, err = applyComputedExprs(r.Context(), user, attributes, parsedValues)
-	if err != nil {
-		log.Printf("computed_expr system error: %v", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	userErr, sysErr := evaluateValidateExprs(r.Context(), user, elements, attributes, parsedValues)
+	fieldErrors, sysErr := evaluateValidateExprs(r.Context(), user, ctx.elements, ctx.attributes, parsedValues)
 	if sysErr != nil {
-		log.Printf("validate_expr system error: %v", sysErr)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "FormsRuntimeCreate", err)
 		return
 	}
-	if userErr != "" {
-		http.Redirect(w, r, "/form/"+machineName+"?message="+userErr, http.StatusSeeOther)
+	if len(fieldErrors) > 0 {
+		h.renderRuntimeForm(w, user, ctx, nil, parsedValues, fieldErrors, "", "", "")
 		return
 	}
 
-	// Transaction
 	tx, err := db.Storage.BeginTransaction()
 	if err != nil {
-		http.Redirect(w, r, "/form/"+machineName+"?message=Erro ao iniciar transação", http.StatusSeeOther)
+		h.renderRuntimeForm(w, user, ctx, nil, parsedValues, nil, "", "Erro ao iniciar transação", "")
 		return
 	}
 	committed := false
@@ -327,15 +208,18 @@ func (h *Handlers) FormsRuntimeCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// Helper handles pre_save, record creation, vsalue saving
-	_, recordRefID, err := insertRecordTx(tx, entityType, attributes, parsedValues)
+	// Helper handles pre_save, record creation and value saving. Failures
+	// (pre_save block, unique violation) re-render keeping the typed values.
+	_, recordRefID, err := insertRecordTx(tx, ctx.entityType, ctx.attributes, parsedValues)
 	if err != nil {
-		http.Redirect(w, r, "/form/"+machineName+"?message="+err.Error(), http.StatusSeeOther)
+		h.renderRuntimeForm(w, user, ctx, nil, parsedValues, nil, "", err.Error(), "")
 		return
 	}
 
-	if err := tx.Commit(); err != nil {
-		http.Redirect(w, r, "/form/"+machineName+"?message=Erro ao finalizar: "+err.Error(), http.StatusSeeOther)
+	err = tx.Commit()
+	if err != nil {
+		ref := logRef("create commit", err)
+		h.renderRuntimeForm(w, user, ctx, nil, parsedValues, nil, "", "Erro ao finalizar (ref "+ref+")", "")
 		return
 	}
 	committed = true
@@ -379,94 +263,38 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "FormsRuntimeEdit", err)
 		return
 	}
 	if !authed {
 		return
 	}
 
-	machineName := r.PathValue("machineName")
-	recordRefID := r.PathValue("recordRef")
+	ctx, ok := h.loadRuntimeForm(w, r, true)
+	if !ok {
+		return
+	}
 
-	form, err := db.Storage.GetFormByMachineName(machineName)
+	record, err := db.Storage.GetEAVRecordByRefID(r.PathValue("recordRef"))
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.notFound(w, r)
 		return
 	}
-	if form == nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	if form.EAVEntityTypeID == nil {
-		http.Error(w, "Form is not linked to any EAV table", http.StatusBadRequest)
+	if record.EntityTypeID != ctx.entityType.ID {
+		h.errorPage(w, r, http.StatusBadRequest, "Record does not belong to this form's entity type")
 		return
 	}
 
-	entityType, err := db.Storage.GetEAVEntityTypeByID(*form.EAVEntityTypeID)
-	if err != nil {
-		http.Error(w, "EAV entity type not found", http.StatusInternalServerError)
-		return
-	}
-
-	record, err := db.Storage.GetEAVRecordByRefID(recordRefID)
-	if err != nil {
-		http.Error(w, "Record not found", http.StatusNotFound)
-		return
-	}
-
-	// Ensure record belongs to this entity type
-	if record.EntityTypeID != entityType.ID {
-		http.Error(w, "Record does not belong to this form's entity type", http.StatusBadRequest)
-		return
-	}
-
-	// Get form elements
-	elements, err := db.Storage.ListFormElements(form.ID)
-	if err != nil {
-		http.Error(w, "failed to list form elements", http.StatusInternalServerError)
-		return
-	}
-
-	// Get all attributes
-	attributes, err := db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
-	if err != nil {
-		http.Error(w, "failed to list attributes", http.StatusInternalServerError)
-		return
-	}
-
-	attrMap := make(map[int64]*db.EAVAttribute)
-	for i := range attributes {
-		attrMap[attributes[i].ID] = &attributes[i]
-	}
-
-	// Build runtime elements
-	var runtimeElements []FormRuntimeElement
-	for _, el := range elements {
-		re := FormRuntimeElement{Element: el}
-		if el.EAVAttributeID != nil {
-			re.Attribute = attrMap[*el.EAVAttributeID]
-		}
-		runtimeElements = append(runtimeElements, re)
-	}
-
-	// Build hierarchical element tree
-	elementTree := BuildElementTree(elements, attrMap)
-
-	// Get record values
 	eavValues, err := db.Storage.GetEAVValuesByRecordID(record.ID)
 	if err != nil {
-		http.Error(w, "failed to list values", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to list values", err)
 		return
 	}
+	values := recordValuesMap(eavValues, ctx.attributes)
 
-	values := recordValuesMap(eavValues, attributes)
-
-	// Execute pos_load script
 	var posLoadError string
-	if entityType.PosLoad != "" {
-		modifiedValues, userError, execErr := db.ExecutePosLoadScript(entityType, db.EAVRecordValues(values))
+	if ctx.entityType.PosLoad != "" {
+		modifiedValues, userError, execErr := db.ExecutePosLoadScript(ctx.entityType, db.EAVRecordValues(values))
 		if execErr == nil {
 			maps.Copy(values, modifiedValues)
 			posLoadError = userError
@@ -477,131 +305,73 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 	if len(message) > 200 {
 		message = ""
 	}
-
 	errorMsg := r.URL.Query().Get("error")
 	if len(errorMsg) > 200 {
 		errorMsg = ""
 	}
 
-	menuItems, menuMachineName := loadFormMenu(form)
-
-	data := struct {
-		Authed          bool
-		User            db.User
-		Config          config.Config
-		Form            *db.Form
-		EntityType      *db.EAVEntityType
-		Elements        []FormRuntimeElement
-		ElementsTree    []FormRuntimeNode
-		Record          *db.EAVRecord
-		Values          map[string]any
-		Message         string
-		Error           string
-		PosLoadError    string
-		MenuItems       []db.MenuItemNode
-		MenuMachineName string
-	}{
-		Authed:          true,
-		User:            *user,
-		Config:          *h.cfg,
-		Form:            form,
-		EntityType:      entityType,
-		Elements:        runtimeElements,
-		ElementsTree:    elementTree,
-		Record:          record,
-		Values:          values,
-		Message:         message,
-		Error:           errorMsg,
-		PosLoadError:    posLoadError,
-		MenuItems:       menuItems,
-		MenuMachineName: menuMachineName,
-	}
-
-	h.render(w, "forms_runtime.go.tmpl", data)
+	h.renderRuntimeForm(w, user, ctx, record, values, nil, message, errorMsg, posLoadError)
 }
 
 // FormsRuntimeUpdate handles form submission to update an existing record.
+// Validation problems re-render the edit view keeping the typed values.
 func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
 		true, false, true,
 	)
 	if err != nil || !authed {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
-	machineName := r.PathValue("machineName")
+	ctx, ok := h.loadRuntimeForm(w, r, true)
+	if !ok {
+		return
+	}
+	machineName := ctx.form.MachineName
 	recordRefID := r.PathValue("recordRef")
-
-	form, err := db.Storage.GetFormByMachineName(machineName)
-	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-	if form == nil {
-		http.NotFound(w, r)
-		return
-	}
-
-	if form.EAVEntityTypeID == nil {
-		http.Error(w, "Form is not linked to any EAV table", http.StatusBadRequest)
-		return
-	}
-
-	entityType, err := db.Storage.GetEAVEntityTypeByID(*form.EAVEntityTypeID)
-	if err != nil {
-		http.Error(w, "EAV entity type not found", http.StatusInternalServerError)
-		return
-	}
 
 	record, err := db.Storage.GetEAVRecordByRefID(recordRefID)
 	if err != nil {
-		http.Error(w, "Record not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
-	// Optimistic locking
-	revStr := r.FormValue("rev")
-	submittedRev, _ := strconv.Atoi(revStr)
+	parsedValues, fieldErrors := parseFormAttributesLenient(r, ctx.elements, ctx.attributes)
+
+	// Optimistic locking: the hidden rev must match the current record.
+	submittedRev, _ := strconv.Atoi(r.FormValue("rev"))
 	if submittedRev != record.Rev {
-		http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message=Registro foi modificado por outro usuário", http.StatusSeeOther)
+		h.renderRuntimeForm(w, user, ctx, record, parsedValues, nil, "",
+			"Registro foi modificado por outro usuário. Revise os dados antes de salvar novamente.", "")
 		return
 	}
 
-	// Get form elements and attributes
-	elements, _ := db.Storage.ListFormElements(form.ID)
-	attributes, _ := db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
+	if len(fieldErrors) > 0 {
+		h.renderRuntimeForm(w, user, ctx, record, parsedValues, fieldErrors, "", "", "")
+		return
+	}
 
-	// Parse form values
-	parsedValues, err := parseFormAttributes(r, elements, attributes)
+	parsedValues, err = applyComputedExprs(r.Context(), user, ctx.attributes, parsedValues)
 	if err != nil {
-		http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message="+err.Error(), http.StatusSeeOther)
+		h.serverError(w, r, "FormsRuntimeUpdate", err)
 		return
 	}
 
-	parsedValues, err = applyComputedExprs(r.Context(), user, attributes, parsedValues)
-	if err != nil {
-		log.Printf("computed_expr system error: %v", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
-		return
-	}
-
-	userErr, sysErr := evaluateValidateExprs(r.Context(), user, elements, attributes, parsedValues)
+	fieldErrors, sysErr := evaluateValidateExprs(r.Context(), user, ctx.elements, ctx.attributes, parsedValues)
 	if sysErr != nil {
-		log.Printf("validate_expr system error: %v", sysErr)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "FormsRuntimeUpdate", err)
 		return
 	}
-	if userErr != "" {
-		http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message="+userErr, http.StatusSeeOther)
+	if len(fieldErrors) > 0 {
+		h.renderRuntimeForm(w, user, ctx, record, parsedValues, fieldErrors, "", "", "")
 		return
 	}
 
-	// Transaction
 	tx, err := db.Storage.BeginTransaction()
 	if err != nil {
-		http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message=Erro ao iniciar transação", http.StatusSeeOther)
+		h.renderRuntimeForm(w, user, ctx, record, parsedValues, nil, "", "Erro ao iniciar transação", "")
 		return
 	}
 	committed := false
@@ -611,15 +381,17 @@ func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 		}
 	}()
 
-	// Helper handles pre_save, revision update, value saving
-	err = updateRecordTx(tx, entityType, record, attributes, parsedValues)
+	// Helper handles pre_save, revision update and value saving.
+	err = updateRecordTx(tx, ctx.entityType, record, ctx.attributes, parsedValues)
 	if err != nil {
-		http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message="+err.Error(), http.StatusSeeOther)
+		h.renderRuntimeForm(w, user, ctx, record, parsedValues, nil, "", err.Error(), "")
 		return
 	}
 
-	if err := tx.Commit(); err != nil {
-		http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message=Erro ao finalizar: "+err.Error(), http.StatusSeeOther)
+	err = tx.Commit()
+	if err != nil {
+		ref := logRef("update commit", err)
+		h.renderRuntimeForm(w, user, ctx, record, parsedValues, nil, "", "Erro ao finalizar (ref "+ref+")", "")
 		return
 	}
 	committed = true
@@ -635,7 +407,8 @@ func (h *Handlers) FormsRuntimeButtonAction(w http.ResponseWriter, r *http.Reque
 		true, false, true,
 	)
 	if err != nil {
-		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": err.Error()})
+		ref := logRef("FormsRuntimeButtonAction prelude", err)
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "erro interno (ref " + ref + ")"})
 		return
 	}
 	if !authed {
@@ -808,14 +581,14 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 			jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "computed_expr failed"})
 			return
 		}
-		userErr, sysErr := evaluateValidateExprs(r.Context(), user, elements, attributes, parsedValues)
+		fieldErrors, sysErr := evaluateValidateExprs(r.Context(), user, elements, attributes, parsedValues)
 		if sysErr != nil {
 			log.Printf("[ERROR] button validate_expr: %v", sysErr)
 			jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "validate_expr failed"})
 			return
 		}
-		if userErr != "" {
-			jsonResponse(w, http.StatusBadRequest, map[string]string{"error": userErr})
+		if len(fieldErrors) > 0 {
+			jsonResponse(w, http.StatusBadRequest, map[string]string{"error": joinFieldErrors(elements, fieldErrors)})
 			return
 		}
 
@@ -846,8 +619,8 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 
 	// 4. Commit Transaction
 	if err := tx.Commit(); err != nil {
-		log.Printf("[ERROR] Commit failed: %v", err)
-		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Commit failed: " + err.Error()})
+		ref := logRef("button commit", err)
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao finalizar (ref " + ref + ")"})
 		return
 	}
 	committed = true

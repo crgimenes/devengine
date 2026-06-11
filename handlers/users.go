@@ -12,7 +12,6 @@ import (
 	"github.com/crgimenes/devengine/auth/basic"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
-	"github.com/crgimenes/devengine/log"
 )
 
 const usersPageSize = 50
@@ -24,14 +23,14 @@ func (h *Handlers) ToolsUsers(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsUsers", err)
 		return
 	}
 	if !authed {
 		return
 	}
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -43,8 +42,7 @@ func (h *Handlers) ToolsUsers(w http.ResponseWriter, r *http.Request) {
 
 	users, total, err := db.Storage.ListUsers(usersPageSize, offset)
 	if err != nil {
-		log.Printf("ToolsUsers ListUsers: %v", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsUsers", err)
 		return
 	}
 
@@ -94,18 +92,18 @@ func (h *Handlers) ToolsUsersEdit(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsUsersEdit", err)
 		return
 	}
 	if !authed {
 		return
 	}
 	if !current.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
-	target, err := loadTargetUser(r, w)
+	target, err := h.loadTargetUser(r, w)
 	if err != nil || target == nil {
 		return
 	}
@@ -144,18 +142,18 @@ func (h *Handlers) ToolsUsersUpdate(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsUsersUpdate", err)
 		return
 	}
 	if !authed {
 		return
 	}
 	if !current.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
-	target, err := loadTargetUser(r, w)
+	target, err := h.loadTargetUser(r, w)
 	if err != nil || target == nil {
 		return
 	}
@@ -167,19 +165,22 @@ func (h *Handlers) ToolsUsersUpdate(w http.ResponseWriter, r *http.Request) {
 
 	_, err = db.Storage.UpdateUserProfile(target.ID, username, target.AvatarURL, email)
 	if err != nil {
-		usersEditRedirect(w, r, target.ReferenceID, "error", err.Error())
+		ref := logRef("UpdateUserProfile", err)
+		usersEditRedirect(w, r, target.ReferenceID, "error", "Erro ao atualizar perfil (ref "+ref+")")
 		return
 	}
 
 	err = db.Storage.UpdateUserSysop(target.ID, sysop, current.ID)
 	if err != nil {
-		usersEditRedirect(w, r, target.ReferenceID, "error", err.Error())
+		ref := logRef("UpdateUserSysop", err)
+		usersEditRedirect(w, r, target.ReferenceID, "error", "Erro ao atualizar sysop (ref "+ref+")")
 		return
 	}
 
 	err = db.Storage.UpdateUserEnabled(target.ID, enabled, current.ID)
 	if err != nil {
-		usersEditRedirect(w, r, target.ReferenceID, "error", err.Error())
+		ref := logRef("UpdateUserEnabled", err)
+		usersEditRedirect(w, r, target.ReferenceID, "error", "Erro ao atualizar enabled (ref "+ref+")")
 		return
 	}
 
@@ -194,40 +195,37 @@ func (h *Handlers) ToolsUsersResetPassword(w http.ResponseWriter, r *http.Reques
 		true, false, true,
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsUsersResetPassword", err)
 		return
 	}
 	if !authed {
 		return
 	}
 	if !current.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
-	target, err := loadTargetUser(r, w)
+	target, err := h.loadTargetUser(r, w)
 	if err != nil || target == nil {
 		return
 	}
 
 	newPassword, err := randomPassword()
 	if err != nil {
-		log.Printf("randomPassword: %v", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsUsersResetPassword", err)
 		return
 	}
 
 	hash, err := basic.HashPassword(newPassword)
 	if err != nil {
-		log.Printf("basic.HashPassword: %v", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsUsersResetPassword", err)
 		return
 	}
 
 	err = db.Storage.SetPasswordHash(target.ID, hash)
 	if err != nil {
-		log.Printf("SetPasswordHash: %v", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsUsersResetPassword", err)
 		return
 	}
 
@@ -239,20 +237,19 @@ func (h *Handlers) ToolsUsersResetPassword(w http.ResponseWriter, r *http.Reques
 // loadTargetUser parses the reference_id from the URL and fetches the target
 // user. Writes the appropriate HTTP error and returns nil when the user
 // cannot be loaded; the caller must check (nil, _) and return.
-func loadTargetUser(r *http.Request, w http.ResponseWriter) (*db.User, error) {
+func (h *Handlers) loadTargetUser(r *http.Request, w http.ResponseWriter) (*db.User, error) {
 	ref := r.PathValue("ref")
 	if ref == "" {
-		http.Error(w, "missing user ref", http.StatusBadRequest)
+		h.errorPage(w, r, http.StatusBadRequest, "missing user ref")
 		return nil, nil
 	}
 	u, err := db.Storage.GetUserByRefID(ref)
 	if err != nil {
-		log.Printf("GetUserByRefID: %v", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "GetUserByRefID", err)
 		return nil, err
 	}
 	if u == nil {
-		http.NotFound(w, r)
+		h.notFound(w, r)
 		return nil, nil
 	}
 	return u, nil

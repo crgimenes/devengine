@@ -37,26 +37,25 @@ func (h *Handlers) formListContext(w http.ResponseWriter, r *http.Request) (*db.
 	machineName := r.PathValue("machineName")
 	form, err := db.Storage.GetFormByMachineName(machineName)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "formListContext", err)
 		return nil, nil, nil, false
 	}
 	if form == nil {
-		http.NotFound(w, r)
+		h.notFound(w, r)
 		return nil, nil, nil, false
 	}
 	if form.EAVEntityTypeID == nil {
-		http.Error(w, "form has no entity type", http.StatusBadRequest)
+		h.errorPage(w, r, http.StatusBadRequest, "form has no entity type")
 		return nil, nil, nil, false
 	}
 	et, err := db.Storage.GetEAVEntityTypeByID(*form.EAVEntityTypeID)
 	if err != nil {
-		http.Error(w, "entity type not found", http.StatusInternalServerError)
+		h.serverError(w, r, "entity type not found", err)
 		return nil, nil, nil, false
 	}
 	attributes, err := db.Storage.ListEAVAttributesByEntityTypeID(et.ID)
 	if err != nil {
-		log.Printf("ListEAVAttributesByEntityTypeID: %v", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "formListContext", err)
 		return nil, nil, nil, false
 	}
 	return form, et, attributes, true
@@ -119,7 +118,7 @@ func (h *Handlers) FormsRuntimeList(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "FormsRuntimeList", err)
 		return
 	}
 	if !authed {
@@ -134,8 +133,7 @@ func (h *Handlers) FormsRuntimeList(w http.ResponseWriter, r *http.Request) {
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	rows, nextCursor, err := h.fetchRecordRows(et.ID, 0, q, attributes)
 	if err != nil {
-		log.Printf("fetchRecordRows: %v", err)
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "FormsRuntimeList", err)
 		return
 	}
 

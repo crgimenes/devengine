@@ -31,14 +31,14 @@ func (h *Handlers) ToolsFilo(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsFilo", err)
 		return
 	}
 	if !authed {
 		return
 	}
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 

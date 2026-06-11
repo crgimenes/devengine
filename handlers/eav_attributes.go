@@ -17,14 +17,14 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeNew(w http.ResponseWriter, r *
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	entityRefID := r.PathValue("id")
 	entityType, err := db.Storage.GetEAVEntityTypeByRefID(entityRefID)
 	if err != nil {
-		http.Error(w, "Entity type not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
@@ -56,7 +56,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeEdit(w http.ResponseWriter, r 
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -65,14 +65,14 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeEdit(w http.ResponseWriter, r 
 
 	entityType, err := db.Storage.GetEAVEntityTypeByRefID(entityRefID)
 	if err != nil {
-		http.Error(w, "Entity type not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
 	// External URLs carry reference ids, never internal numeric ids.
 	attribute, err := db.Storage.GetEAVAttributeByRefID(attrRefID)
 	if err != nil {
-		http.Error(w, "Attribute not found", http.StatusNotFound)
+		h.notFound(w, r)
 		return
 	}
 
@@ -106,7 +106,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeCreate(w http.ResponseWriter, 
 		true,  // prevent cache
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsDatabaseSchemaEAVAttributeCreate", err)
 		return
 	}
 
@@ -116,14 +116,14 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeCreate(w http.ResponseWriter, 
 
 	// Sysop-only
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
 	// Get entity type ID from path
 	entityRefID := r.PathValue("id")
 	if entityRefID == "" {
-		http.Error(w, "missing entity type ID", http.StatusBadRequest)
+		h.errorPage(w, r, http.StatusBadRequest, "missing entity type ID")
 		return
 	}
 
@@ -131,10 +131,10 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeCreate(w http.ResponseWriter, 
 	entityType, err := db.Storage.GetEAVEntityTypeByRefID(entityRefID)
 	if err != nil {
 		if err == db.ErrNotFound {
-			http.Error(w, "Entity type not found", http.StatusNotFound)
+			h.notFound(w, r)
 			return
 		}
-		http.Error(w, "failed to fetch entity type", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to fetch entity type", err)
 		return
 	}
 
@@ -230,8 +230,9 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeCreate(w http.ResponseWriter, 
 		defaultVDatetime,
 	)
 	if err != nil {
+		ref := logRef("create attribute", err)
 		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/edit?message="+
-			"Erro ao criar atributo: "+err.Error(), http.StatusSeeOther)
+			"Erro ao criar atributo (ref "+ref+")", http.StatusSeeOther)
 		return
 	}
 
@@ -248,7 +249,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeDelete(w http.ResponseWriter, 
 		true,  // prevent cache
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsDatabaseSchemaEAVAttributeDelete", err)
 		return
 	}
 
@@ -258,7 +259,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeDelete(w http.ResponseWriter, 
 
 	// Sysop-only
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -266,7 +267,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeDelete(w http.ResponseWriter, 
 	entityRefID := r.PathValue("id")
 	attrRefID := r.PathValue("attr_id")
 	if entityRefID == "" || attrRefID == "" {
-		http.Error(w, "missing IDs", http.StatusBadRequest)
+		h.errorPage(w, r, http.StatusBadRequest, "missing IDs")
 		return
 	}
 
@@ -274,18 +275,19 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeDelete(w http.ResponseWriter, 
 	attr, err := db.Storage.GetEAVAttributeByRefID(attrRefID)
 	if err != nil {
 		if err == db.ErrNotFound {
-			http.Error(w, "Attribute not found", http.StatusNotFound)
+			h.notFound(w, r)
 			return
 		}
-		http.Error(w, "failed to fetch attribute", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to fetch attribute", err)
 		return
 	}
 
 	// Soft delete
 	err = db.Storage.SoftDeleteEAVAttribute(attr.ID)
 	if err != nil {
+		ref := logRef("delete attribute", err)
 		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/edit?message="+
-			"Erro ao excluir atributo: "+err.Error(), http.StatusSeeOther)
+			"Erro ao excluir atributo (ref "+ref+")", http.StatusSeeOther)
 		return
 	}
 
@@ -302,7 +304,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeUpdate(w http.ResponseWriter, 
 		true,  // prevent cache
 	)
 	if err != nil {
-		http.Error(w, "internal server error", http.StatusInternalServerError)
+		h.serverError(w, r, "ToolsDatabaseSchemaEAVAttributeUpdate", err)
 		return
 	}
 
@@ -312,7 +314,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeUpdate(w http.ResponseWriter, 
 
 	// Sysop-only
 	if !user.Sysop {
-		http.Error(w, "forbidden", http.StatusForbidden)
+		h.forbidden(w, r)
 		return
 	}
 
@@ -320,7 +322,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeUpdate(w http.ResponseWriter, 
 	entityRefID := r.PathValue("id")
 	attrRefID := r.PathValue("attr_id")
 	if entityRefID == "" || attrRefID == "" {
-		http.Error(w, "missing IDs", http.StatusBadRequest)
+		h.errorPage(w, r, http.StatusBadRequest, "missing IDs")
 		return
 	}
 
@@ -328,10 +330,10 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeUpdate(w http.ResponseWriter, 
 	attr, err := db.Storage.GetEAVAttributeByRefID(attrRefID)
 	if err != nil {
 		if err == db.ErrNotFound {
-			http.Error(w, "Attribute not found", http.StatusNotFound)
+			h.notFound(w, r)
 			return
 		}
-		http.Error(w, "failed to fetch attribute", http.StatusInternalServerError)
+		h.serverError(w, r, "failed to fetch attribute", err)
 		return
 	}
 
@@ -428,8 +430,9 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeUpdate(w http.ResponseWriter, 
 		defaultVDatetime,
 	)
 	if err != nil {
+		ref := logRef("update attribute", err)
 		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/edit?message="+
-			"Erro ao atualizar atributo: "+err.Error(), http.StatusSeeOther)
+			"Erro ao atualizar atributo (ref "+ref+")", http.StatusSeeOther)
 		return
 	}
 

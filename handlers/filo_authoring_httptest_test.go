@@ -3,6 +3,7 @@ package handlers
 import (
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -54,18 +55,25 @@ func TestElementValidateExprAuthoringAndRuntime(t *testing.T) {
 		t.Fatalf("validate_expr not persisted: %q", got.ValidateExpr)
 	}
 
-	// Runtime must block the forbidden value...
+	// Runtime must block the forbidden value, re-rendering the form with the
+	// message next to the field and the typed value preserved.
 	rr = doPostForm(t, mux, "/form/"+form.MachineName,
 		url.Values{"titulo": {"proibido"}}, user)
-	loc := location(t, rr)
-	if !strings.Contains(loc, "valor proibido") {
-		t.Fatalf("validate_expr not enforced, redirect: %s", loc)
+	if rr.Code != 200 {
+		t.Fatalf("invalid submit = %d, want re-render", rr.Code)
+	}
+	page := rr.Body.String()
+	if !strings.Contains(page, "valor proibido") {
+		t.Fatalf("validate_expr message missing from re-render")
+	}
+	if !strings.Contains(page, `value="proibido"`) {
+		t.Fatalf("typed value not preserved on re-render")
 	}
 
 	// ...and accept anything else.
 	rr = doPostForm(t, mux, "/form/"+form.MachineName,
 		url.Values{"titulo": {"permitido"}}, user)
-	loc = location(t, rr)
+	loc := location(t, rr)
 	if !strings.Contains(loc, "sucesso") {
 		t.Fatalf("valid value rejected, redirect: %s", loc)
 	}
@@ -279,5 +287,76 @@ func TestDatetimeDefaultNow(t *testing.T) {
 	m := regexp.MustCompile(`name="data"\s+value="(\d{4}-\d{2}-\d{2}T\d{2}:\d{2})"`).FindStringSubmatch(body)
 	if m == nil {
 		t.Fatalf("data input not filled with a timestamp")
+	}
+}
+
+// A parse error (bad INT) must re-render with the message on the offending
+// field and every typed value preserved — including the bad one.
+func TestCreateParseErrorPreservesValues(t *testing.T) {
+	mux, s := newHTTPTestEnv(t)
+	form, _ := seedStockScenario(t, s)
+	user := plantUser(t, "user", false)
+
+	rr := doPostForm(t, mux, "/form/"+form.MachineName,
+		url.Values{"quantidade": {"abc"}, "produto": {"manter isto"}}, user)
+	if rr.Code != 200 {
+		t.Fatalf("bad submit = %d, want re-render", rr.Code)
+	}
+	page := rr.Body.String()
+	if !strings.Contains(page, "valor inválido") {
+		t.Fatalf("parse error message missing")
+	}
+	if !strings.Contains(page, `value="abc"`) {
+		t.Fatalf("bad input not preserved for correction")
+	}
+	if !strings.Contains(page, `value="manter isto"`) {
+		t.Fatalf("good input lost on re-render")
+	}
+
+	records, err := s.ListEAVRecordsCursor(*form.EAVEntityTypeID, 0, 10, "")
+	if err != nil || len(records) != 0 {
+		t.Fatalf("records = %d (%v), want 0", len(records), err)
+	}
+}
+
+// Update validation failures must re-render the edit view (rev hidden intact)
+// without touching the stored record.
+func TestUpdateValidationRerendersWithValues(t *testing.T) {
+	mux, s := newHTTPTestEnv(t)
+	form := seedTaskForm(t, s, "original")
+	user := plantUser(t, "user", false)
+
+	els, err := s.ListFormElements(form.ID)
+	if err != nil || len(els) == 0 {
+		t.Fatalf("ListFormElements: %v", err)
+	}
+	el := els[0]
+	err = s.UpdateFormElement(el.ID, nil, el.MachineName, el.ElementKind, el.Label, "",
+		0, 12, "left", "", "", el.EAVAttributeID, false, false, false, false,
+		`(if (= field:titulo "proibido") "valor proibido" "")`,
+		"", false, "", "", "")
+	if err != nil {
+		t.Fatalf("UpdateFormElement: %v", err)
+	}
+
+	records, err := s.ListEAVRecordsCursor(*form.EAVEntityTypeID, 0, 10, "")
+	if err != nil || len(records) != 1 {
+		t.Fatalf("seed record: %v", err)
+	}
+	rec := records[0]
+
+	rr := doPostForm(t, mux, "/form/"+form.MachineName+"/r/"+rec.ReferenceID,
+		url.Values{"titulo": {"proibido"}, "rev": {strconv.Itoa(rec.Rev)}}, user)
+	if rr.Code != 200 {
+		t.Fatalf("invalid update = %d, want re-render", rr.Code)
+	}
+	page := rr.Body.String()
+	if !strings.Contains(page, "valor proibido") || !strings.Contains(page, `value="proibido"`) {
+		t.Fatalf("re-render missing error or typed value")
+	}
+
+	vals, err := s.GetEAVValuesByRecordID(rec.ID)
+	if err != nil || len(vals) != 1 || vals[0].VText == nil || *vals[0].VText != "original" {
+		t.Fatalf("stored value changed: %+v", vals)
 	}
 }
