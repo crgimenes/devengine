@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"database/sql"
+	"context"
 	"encoding/json"
 	"fmt"
 	"maps"
@@ -201,19 +201,7 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		errorMsg = ""
 	}
 
-	// Load menu items if form has a menu associated
-	var menuItems []db.MenuItemNode
-	var menuMachineName string
-	if form.MenuID != nil {
-		menu, err := db.Storage.GetMenuByID(*form.MenuID)
-		if err == nil && menu != nil {
-			menuMachineName = menu.MachineName
-			items, err := db.Storage.ListMenuItems(menu.ID)
-			if err == nil {
-				menuItems = db.BuildMenuItemTreeWithName(items, menuMachineName)
-			}
-		}
-	}
+	menuItems, menuMachineName := loadFormMenu(form)
 
 	data := struct {
 		Authed          bool
@@ -247,10 +235,7 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		MenuMachineName: menuMachineName,
 	}
 
-	err = h.templates(w, "forms_runtime.go.tmpl", data)
-	if err != nil {
-		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
-	}
+	h.render(w, "forms_runtime.go.tmpl", data)
 }
 
 // FormsRuntimeCreate handles form submission to create a new record.
@@ -260,7 +245,7 @@ func (h *Handlers) FormsRuntimeCreate(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil || !authed {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -355,6 +340,26 @@ func (h *Handlers) FormsRuntimeCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 // FormsRuntimeEdit shows a form for editing an existing record.
+// recordValuesMap flattens typed EAV values into machine_name → Go value.
+func recordValuesMap(eavValues []db.EAVValue, attributes []db.EAVAttribute) map[string]any {
+	attrByID := make(map[int64]*db.EAVAttribute, len(attributes))
+	for i := range attributes {
+		attrByID[attributes[i].ID] = &attributes[i]
+	}
+	values := make(map[string]any, len(eavValues))
+	for _, val := range eavValues {
+		attr := attrByID[val.AttributeID]
+		if attr == nil {
+			continue
+		}
+		v := unwrapValue(attr.PrimitiveKind, val)
+		if v != nil {
+			values[attr.MachineName] = v
+		}
+	}
+	return values
+}
+
 func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
@@ -443,43 +448,7 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Build values map
-	values := make(map[string]any)
-	for _, val := range eavValues {
-		var attr *db.EAVAttribute
-		for i := range attributes {
-			if attributes[i].ID == val.AttributeID {
-				attr = &attributes[i]
-				break
-			}
-		}
-		if attr == nil {
-			continue
-		}
-
-		switch attr.PrimitiveKind {
-		case "BOOL":
-			if val.VBool != nil {
-				values[attr.MachineName] = *val.VBool
-			}
-		case "INT":
-			if val.VInt != nil {
-				values[attr.MachineName] = *val.VInt
-			}
-		case "REAL":
-			if val.VReal != nil {
-				values[attr.MachineName] = *val.VReal
-			}
-		case "DATETIME":
-			if val.VDatetime != nil {
-				values[attr.MachineName] = *val.VDatetime
-			}
-		default:
-			if val.VText != nil {
-				values[attr.MachineName] = *val.VText
-			}
-		}
-	}
+	values := recordValuesMap(eavValues, attributes)
 
 	// Execute pos_load script
 	var posLoadError string
@@ -501,19 +470,7 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 		errorMsg = ""
 	}
 
-	// Load menu items if form has a menu associated
-	var menuItems []db.MenuItemNode
-	var menuMachineName string
-	if form.MenuID != nil {
-		menu, err := db.Storage.GetMenuByID(*form.MenuID)
-		if err == nil && menu != nil {
-			menuMachineName = menu.MachineName
-			mItems, err := db.Storage.ListMenuItems(menu.ID)
-			if err == nil {
-				menuItems = db.BuildMenuItemTreeWithName(mItems, menuMachineName)
-			}
-		}
-	}
+	menuItems, menuMachineName := loadFormMenu(form)
 
 	data := struct {
 		Authed          bool
@@ -547,10 +504,7 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 		MenuMachineName: menuMachineName,
 	}
 
-	err = h.templates(w, "forms_runtime.go.tmpl", data)
-	if err != nil {
-		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
-	}
+	h.render(w, "forms_runtime.go.tmpl", data)
 }
 
 // FormsRuntimeUpdate handles form submission to update an existing record.
@@ -560,7 +514,7 @@ func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil || !authed {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -766,7 +720,7 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 	// 1. Prepare Data (Strict Typing)
 	// =========================================================
 
-	var parsedValues db.EAVRecordValues = make(db.EAVRecordValues)
+	parsedValues := make(db.EAVRecordValues)
 	var attributes []db.EAVAttribute
 
 	if form.EAVEntityTypeID != nil {
@@ -815,123 +769,14 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 	// 2. Execute Filo Script (BEFORE Save)
 	// =========================================================
 	if button.ButtonFiloCode != "" {
-		// Build Filo globals
-		globals := make(map[string]filo.Value)
-
-		// Add Form/EAV values (Strict Types)
-		for k, v := range parsedValues {
-			globals["field:"+k] = goToFilo(v)
-		}
-
-		// Add form metadata
-		globals["form:machine_name"] = filo.VString(form.MachineName)
-		globals["form:label"] = filo.VString(form.Label)
-		globals["form:reference_id"] = filo.VString(form.ReferenceID)
-
-		// Add user metadata
-		if user != nil {
-			globals["user:id"] = filo.VNum(float64(user.ID))
-			globals["user:email"] = filo.VString(user.Email)
-			globals["user:sysop"] = filo.VBool(user.Sysop)
-		}
-
-		// Add Record metadata (if available)
-		globals["record:id"] = filo.VNum(0)
-		globals["record:ref_id"] = filo.VString("")
-
-		if currentRecord != nil {
-			globals["record:id"] = filo.VNum(float64(currentRecord.ID))
-			globals["record:ref_id"] = filo.VString(currentRecord.ReferenceID)
-			globals["record:status"] = filo.VString(currentRecord.Status)
-		}
-
-		// Control variables
-		globals["error"] = filo.VString("")
-		globals["message"] = filo.VString("")
-		globals["redirect_to"] = filo.VString("")
-
-		// Execute Filo script
-		eng := filo.NewEngine()
-
-		// Setup DB context for Filo using the SAME TRANSACTION
-		dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
-		dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
-
-		// Register builtins (including DB ops attached to this TX)
-		filostrings.RegisterBuiltins(eng)
-		filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
-		filolog.RegisterLogBuiltins(eng, filolog.NewContext(globals))
-
-		ctx := r.Context()
-		cfg := filo.EvalConfig{
-			StepLimit:      10000,
-			RecursionLimit: 100,
-			Timeout:        5 * 1e9, // 5 seconds in nanoseconds
-		}
-
-		_, newGlobals, execErr := eng.RunScript(ctx, button.ButtonFiloCode, globals, cfg)
+		globals := buttonFiloGlobals(form, user, currentRecord, parsedValues)
+		newGlobals, execErr := runButtonFilo(r.Context(), tx, button.ButtonFiloCode, globals)
 		if execErr != nil {
 			log.Printf("[ERROR] Button '%s' Filo script error: %v", button.MachineName, execErr)
 			jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Script error: " + execErr.Error()})
 			return
 		}
-
-		// Read back changes to inputs from Filo
-		for kRaw, val := range newGlobals {
-			var goVal any
-			switch val.Kind {
-			case filo.KNumber:
-				goVal = int64(val.Num)
-				if val.Num != float64(int64(val.Num)) {
-					goVal = val.Num
-				}
-			case filo.KString:
-				goVal = val.Str
-			case filo.KBool:
-				goVal = val.Bool
-			default:
-				continue
-			}
-
-			// Handle field: prefix
-			k := kRaw
-			if after, ok := strings.CutPrefix(k, "field:"); ok {
-				k = after
-			} else {
-				// Ignore non-field globals (like error, message, etc unless they match field names explicitly without prefix which is deprecated but supported for non-colliding legacy if any)
-				// Actually, per strict rules, we only save "field:" variables or variables that match attribute names directly IF we supported legacy.
-				// But to be safe and avoid collision with "error", "message", we ONLY map back if it matches a known attribute.
-				// However, if we only inject "field:", scripts MUST write to "field:".
-				// IF a script writes to "idade" (no prefix), it ends up in globals["idade"].
-				// If we have a field "idade", should we accept it?
-				// Risk: collision with "error".
-				// Decision: Only accept "field:" prefixed variables OR variables that match attribute names BUT are not reserved words.
-				// For now, let's accept both but prioritize field:?
-				// To enforce the standard, let's rely on matching attribute names, but prioritize mapped Key.
-			}
-
-			if _, exists := parsedValues[k]; exists {
-				parsedValues[k] = goVal
-			} else {
-				for _, attr := range attributes {
-					if attr.MachineName == k {
-						parsedValues[k] = goVal
-						break
-					}
-				}
-			}
-
-			// Read control variables
-			if kRaw == "error" && val.Kind == filo.KString && val.Str != "" {
-				response["error"] = val.Str
-			}
-			if kRaw == "message" && val.Kind == filo.KString && val.Str != "" {
-				response["message"] = val.Str
-			}
-			if kRaw == "redirect_to" && val.Kind == filo.KString && val.Str != "" {
-				response["redirect_to"] = val.Str
-			}
-		}
+		applyButtonGlobals(newGlobals, attributes, parsedValues, response)
 	}
 
 	// Check if there was an error from Filo
@@ -965,7 +810,6 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 				jsonResponse(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
 				return
 			}
-			recordRefID = newRefID
 			response["redirect_to"] = "/form/" + machineName + "/r/" + newRefID
 		}
 	}
@@ -979,6 +823,112 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 	committed = true
 
 	jsonResponse(w, http.StatusOK, response)
+}
+
+// buttonFiloGlobals assembles the global scope handed to a button's Filo
+// script: field values, form/user/record metadata and the control variables.
+func buttonFiloGlobals(form *db.Form, user *db.User, currentRecord *db.EAVRecord, parsedValues db.EAVRecordValues) map[string]filo.Value {
+	globals := make(map[string]filo.Value)
+
+	for k, v := range parsedValues {
+		globals["field:"+k] = goToFilo(v)
+	}
+
+	globals["form:machine_name"] = filo.VString(form.MachineName)
+	globals["form:label"] = filo.VString(form.Label)
+	globals["form:reference_id"] = filo.VString(form.ReferenceID)
+
+	if user != nil {
+		globals["user:id"] = filo.VNum(float64(user.ID))
+		globals["user:email"] = filo.VString(user.Email)
+		globals["user:sysop"] = filo.VBool(user.Sysop)
+	}
+
+	globals["record:id"] = filo.VNum(0)
+	globals["record:ref_id"] = filo.VString("")
+	if currentRecord != nil {
+		globals["record:id"] = filo.VNum(float64(currentRecord.ID))
+		globals["record:ref_id"] = filo.VString(currentRecord.ReferenceID)
+		globals["record:status"] = filo.VString(currentRecord.Status)
+	}
+
+	// Control variables the script may set to influence the response.
+	globals["error"] = filo.VString("")
+	globals["message"] = filo.VString("")
+	globals["redirect_to"] = filo.VString("")
+
+	return globals
+}
+
+// runButtonFilo executes the script with the engine wired to the SAME
+// transaction, so script-issued DB ops roll back together with the save.
+func runButtonFilo(ctx context.Context, tx *db.Transaction, code string, globals map[string]filo.Value) (map[string]filo.Value, error) {
+	eng := filo.NewEngine()
+
+	dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
+	dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
+
+	filostrings.RegisterBuiltins(eng)
+	filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
+	filolog.RegisterLogBuiltins(eng, filolog.NewContext(globals))
+
+	cfg := filo.EvalConfig{
+		StepLimit:      10000,
+		RecursionLimit: 100,
+		Timeout:        5 * 1e9, // 5 seconds in nanoseconds
+	}
+
+	_, newGlobals, err := eng.RunScript(ctx, code, globals, cfg)
+	return newGlobals, err
+}
+
+// applyButtonGlobals maps the script's resulting globals back onto the parsed
+// values and the response control variables.
+func applyButtonGlobals(newGlobals map[string]filo.Value, attributes []db.EAVAttribute, parsedValues db.EAVRecordValues, response map[string]any) {
+	for kRaw, val := range newGlobals {
+		var goVal any
+		switch val.Kind {
+		case filo.KNumber:
+			goVal = int64(val.Num)
+			if val.Num != float64(int64(val.Num)) {
+				goVal = val.Num
+			}
+		case filo.KString:
+			goVal = val.Str
+		case filo.KBool:
+			goVal = val.Bool
+		default:
+			continue
+		}
+
+		// Unprefixed globals only map back when they match a known attribute,
+		// so control names like "error" cannot collide.
+		k := kRaw
+		if after, ok := strings.CutPrefix(k, "field:"); ok {
+			k = after
+		}
+
+		if _, exists := parsedValues[k]; exists {
+			parsedValues[k] = goVal
+		} else {
+			for _, attr := range attributes {
+				if attr.MachineName == k {
+					parsedValues[k] = goVal
+					break
+				}
+			}
+		}
+
+		if kRaw == "error" && val.Kind == filo.KString && val.Str != "" {
+			response["error"] = val.Str
+		}
+		if kRaw == "message" && val.Kind == filo.KString && val.Str != "" {
+			response["message"] = val.Str
+		}
+		if kRaw == "redirect_to" && val.Kind == filo.KString && val.Str != "" {
+			response["redirect_to"] = val.Str
+		}
+	}
 }
 
 // jsonResponse writes a JSON response with the given status code.
@@ -1044,9 +994,6 @@ func (h *Handlers) FormsRuntimeActionsJS(w http.ResponseWriter, r *http.Request)
 
 	_, _ = w.Write([]byte(js.String()))
 }
-
-// Unused import placeholder
-var _ = sql.ErrNoRows
 
 // =========================================================
 // Helper Functions for Atomic Transactions

@@ -9,13 +9,13 @@ import (
 
 type stubPlugin struct{ id string }
 
-func (p stubPlugin) ID() string                  { return p.id }
-func (stubPlugin) PrimitiveKinds() []string      { return []string{"TEXT"} }
-func (stubPlugin) HasPersistence() bool          { return true }
-func (stubPlugin) SupportsReadOnly() bool        { return true }
-func (stubPlugin) ParseOptions(string) any       { return nil }
+func (p stubPlugin) ID() string                   { return p.id }
+func (stubPlugin) PrimitiveKinds() []string       { return []string{"TEXT"} }
+func (stubPlugin) HasPersistence() bool           { return true }
+func (stubPlugin) SupportsReadOnly() bool         { return true }
+func (stubPlugin) ParseOptions(string) any        { return nil }
 func (stubPlugin) Parse(string, any) (any, error) { return nil, nil }
-func (stubPlugin) Validate(any, any) error       { return nil }
+func (stubPlugin) Validate(any, any) error        { return nil }
 
 func TestRegisterAndGet(t *testing.T) {
 	ui.Reset()

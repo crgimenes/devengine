@@ -4,8 +4,6 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/crgimenes/devengine/log"
-
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
@@ -34,7 +32,7 @@ func (h *Handlers) ToolsMenus(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -67,11 +65,7 @@ func (h *Handlers) ToolsMenus(w http.ResponseWriter, r *http.Request) {
 		Menus:       menus,
 	}
 
-	err = h.templates(w, "tools_menu_editor.go.tmpl", data)
-	if err != nil {
-		log.Printf("template error: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "tools_menu_editor.go.tmpl", data)
 }
 
 // ToolsMenusNew shows the new menu creation page.
@@ -88,7 +82,7 @@ func (h *Handlers) ToolsMenusNew(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -112,11 +106,7 @@ func (h *Handlers) ToolsMenusNew(w http.ResponseWriter, r *http.Request) {
 		FormData:    struct{ MachineName, Label, Description string }{},
 	}
 
-	err = h.templates(w, "tools_menu_editor_new.go.tmpl", data)
-	if err != nil {
-		log.Printf("template error: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "tools_menu_editor_new.go.tmpl", data)
 }
 
 // ToolsMenusCreate handles menu creation.
@@ -133,7 +123,7 @@ func (h *Handlers) ToolsMenusCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -211,7 +201,7 @@ func (h *Handlers) ToolsMenusEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -310,11 +300,7 @@ func (h *Handlers) ToolsMenusEdit(w http.ResponseWriter, r *http.Request) {
 		Csrf:        csrf,
 	}
 
-	err = h.templates(w, "tools_menu_editor_edit.go.tmpl", data)
-	if err != nil {
-		log.Printf("template error: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "tools_menu_editor_edit.go.tmpl", data)
 }
 
 // ToolsMenusUpdate handles menu update.
@@ -331,7 +317,7 @@ func (h *Handlers) ToolsMenusUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -374,7 +360,7 @@ func (h *Handlers) ToolsMenusDelete(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -408,7 +394,7 @@ func (h *Handlers) ToolsMenusItemCreate(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -477,7 +463,7 @@ func (h *Handlers) ToolsMenusItemEdit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -525,10 +511,7 @@ func (h *Handlers) ToolsMenusItemEdit(w http.ResponseWriter, r *http.Request) {
 		Csrf:        csrf,
 	}
 
-	err = h.templates(w, "tools_menu_editor_item_edit.go.tmpl", data)
-	if err != nil {
-		log.Printf("[ERROR] ToolsMenusItemEdit template error: %v", err)
-	}
+	h.render(w, "tools_menu_editor_item_edit.go.tmpl", data)
 }
 
 // ToolsMenusItemUpdate handles item update.
@@ -545,7 +528,7 @@ func (h *Handlers) ToolsMenusItemUpdate(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -605,7 +588,7 @@ func (h *Handlers) ToolsMenusItemDelete(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -641,7 +624,7 @@ func (h *Handlers) ToolsMenusItemMoveUp(w http.ResponseWriter, r *http.Request) 
 	}
 
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -673,7 +656,7 @@ func (h *Handlers) ToolsMenusItemMoveDown(w http.ResponseWriter, r *http.Request
 	}
 
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -705,7 +688,7 @@ func (h *Handlers) ToolsMenusPreview(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -743,11 +726,7 @@ func (h *Handlers) ToolsMenusPreview(w http.ResponseWriter, r *http.Request) {
 		AllItems:    items,
 	}
 
-	err = h.templates(w, "tools_menu_editor_preview.go.tmpl", data)
-	if err != nil {
-		log.Printf("template error: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "tools_menu_editor_preview.go.tmpl", data)
 }
 
 // MenuItemAction handles menu item action execution (Filo code).

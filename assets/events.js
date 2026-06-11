@@ -1,16 +1,9 @@
-// Minimalista SSE client
-console.log("[SSE] Script loaded");
-
+// Minimalist SSE client.
 (function () {
   let es = null;
 
   try {
-    console.log("[SSE] Creating EventSource");
     es = new EventSource("/events");
-
-    es.onopen = function () {
-      console.log("[SSE] Connected");
-    };
 
     es.onmessage = function (event) {
       const msg = String(event.data || "");
@@ -20,8 +13,6 @@ console.log("[SSE] Script loaded");
         return;
       }
 
-      console.log("[SSE] Message:", msg);
-
       // Handle refresh message
       if (msg === "refresh") {
         location.reload();
@@ -29,10 +20,10 @@ console.log("[SSE] Script loaded");
     };
 
     es.onerror = function () {
-      console.log("[SSE] Connection error, state:", es.readyState);
+      // EventSource retries automatically; nothing to do.
     };
   } catch (err) {
-    console.log("[SSE] Error:", err);
+    console.error("[SSE] Error:", err);
   }
 
   // Cleanup on page unload
@@ -42,4 +33,3 @@ console.log("[SSE] Script loaded");
     }
   });
 })();
-

@@ -41,12 +41,12 @@ type Options struct {
 
 type Plugin struct{}
 
-func (Plugin) ID() string                  { return "subform" }
-func (Plugin) PrimitiveKinds() []string    { return nil }
-func (Plugin) HasPersistence() bool        { return false }
-func (Plugin) SupportsReadOnly() bool      { return true }
+func (Plugin) ID() string                     { return "subform" }
+func (Plugin) PrimitiveKinds() []string       { return nil }
+func (Plugin) HasPersistence() bool           { return false }
+func (Plugin) SupportsReadOnly() bool         { return true }
 func (Plugin) Parse(string, any) (any, error) { return nil, nil }
-func (Plugin) Validate(any, any) error     { return nil }
+func (Plugin) Validate(any, any) error        { return nil }
 
 func (Plugin) ParseOptions(raw string) any {
 	var o Options

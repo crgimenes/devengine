@@ -336,7 +336,7 @@ func (s *SQLite) ListFilesByUserIDSorted(
 	offset int,
 	limit int,
 ) ([]*File, error) {
-	orderBy := "created_at DESC"
+	var orderBy string
 	switch strings.ToLower(strings.TrimSpace(sort)) {
 	case "name_asc":
 		orderBy = "LOWER(original_filename) ASC, created_at DESC"
@@ -450,7 +450,7 @@ func (s *SQLite) SearchFilesByUserIDFTS(
 		return s.ListFilesByUserID(userID, offset, limit)
 	}
 
-	orderBy := "f.created_at DESC"
+	var orderBy string
 	switch strings.ToLower(strings.TrimSpace(sort)) {
 	case "name_asc":
 		orderBy = "LOWER(f.original_filename) ASC, f.created_at DESC"

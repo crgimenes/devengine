@@ -45,8 +45,8 @@ func testDB(t *testing.T) *sql.DB {
 	}
 
 	t.Cleanup(func() {
-		db.Close()
-		os.RemoveAll(dir)
+		_ = db.Close()
+		_ = os.RemoveAll(dir)
 	})
 
 	return db

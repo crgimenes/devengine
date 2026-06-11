@@ -25,10 +25,10 @@ type AssetMeta struct {
 }
 
 var index map[string]AssetMeta
-var appFS http.FileSystem // FS da aplicação (opcional)
+var appFS http.FileSystem // application FS (optional)
 
-// RegisterAppFS permite que a aplicação registre seu próprio FS de assets.
-// Assets da aplicação têm prioridade sobre os do devengine.
+// RegisterAppFS lets the application register its own asset FS.
+// Application assets take precedence over devengine's.
 func RegisterAppFS(fs http.FileSystem) {
 	appFS = fs
 }
@@ -48,7 +48,7 @@ func Init() error {
 
 	index = built
 
-	// Indexar assets da aplicação (se registrado)
+	// Index application assets (if registered)
 	if appFS != nil {
 		appAssets, err := buildAssetsIndex(appFS)
 		if err != nil {

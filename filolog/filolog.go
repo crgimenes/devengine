@@ -119,7 +119,7 @@ func formatWithFiloTypes(format string, args []filo.Value) string {
 			if j < len(format) {
 				specFull := format[i : j+1]
 				if argIndex < len(args) {
-					result.WriteString(fmt.Sprintf(specFull, valueToGo(args[argIndex])))
+					fmt.Fprintf(&result, specFull, valueToGo(args[argIndex]))
 					argIndex++
 				} else {
 					result.WriteString(specFull)

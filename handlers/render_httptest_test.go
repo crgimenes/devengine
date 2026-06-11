@@ -143,6 +143,10 @@ func seedTaskForm(t *testing.T, s *db.SQLite, title string) *db.Form {
 	if err != nil {
 		t.Fatalf("CreateForm: %v", err)
 	}
+	_, err = s.CreateFormElement(form.ID, nil, "titulo", "field", "Título", "", 0, 12, "", "", &attr.ID, false, false)
+	if err != nil {
+		t.Fatalf("CreateFormElement: %v", err)
+	}
 	rec, err := s.CreateEAVRecord(et.ID)
 	if err != nil {
 		t.Fatalf("CreateEAVRecord: %v", err)

@@ -8,7 +8,6 @@ import (
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
-	"github.com/crgimenes/devengine/log"
 )
 
 // FormWithEntityType combines a form with its linked entity type info.
@@ -36,7 +35,7 @@ func (h *Handlers) ToolsForms(w http.ResponseWriter, r *http.Request) {
 
 	// Sysop-only check
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -83,11 +82,7 @@ func (h *Handlers) ToolsForms(w http.ResponseWriter, r *http.Request) {
 		Forms:       formsWithTypes,
 	}
 
-	err = h.templates(w, "tools_forms.go.tmpl", data)
-	if err != nil {
-		log.Printf("template error: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "tools_forms.go.tmpl", data)
 }
 
 // ToolsFormsNew shows the new form creation page.
@@ -97,7 +92,7 @@ func (h *Handlers) ToolsFormsNew(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -130,10 +125,7 @@ func (h *Handlers) ToolsFormsNew(w http.ResponseWriter, r *http.Request) {
 		EntityTypes: entityTypes,
 	}
 
-	err = h.templates(w, "tools_forms_new.go.tmpl", data)
-	if err != nil {
-		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
-	}
+	h.render(w, "tools_forms_new.go.tmpl", data)
 }
 
 // ToolsFormsCreate handles form creation.
@@ -143,7 +135,7 @@ func (h *Handlers) ToolsFormsCreate(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -186,7 +178,7 @@ func (h *Handlers) ToolsFormsEdit(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -304,10 +296,7 @@ func (h *Handlers) ToolsFormsEdit(w http.ResponseWriter, r *http.Request) {
 		SelectedMenuID: selectedMenuID,
 	}
 
-	err = h.templates(w, "tools_forms_edit.go.tmpl", data)
-	if err != nil {
-		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
-	}
+	h.render(w, "tools_forms_edit.go.tmpl", data)
 }
 
 // ToolsFormsUpdate handles form update.
@@ -317,7 +306,7 @@ func (h *Handlers) ToolsFormsUpdate(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -383,7 +372,7 @@ func (h *Handlers) ToolsFormsDelete(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -410,7 +399,7 @@ func (h *Handlers) ToolsFormsElementCreate(w http.ResponseWriter, r *http.Reques
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -469,7 +458,7 @@ func (h *Handlers) ToolsFormsElementDelete(w http.ResponseWriter, r *http.Reques
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -504,7 +493,7 @@ func (h *Handlers) ToolsFormsElementMoveUp(w http.ResponseWriter, r *http.Reques
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -538,7 +527,7 @@ func (h *Handlers) ToolsFormsElementMoveDown(w http.ResponseWriter, r *http.Requ
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -634,7 +623,7 @@ func (h *Handlers) renderElementsTableRows(w http.ResponseWriter, formRefID stri
 		Elements: elementViews,
 	}
 
-	_ = h.templates(w, "elements_table_rows", data)
+	h.render(w, "elements_table_rows", data)
 }
 
 // ToolsFormsElementEdit shows the form element edit page.
@@ -644,7 +633,7 @@ func (h *Handlers) ToolsFormsElementEdit(w http.ResponseWriter, r *http.Request)
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -750,10 +739,7 @@ func (h *Handlers) ToolsFormsElementEdit(w http.ResponseWriter, r *http.Request)
 		EAVAttributeLabel: eavAttributeLabel,
 	}
 
-	err = h.templates(w, "tools_forms_element_edit.go.tmpl", data)
-	if err != nil {
-		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
-	}
+	h.render(w, "tools_forms_element_edit.go.tmpl", data)
 }
 
 // ToolsFormsElementUpdate handles form element update.
@@ -763,7 +749,7 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -881,7 +867,7 @@ func (h *Handlers) ToolsFormsRecords(w http.ResponseWriter, r *http.Request) {
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -940,8 +926,5 @@ func (h *Handlers) ToolsFormsRecords(w http.ResponseWriter, r *http.Request) {
 		EntityTypeRefID: entityType.ReferenceID,
 	}
 
-	err = h.templates(w, "tools_forms_records.go.tmpl", data)
-	if err != nil {
-		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
-	}
+	h.render(w, "tools_forms_records.go.tmpl", data)
 }

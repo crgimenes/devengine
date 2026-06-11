@@ -51,7 +51,7 @@ func (sessionStore) Del(sid string) { session.Del(sid) }
 
 func (u storedUser) ToDBUser() db.User { return u.User }
 
-// Routes registra as rotas de autenticação no mux.
+// Routes registers the authentication routes on the mux.
 func Routes(mux *http.ServeMux) {
 	mux.HandleFunc("/logout", Logout)
 }
@@ -97,8 +97,8 @@ func Prelude(
 		return nil, "", false, nil
 	}
 
-	if chkRatelimit {
-	}
+	// Rate limiting lands with roadmap Bloco 5.1.
+	_ = chkRatelimit
 
 	ref := r.Referer()
 	_ = ref

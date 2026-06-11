@@ -124,11 +124,7 @@ func (h *Handlers) FormsRuntimeList(w http.ResponseWriter, r *http.Request) {
 		MenuMachineName: menuMachineName,
 	}
 
-	err = h.templates(w, "forms_runtime_list.go.tmpl", data)
-	if err != nil {
-		log.Printf("template error in forms_runtime_list.go.tmpl: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "forms_runtime_list.go.tmpl", data)
 }
 
 // FormsRuntimeListRows renders only the rows + next sentinel for the HTMX
@@ -175,9 +171,5 @@ func (h *Handlers) FormsRuntimeListRows(w http.ResponseWriter, r *http.Request) 
 
 	// The file is define-only; executing it by filename renders nothing, so
 	// address the defined template directly.
-	err = h.templates(w, "forms_runtime_list_rows", data)
-	if err != nil {
-		log.Printf("template error in forms_runtime_list_rows: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "forms_runtime_list_rows", data)
 }

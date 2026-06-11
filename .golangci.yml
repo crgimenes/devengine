@@ -1,0 +1,25 @@
+version: "2"
+
+linters:
+  default: standard
+  enable:
+    - gocyclo
+  settings:
+    gocyclo:
+      min-complexity: 30
+    errcheck:
+      # Deferred cleanup on read paths is the canonical Go idiom; the error
+      # has no caller-visible consequence there.
+      exclude-functions:
+        - (*database/sql.Rows).Close
+        - (*database/sql.Tx).Rollback
+        - (*os.File).Close
+        - (net/http.File).Close
+        - (mime/multipart.File).Close
+        - (io/fs.File).Close
+  exclusions:
+    rules:
+      # Long table-driven and full-flow tests are allowed to be branchy.
+      - path: _test\.go
+        linters:
+          - gocyclo

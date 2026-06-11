@@ -8,7 +8,7 @@ import (
 	"github.com/crgimenes/devengine/log"
 )
 
-// Routes registra as rotas de sessão no mux.
+// Routes registers the session routes on the mux.
 func Routes(mux *http.ServeMux) {
 	mux.HandleFunc("/events", sseHandler)
 }

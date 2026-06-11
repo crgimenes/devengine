@@ -15,7 +15,7 @@ func ExampleNewWithPath() {
 	if err != nil {
 		panic(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	store, err := db.NewWithPath(filepath.Join(tmpDir, "example.db"))
 	if err != nil {
@@ -46,7 +46,7 @@ func ExampleTransaction() {
 	if err != nil {
 		panic(err)
 	}
-	defer os.RemoveAll(tmpDir)
+	defer func() { _ = os.RemoveAll(tmpDir) }()
 
 	store, err := db.NewWithPath(filepath.Join(tmpDir, "example-tx.db"))
 	if err != nil {

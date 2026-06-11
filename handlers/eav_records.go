@@ -64,7 +64,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecords(w http.ResponseWriter, r *http.
 
 	// Sysop-only
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -184,10 +184,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecords(w http.ResponseWriter, r *http.
 		HasMore:     hasMore,
 	}
 
-	err = h.templates(w, "tools_database_schema_eav_records.go.tmpl", data)
-	if err != nil {
-		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
-	}
+	h.render(w, "tools_database_schema_eav_records.go.tmpl", data)
 }
 
 // ToolsDatabaseSchemaEAVRecordsAPI returns JSON for infinite scroll pagination
@@ -302,7 +299,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordNew(w http.ResponseWriter, r *htt
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -374,20 +371,151 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordNew(w http.ResponseWriter, r *htt
 		PosLoadError: posLoadError,
 	}
 
-	err = h.templates(w, "tools_database_schema_eav_record_edit.go.tmpl", data)
-	if err != nil {
-		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
-	}
+	h.render(w, "tools_database_schema_eav_record_edit.go.tmpl", data)
 }
 
-// ToolsDatabaseSchemaEAVRecordCreate creates new record
+// parseAdminRecordValues extracts typed values from the admin record form.
+// On a validation problem it returns the user-facing message instead.
+func parseAdminRecordValues(r *http.Request, attributes []db.EAVAttribute) (db.EAVRecordValues, string) {
+	parsed := make(db.EAVRecordValues)
+	for _, attr := range attributes {
+		value := r.FormValue("attr_" + attr.MachineName)
+
+		if value == "" && attr.IsRequired {
+			return nil, "Campo obrigatório: " + attr.Label
+		}
+		// Keep empty optionals visible to pre_save scripts.
+		if value == "" {
+			parsed[attr.MachineName] = ""
+			continue
+		}
+
+		switch attr.PrimitiveKind {
+		case "BOOL":
+			parsed[attr.MachineName] = value == "1" || value == "true"
+		case "INT":
+			intVal, err := strconv.ParseInt(value, 10, 64)
+			if err != nil {
+				return nil, "Valor inválido para " + attr.Label
+			}
+			parsed[attr.MachineName] = intVal
+		case "REAL":
+			realVal, err := strconv.ParseFloat(value, 64)
+			if err != nil {
+				return nil, "Valor inválido para " + attr.Label
+			}
+			parsed[attr.MachineName] = realVal
+		case "TEXT":
+			if attr.MaxLength != nil && len(value) > *attr.MaxLength {
+				return nil, "Campo " + attr.Label + " excede o limite de " + fmt.Sprint(*attr.MaxLength) + " caracteres"
+			}
+			parsed[attr.MachineName] = value
+		case "DATETIME":
+			parsed[attr.MachineName] = value
+		}
+	}
+	return parsed, ""
+}
+
+// typedEAVValue converts a parsed value back to the typed pointer set used by
+// the eav_values columns. All pointers nil means "no value" (empty optional).
+func typedEAVValue(kind string, raw any) (vBool *bool, vInt *int64, vReal *float64, vText, vDatetime *string) {
+	switch kind {
+	case "BOOL":
+		v, ok := raw.(bool)
+		if ok {
+			vBool = &v
+		}
+	case "INT":
+		v, ok := raw.(int64)
+		if ok {
+			vInt = &v
+		}
+	case "REAL":
+		v, ok := raw.(float64)
+		if ok {
+			vReal = &v
+			return
+		}
+		// Scripts may hand back an int where a REAL is expected.
+		i, ok := raw.(int64)
+		if ok {
+			f := float64(i)
+			vReal = &f
+		}
+	case "TEXT":
+		v, ok := raw.(string)
+		if ok {
+			vText = &v
+		}
+	case "DATETIME":
+		v, ok := raw.(string)
+		if ok {
+			vDatetime = &v
+		}
+	}
+	return
+}
+
+// eavUniquePointer returns the pointer matching the attribute's kind for the
+// uniqueness check, or nil when the value is empty.
+func eavUniquePointer(kind string, vBool *bool, vInt *int64, vReal *float64, vText, vDatetime *string) any {
+	switch kind {
+	case "BOOL":
+		if vBool != nil {
+			return vBool
+		}
+	case "INT":
+		if vInt != nil {
+			return vInt
+		}
+	case "REAL":
+		if vReal != nil {
+			return vReal
+		}
+	case "TEXT":
+		if vText != nil {
+			return vText
+		}
+	case "DATETIME":
+		if vDatetime != nil {
+			return vDatetime
+		}
+	}
+	return nil
+}
+
+// runAdminPreSave executes the entity's pre_save script inside the given
+// transaction context. It returns the (possibly modified) values, or the
+// user-facing message when the script blocks or fails.
+func runAdminPreSave(entityType *db.EAVEntityType, tx *db.Transaction, values db.EAVRecordValues) (db.EAVRecordValues, string) {
+	if entityType.PreSave == "" {
+		return values, ""
+	}
+	dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
+	dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
+	scriptSetup := func(eng *filo.Engine) {
+		filostrings.RegisterBuiltins(eng)
+		filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
+	}
+	modified, userError, execErr := db.ExecutePreSaveScriptWithSetup(entityType, values, scriptSetup)
+	if execErr != nil {
+		return nil, "Erro no script: " + execErr.Error()
+	}
+	if userError != "" {
+		return nil, userError
+	}
+	return modified, ""
+}
+
+// ToolsDatabaseSchemaEAVRecordCreate creates a new record.
 func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -404,75 +532,22 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 		return
 	}
 
-	// Build attribute lookup by machine_name for later use
-	attrByMachine := make(map[string]db.EAVAttribute)
-	for _, attr := range attributes {
-		attrByMachine[attr.MachineName] = attr
+	redirectBack := func(message string) {
+		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message="+message, http.StatusSeeOther)
 	}
 
-	// =========================================================
-	// PHASE 1: Parse all values into a map (without saving)
-	// =========================================================
-	parsedValues := make(db.EAVRecordValues)
-
-	for _, attr := range attributes {
-		value := r.FormValue("attr_" + attr.MachineName)
-
-		// For empty non-required fields, still set the variable so scripts can check it
-		if value == "" && !attr.IsRequired {
-			// Add empty value so the variable exists in the script
-			parsedValues[attr.MachineName] = ""
-			continue
-		}
-
-		// Validate required fields
-		if value == "" && attr.IsRequired {
-			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Campo obrigatório: "+attr.Label, http.StatusSeeOther)
-			return
-		}
-
-		// Parse value based on type
-		switch attr.PrimitiveKind {
-		case "BOOL":
-			parsedValues[attr.MachineName] = value == "1" || value == "true"
-		case "INT":
-			intVal, err := strconv.ParseInt(value, 10, 64)
-			if err != nil {
-				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Valor inválido para "+attr.Label, http.StatusSeeOther)
-				return
-			}
-			parsedValues[attr.MachineName] = intVal
-		case "REAL":
-			realVal, err := strconv.ParseFloat(value, 64)
-			if err != nil {
-				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Valor inválido para "+attr.Label, http.StatusSeeOther)
-				return
-			}
-			parsedValues[attr.MachineName] = realVal
-		case "TEXT":
-			// Validate max_length
-			if attr.MaxLength != nil && len(value) > *attr.MaxLength {
-				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Campo "+attr.Label+" excede o limite de "+fmt.Sprint(*attr.MaxLength)+" caracteres", http.StatusSeeOther)
-				return
-			}
-			parsedValues[attr.MachineName] = value
-		case "DATETIME":
-			if value != "" {
-				parsedValues[attr.MachineName] = value
-			}
-		}
-	}
-
-	// =========================================================
-	// PHASE 2+3: Transaction-wrapped pre_save script + save
-	// pre_save script and EAV save share the same transaction
-	// =========================================================
-	tx, err := db.Storage.BeginTransaction()
-	if err != nil {
-		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Erro ao iniciar transação", http.StatusSeeOther)
+	parsedValues, msg := parseAdminRecordValues(r, attributes)
+	if msg != "" {
+		redirectBack(msg)
 		return
 	}
-	// Ensure rollback on any error
+
+	// pre_save script and EAV save share the same transaction.
+	tx, err := db.Storage.BeginTransaction()
+	if err != nil {
+		redirectBack("Erro ao iniciar transação")
+		return
+	}
 	committed := false
 	defer func() {
 		if !committed {
@@ -480,29 +555,12 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 		}
 	}()
 
-	// Create filodb context with transaction for pre_save script
-	dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
-	dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
-
-	// Execute pre_save script with transaction context
-	if entityType.PreSave != "" {
-		scriptSetup := func(eng *filo.Engine) {
-			filostrings.RegisterBuiltins(eng)
-			filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
-		}
-		modifiedValues, userError, execErr := db.ExecutePreSaveScriptWithSetup(entityType, parsedValues, scriptSetup)
-		if execErr != nil {
-			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Erro no script: "+execErr.Error(), http.StatusSeeOther)
-			return
-		}
-		if userError != "" {
-			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message="+userError, http.StatusSeeOther)
-			return
-		}
-		parsedValues = modifiedValues
+	parsedValues, msg = runAdminPreSave(entityType, tx, parsedValues)
+	if msg != "" {
+		redirectBack(msg)
+		return
 	}
 
-	// Create record using transaction
 	refID := utils.NewOpaqueID()
 	var recordID int64
 	var recordRefID string
@@ -512,74 +570,37 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 		return
 	}
 
-	// Save each value using transaction
+	attrByMachine := make(map[string]db.EAVAttribute, len(attributes))
+	for _, attr := range attributes {
+		attrByMachine[attr.MachineName] = attr
+	}
+
 	for machineName, rawValue := range parsedValues {
 		attr, ok := attrByMachine[machineName]
 		if !ok {
-			continue // Skip values for unknown attributes
+			continue // skip values for unknown attributes
 		}
 
-		var vBool *bool
-		var vInt *int64
-		var vReal *float64
-		var vText *string
-		var vDatetime *string
-
-		// Convert back to typed pointers
-		switch attr.PrimitiveKind {
-		case "BOOL":
-			if v, ok := rawValue.(bool); ok {
-				vBool = &v
-			}
-		case "INT":
-			if v, ok := rawValue.(int64); ok {
-				vInt = &v
-			}
-		case "REAL":
-			if v, ok := rawValue.(float64); ok {
-				vReal = &v
-			} else if v, ok := rawValue.(int64); ok {
-				fv := float64(v)
-				vReal = &fv
-			}
-		case "TEXT":
-			if v, ok := rawValue.(string); ok {
-				vText = &v
-			}
-		case "DATETIME":
-			if v, ok := rawValue.(string); ok {
-				vDatetime = &v
-			}
+		vBool, vInt, vReal, vText, vDatetime := typedEAVValue(attr.PrimitiveKind, rawValue)
+		// An empty optional has no typed value; storing an all-NULL row would
+		// violate the one-value CHECK on eav_values.
+		if vBool == nil && vInt == nil && vReal == nil && vText == nil && vDatetime == nil {
+			continue
 		}
 
-		// Validate unique constraint (using transaction)
-		var uniqueValue any
-		switch attr.PrimitiveKind {
-		case "BOOL":
-			uniqueValue = vBool
-		case "INT":
-			uniqueValue = vInt
-		case "REAL":
-			uniqueValue = vReal
-		case "TEXT":
-			uniqueValue = vText
-		case "DATETIME":
-			uniqueValue = vDatetime
-		}
-
+		uniqueValue := eavUniquePointer(attr.PrimitiveKind, vBool, vInt, vReal, vText, vDatetime)
 		if attr.IsUnique && uniqueValue != nil {
 			isUnique, err := db.Storage.CheckEAVValueUnique(attr.ID, attr.PrimitiveKind, uniqueValue, 0)
 			if err != nil {
-				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Erro ao validar unicidade: "+err.Error(), http.StatusSeeOther)
+				redirectBack("Erro ao validar unicidade: " + err.Error())
 				return
 			}
 			if !isUnique {
-				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=O valor já existe para o campo "+attr.Label, http.StatusSeeOther)
+				redirectBack("O valor já existe para o campo " + attr.Label)
 				return
 			}
 		}
 
-		// Upsert value using transaction
 		err = tx.Exec(`
 			INSERT INTO eav_values (record_id, attribute_id, v_bool, v_int, v_real, v_text, v_datetime)
 			VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -592,21 +613,21 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 				updated_at = datetime('now')
 		`, recordID, attr.ID, vBool, vInt, vReal, vText, vDatetime)
 		if err != nil {
-			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Erro ao salvar valor: "+err.Error(), http.StatusSeeOther)
+			redirectBack("Erro ao salvar valor: " + err.Error())
 			return
 		}
 	}
 
-	// Set status to 'active' using transaction (must increment rev per trigger constraint)
+	// Activation must bump rev to satisfy the trigger constraint.
 	err = tx.Exec(`UPDATE eav_records SET status = 'active', rev = rev + 1 WHERE id = ?`, recordID)
 	if err != nil {
-		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Erro ao ativar registro: "+err.Error(), http.StatusSeeOther)
+		redirectBack("Erro ao ativar registro: " + err.Error())
 		return
 	}
 
-	// Commit transaction
-	if err := tx.Commit(); err != nil {
-		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/new?message=Erro ao salvar: "+err.Error(), http.StatusSeeOther)
+	err = tx.Commit()
+	if err != nil {
+		redirectBack("Erro ao salvar: " + err.Error())
 		return
 	}
 	committed = true
@@ -621,7 +642,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordEdit(w http.ResponseWriter, r *ht
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -737,20 +758,17 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordEdit(w http.ResponseWriter, r *ht
 		PosLoadError: posLoadError,
 	}
 
-	err = h.templates(w, "tools_database_schema_eav_record_edit.go.tmpl", data)
-	if err != nil {
-		http.Error(w, "template error: "+err.Error(), http.StatusInternalServerError)
-	}
+	h.render(w, "tools_database_schema_eav_record_edit.go.tmpl", data)
 }
 
-// ToolsDatabaseSchemaEAVRecordUpdate updates existing record
+// ToolsDatabaseSchemaEAVRecordUpdate updates an existing record.
 func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -775,77 +793,28 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 		return
 	}
 
-	// Build attribute lookup by machine_name for later use
-	attrByMachine := make(map[string]db.EAVAttribute)
-	for _, attr := range attributes {
-		attrByMachine[attr.MachineName] = attr
+	redirectBack := func(message string) {
+		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message="+message, http.StatusSeeOther)
 	}
 
-	// Get current rev from form
 	currentRev, err := strconv.Atoi(r.FormValue("rev"))
 	if err != nil {
-		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Erro: rev inválida", http.StatusSeeOther)
+		redirectBack("Erro: rev inválida")
 		return
 	}
 
-	// =========================================================
-	// PHASE 1: Parse all values into a map (without saving)
-	// =========================================================
-	parsedValues := make(db.EAVRecordValues)
-
-	for _, attr := range attributes {
-		value := r.FormValue("attr_" + attr.MachineName)
-
-		// Validate required
-		if value == "" && attr.IsRequired {
-			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Campo obrigatório: "+attr.Label, http.StatusSeeOther)
-			return
-		}
-
-		// For empty non-required fields, still set the variable so scripts can check it
-		if value == "" {
-			parsedValues[attr.MachineName] = ""
-			continue
-		}
-
-		// Parse value based on type
-		switch attr.PrimitiveKind {
-		case "BOOL":
-			parsedValues[attr.MachineName] = value == "1" || value == "true"
-		case "INT":
-			intVal, err := strconv.ParseInt(value, 10, 64)
-			if err != nil {
-				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Valor inválido para "+attr.Label, http.StatusSeeOther)
-				return
-			}
-			parsedValues[attr.MachineName] = intVal
-		case "REAL":
-			realVal, err := strconv.ParseFloat(value, 64)
-			if err != nil {
-				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Valor inválido para "+attr.Label, http.StatusSeeOther)
-				return
-			}
-			parsedValues[attr.MachineName] = realVal
-		case "TEXT":
-			// Validate max_length
-			if attr.MaxLength != nil && len(value) > *attr.MaxLength {
-				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Campo "+attr.Label+" excede o limite de "+fmt.Sprint(*attr.MaxLength)+" caracteres", http.StatusSeeOther)
-				return
-			}
-			parsedValues[attr.MachineName] = value
-		case "DATETIME":
-			parsedValues[attr.MachineName] = value
-		}
+	parsedValues, msg := parseAdminRecordValues(r, attributes)
+	if msg != "" {
+		redirectBack(msg)
+		return
 	}
 
-	// =========================================================
-	// PHASE 2: Execute pre_save script with transaction (if defined)
-	// =========================================================
+	// pre_save runs in its own transaction; the value upserts below rely on
+	// the per-value optimistic locking instead.
 	if entityType.PreSave != "" {
-		// Start transaction for pre_save script
 		tx, err := db.Storage.BeginTransaction()
 		if err != nil {
-			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Erro ao iniciar transação", http.StatusSeeOther)
+			redirectBack("Erro ao iniciar transação")
 			return
 		}
 		committed := false
@@ -855,122 +824,67 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 			}
 		}()
 
-		// Create filodb context with transaction for pre_save script
-		dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
-		dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
-
-		scriptSetup := func(eng *filo.Engine) {
-			filostrings.RegisterBuiltins(eng)
-			filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
-		}
-		modifiedValues, userError, execErr := db.ExecutePreSaveScriptWithSetup(entityType, parsedValues, scriptSetup)
-		if execErr != nil {
-			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Erro no script: "+execErr.Error(), http.StatusSeeOther)
+		parsedValues, msg = runAdminPreSave(entityType, tx, parsedValues)
+		if msg != "" {
+			redirectBack(msg)
 			return
 		}
-		if userError != "" {
-			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message="+userError, http.StatusSeeOther)
-			return
-		}
-		// Commit pre_save transaction
-		if err := tx.Commit(); err != nil {
-			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Erro ao salvar script: "+err.Error(), http.StatusSeeOther)
+		err = tx.Commit()
+		if err != nil {
+			redirectBack("Erro ao salvar script: " + err.Error())
 			return
 		}
 		committed = true
-		// Apply modified values
-		parsedValues = modifiedValues
 	}
 
-	// =========================================================
-	// PHASE 3: Save values with optimistic locking
-	// =========================================================
+	attrByMachine := make(map[string]db.EAVAttribute, len(attributes))
+	for _, attr := range attributes {
+		attrByMachine[attr.MachineName] = attr
+	}
+
 	for machineName, rawValue := range parsedValues {
 		attr, ok := attrByMachine[machineName]
 		if !ok {
-			continue // Skip values for unknown attributes
+			continue // skip values for unknown attributes
 		}
 
-		var vBool *bool
-		var vInt *int64
-		var vReal *float64
-		var vText *string
-		var vDatetime *string
-
-		// Convert back to typed pointers
-		switch attr.PrimitiveKind {
-		case "BOOL":
-			if v, ok := rawValue.(bool); ok {
-				vBool = &v
-			}
-		case "INT":
-			if v, ok := rawValue.(int64); ok {
-				vInt = &v
-			}
-		case "REAL":
-			if v, ok := rawValue.(float64); ok {
-				vReal = &v
-			} else if v, ok := rawValue.(int64); ok {
-				// Handle case where script returned int instead of float
-				fv := float64(v)
-				vReal = &fv
-			}
-		case "TEXT":
-			if v, ok := rawValue.(string); ok {
-				vText = &v
-			}
-		case "DATETIME":
-			if v, ok := rawValue.(string); ok {
-				vDatetime = &v
-			}
+		vBool, vInt, vReal, vText, vDatetime := typedEAVValue(attr.PrimitiveKind, rawValue)
+		// An empty optional has no typed value; the rev-checked upsert refuses
+		// an all-NULL row, so keep whatever is stored.
+		if vBool == nil && vInt == nil && vReal == nil && vText == nil && vDatetime == nil {
+			continue
 		}
 
-		// Validate unique constraint (exclude current record)
-		var uniqueValue any
-		switch attr.PrimitiveKind {
-		case "BOOL":
-			uniqueValue = vBool
-		case "INT":
-			uniqueValue = vInt
-		case "REAL":
-			uniqueValue = vReal
-		case "TEXT":
-			uniqueValue = vText
-		case "DATETIME":
-			uniqueValue = vDatetime
-		}
-
+		uniqueValue := eavUniquePointer(attr.PrimitiveKind, vBool, vInt, vReal, vText, vDatetime)
 		if attr.IsUnique && uniqueValue != nil {
 			isUnique, err := db.Storage.CheckEAVValueUnique(attr.ID, attr.PrimitiveKind, uniqueValue, record.ID)
 			if err != nil {
-				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Erro ao validar unicidade: "+err.Error(), http.StatusSeeOther)
+				redirectBack("Erro ao validar unicidade: " + err.Error())
 				return
 			}
 			if !isUnique {
-				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=O valor já existe para o campo "+attr.Label, http.StatusSeeOther)
+				redirectBack("O valor já existe para o campo " + attr.Label)
 				return
 			}
 		}
 
-		// Use UpsertEAVValueWithRev for atomic update
 		_, err = db.Storage.UpsertEAVValueWithRev(record.ID, attr.ID, currentRev, vBool, vInt, vReal, vText, vDatetime)
 		if err != nil {
 			if err == db.ErrConflict {
-				http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Conflito: registro foi modificado por outro usuário. Recarregue a página.", http.StatusSeeOther)
+				redirectBack("Conflito: registro foi modificado por outro usuário. Recarregue a página.")
 				return
 			}
-			http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Erro ao atualizar: "+err.Error(), http.StatusSeeOther)
+			redirectBack("Erro ao atualizar: " + err.Error())
 			return
 		}
 
-		// Update currentRev after first successful update
+		// Each rev-checked upsert bumps the record rev.
 		currentRev++
 	}
 
-	// Always set status to 'active' after successful save
 	err = db.Storage.UpdateEAVRecordStatus(record.ID, currentRev, "active")
 	if err != nil {
-		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records/"+recordRefID+"/edit?message=Erro ao ativar registro: "+err.Error(), http.StatusSeeOther)
+		redirectBack("Erro ao ativar registro: " + err.Error())
 		return
 	}
 
@@ -984,7 +898,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordDelete(w http.ResponseWriter, r *
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 

@@ -5,8 +5,6 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/crgimenes/devengine/log"
-
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
@@ -19,7 +17,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeNew(w http.ResponseWriter, r *
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -48,11 +46,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeNew(w http.ResponseWriter, r *
 		Message:     r.URL.Query().Get("message"),
 	}
 
-	err = h.templates(w, "tools_database_schema_eav_attribute_form.go.tmpl", data)
-	if err != nil {
-		log.Printf("template error: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "tools_database_schema_eav_attribute_form.go.tmpl", data)
 }
 
 // ToolsDatabaseSchemaEAVAttributeEdit shows the form to edit an existing attribute
@@ -62,7 +56,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeEdit(w http.ResponseWriter, r 
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -105,11 +99,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeEdit(w http.ResponseWriter, r 
 		Message:     r.URL.Query().Get("message"),
 	}
 
-	err = h.templates(w, "tools_database_schema_eav_attribute_form.go.tmpl", data)
-	if err != nil {
-		log.Printf("template error: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "tools_database_schema_eav_attribute_form.go.tmpl", data)
 }
 
 // ToolsDatabaseSchemaEAVAttributeCreate handles POST requests to create a new attribute
@@ -131,7 +121,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeCreate(w http.ResponseWriter, 
 
 	// Sysop-only
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -271,7 +261,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeDelete(w http.ResponseWriter, 
 
 	// Sysop-only
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -325,7 +315,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeUpdate(w http.ResponseWriter, 
 
 	// Sysop-only
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 

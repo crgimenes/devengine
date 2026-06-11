@@ -18,7 +18,6 @@ import (
 	"github.com/crgimenes/devengine/db"
 	"github.com/crgimenes/devengine/log"
 	"github.com/crgimenes/devengine/session"
-	"github.com/crgimenes/devengine/templates"
 	"github.com/crgimenes/devengine/utils"
 )
 
@@ -143,11 +142,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		Sort:       "date_desc",
 	}
 
-	err = templates.ExecuteTemplate(w, "filemanager.go.tmpl", data)
-	if err != nil {
-		log.Printf("template %s execute error: %v", "filemanager.go.tmpl", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	renderOr500(w, "filemanager.go.tmpl", data)
 }
 
 func listHandler(w http.ResponseWriter, r *http.Request) {
@@ -264,11 +259,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		Q:          q,
 		Sort:       sort,
 	}
-	err = templates.ExecuteTemplate(w, "filemanager_list", data)
-	if err != nil {
-		log.Printf("template %s execute error: %v", "filemanager_list.go.tmpl", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	renderOr500(w, "filemanager_list", data)
 
 }
 
@@ -308,11 +299,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 			Config: *config.Cfg,
 			Csrf:   csrf,
 		}
-		err := templates.ExecuteTemplate(w, "filemanager_upload.go.tmpl", data)
-		if err != nil {
-			log.Printf("template error: %v", err)
-			http.Error(w, "template error", http.StatusInternalServerError)
-		}
+		renderOr500(w, "filemanager_upload.go.tmpl", data)
 		return
 	}
 
@@ -575,11 +562,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 			Csrf:      csrf,
 		}
 
-		err := templates.ExecuteTemplate(w, "filemanager_edit.go.tmpl", data)
-		if err != nil {
-			log.Printf("template error: %v", err)
-			http.Error(w, "template error", http.StatusInternalServerError)
-		}
+		renderOr500(w, "filemanager_edit.go.tmpl", data)
 		return
 	}
 
@@ -717,11 +700,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 		Config:    *config.Cfg,
 		Csrf:      csrf,
 	}
-	if err := templates.ExecuteTemplate(w, "filemanager_delete_confirm.go.tmpl", data); err != nil {
-		log.Printf("template error: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-		return
-	}
+	renderOr500(w, "filemanager_delete_confirm.go.tmpl", data)
 }
 
 func parseRFC3339(s string) (time.Time, bool) {

@@ -12,7 +12,6 @@ import (
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
-	"github.com/crgimenes/devengine/log"
 	"github.com/crgimenes/filo"
 )
 
@@ -39,7 +38,7 @@ func (h *Handlers) ToolsFilo(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -55,11 +54,7 @@ func (h *Handlers) ToolsFilo(w http.ResponseWriter, r *http.Request) {
 		CurrentPage: "filo",
 	}
 
-	err = h.templates(w, "tools_filo.go.tmpl", data)
-	if err != nil {
-		log.Printf("template error in tools_filo.go.tmpl: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "tools_filo.go.tmpl", data)
 }
 
 // ToolsFiloRun executes the submitted script and renders the result fragment
@@ -78,7 +73,7 @@ func (h *Handlers) ToolsFiloRun(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -87,11 +82,7 @@ func (h *Handlers) ToolsFiloRun(w http.ResponseWriter, r *http.Request) {
 
 	result := h.runFiloScript(user, script, globalsJSON)
 
-	err = h.templates(w, "tools_filo_result.go.tmpl", result)
-	if err != nil {
-		log.Printf("template error in tools_filo_result.go.tmpl: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "tools_filo_result.go.tmpl", result)
 }
 
 // filoResult is the shape passed to the result fragment template.

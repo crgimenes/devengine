@@ -4,8 +4,8 @@ import (
 	"io"
 	"mime/multipart"
 	"net/http"
-
-	"github.com/crgimenes/devengine/log"
+	"slices"
+	"strings"
 
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
@@ -115,11 +115,7 @@ func (h *Handlers) Home(w http.ResponseWriter, r *http.Request) {
 		templateName = "dashboard.go.tmpl"
 	}
 
-	err = h.templates(w, templateName, data)
-	if err != nil {
-		log.Printf("template error: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, templateName, data)
 }
 
 func (h *Handlers) Tools(w http.ResponseWriter, r *http.Request) {
@@ -140,7 +136,7 @@ func (h *Handlers) Tools(w http.ResponseWriter, r *http.Request) {
 
 	// Sysop-only check
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -165,11 +161,7 @@ func (h *Handlers) Tools(w http.ResponseWriter, r *http.Request) {
 		CurrentPage: "tools",
 	}
 
-	err = h.templates(w, "tools.go.tmpl", data)
-	if err != nil {
-		log.Printf("template error: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "tools.go.tmpl", data)
 }
 
 func (h *Handlers) ToolsDatabaseSchema(w http.ResponseWriter, r *http.Request) {
@@ -190,7 +182,7 @@ func (h *Handlers) ToolsDatabaseSchema(w http.ResponseWriter, r *http.Request) {
 
 	// Sysop-only check
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -240,19 +232,9 @@ func (h *Handlers) ToolsDatabaseSchema(w http.ResponseWriter, r *http.Request) {
 		})
 	}
 
-	// Sort alphabetically by Name
-	type byName []SchemaTable
-	sort := func(a, b SchemaTable) bool { return a.Name < b.Name }
-	sortByName := func(tables []SchemaTable) {
-		for i := 0; i < len(tables)-1; i++ {
-			for j := i + 1; j < len(tables); j++ {
-				if !sort(tables[i], tables[j]) {
-					tables[i], tables[j] = tables[j], tables[i]
-				}
-			}
-		}
-	}
-	sortByName(tables)
+	slices.SortFunc(tables, func(a, b SchemaTable) int {
+		return strings.Compare(a.Name, b.Name)
+	})
 
 	data := struct {
 		Authed      bool
@@ -271,11 +253,7 @@ func (h *Handlers) ToolsDatabaseSchema(w http.ResponseWriter, r *http.Request) {
 		Tables:      tables,
 	}
 
-	err = h.templates(w, "tools_database_schema.go.tmpl", data)
-	if err != nil {
-		log.Printf("template error: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "tools_database_schema.go.tmpl", data)
 }
 
 func (h *Handlers) ToolsSearchForms(w http.ResponseWriter, r *http.Request) {
@@ -296,7 +274,7 @@ func (h *Handlers) ToolsSearchForms(w http.ResponseWriter, r *http.Request) {
 
 	// Sysop-only check
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -321,11 +299,7 @@ func (h *Handlers) ToolsSearchForms(w http.ResponseWriter, r *http.Request) {
 		CurrentPage: "search-forms",
 	}
 
-	err = h.templates(w, "tools_search_forms.go.tmpl", data)
-	if err != nil {
-		log.Printf("template error: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "tools_search_forms.go.tmpl", data)
 }
 
 func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Request) {
@@ -346,7 +320,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 
 	// Sysop-only check
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -392,7 +366,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 				}
 				// Only lowercase letters, numbers, underscores
 				for _, ch := range machineName {
-					if !((ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9') || ch == '_') {
+					if (ch < 'a' || ch > 'z') && (ch < '0' || ch > '9') && ch != '_' {
 						validMachineName = false
 						break
 					}
@@ -480,11 +454,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 		FormData:    FormData{},
 	}
 
-	err = h.templates(w, "tools_database_schema_eav_new.go.tmpl", data)
-	if err != nil {
-		log.Printf("template error: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "tools_database_schema_eav_new.go.tmpl", data)
 }
 
 func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Request) {
@@ -505,7 +475,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 
 	// Sysop-only check
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -635,9 +605,5 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 		Attributes:  attributes,
 	}
 
-	err = h.templates(w, "tools_database_schema_eav_edit.go.tmpl", data)
-	if err != nil {
-		log.Printf("template error: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "tools_database_schema_eav_edit.go.tmpl", data)
 }

@@ -31,7 +31,7 @@ func (h *Handlers) ToolsUsers(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -84,11 +84,7 @@ func (h *Handlers) ToolsUsers(w http.ResponseWriter, r *http.Request) {
 		CurrentRefID: user.ReferenceID,
 	}
 
-	err = h.templates(w, "tools_users.go.tmpl", data)
-	if err != nil {
-		log.Printf("template error in tools_users.go.tmpl: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "tools_users.go.tmpl", data)
 }
 
 // ToolsUsersEdit renders the edit form for a single user. sysop-only.
@@ -105,7 +101,7 @@ func (h *Handlers) ToolsUsersEdit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !current.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -138,11 +134,7 @@ func (h *Handlers) ToolsUsersEdit(w http.ResponseWriter, r *http.Request) {
 		CurrentRefID: current.ReferenceID,
 	}
 
-	err = h.templates(w, "tools_users_edit.go.tmpl", data)
-	if err != nil {
-		log.Printf("template error in tools_users_edit.go.tmpl: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "tools_users_edit.go.tmpl", data)
 }
 
 // ToolsUsersUpdate persists username, email, sysop and enabled flags.
@@ -159,7 +151,7 @@ func (h *Handlers) ToolsUsersUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if !current.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -209,7 +201,7 @@ func (h *Handlers) ToolsUsersResetPassword(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	if !current.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 

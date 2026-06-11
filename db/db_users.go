@@ -329,9 +329,9 @@ func IsValidUsername(username string) error {
 	}
 
 	for _, r := range username {
-		if !(r >= 'a' && r <= 'z') &&
-			!(r >= 'A' && r <= 'Z') &&
-			!(r >= '0' && r <= '9') &&
+		if (r < 'a' || r > 'z') &&
+			(r < 'A' || r > 'Z') &&
+			(r < '0' || r > '9') &&
 			r != '_' && r != '-' {
 			return errors.New("username contains invalid characters")
 		}

@@ -30,7 +30,7 @@ func (h *Handlers) ToolsFormsRecordsRows(w http.ResponseWriter, r *http.Request)
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 
@@ -76,11 +76,7 @@ func (h *Handlers) ToolsFormsRecordsRows(w http.ResponseWriter, r *http.Request)
 
 	// The file is define-only; executing it by filename renders nothing, so
 	// address the defined template directly.
-	err = h.templates(w, "forms_records_rows", data)
-	if err != nil {
-		log.Printf("template error in forms_records_rows: %v", err)
-		http.Error(w, "template error", http.StatusInternalServerError)
-	}
+	h.render(w, "forms_records_rows", data)
 }
 
 // ToolsFormsRecordsExport streams every record of the form's entity_type as
@@ -91,7 +87,7 @@ func (h *Handlers) ToolsFormsRecordsExport(w http.ResponseWriter, r *http.Reques
 		true, false, true,
 	)
 	if err != nil || !authed || !user.Sysop {
-		http.Error(w, "Forbidden", http.StatusForbidden)
+		http.Error(w, "forbidden", http.StatusForbidden)
 		return
 	}
 

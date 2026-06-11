@@ -10,8 +10,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/crgimenes/devengine/log"
-
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
@@ -49,11 +47,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 			User:   *u,
 			Config: *h.cfg,
 		}
-		err := h.templates(w, "me.go.tmpl", data)
-		if err != nil {
-			log.Printf("template error: %v", err)
-			http.Error(w, "template error", http.StatusInternalServerError)
-		}
+		h.render(w, "me.go.tmpl", data)
 		return
 	}
 
@@ -185,10 +179,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 			Error:  err.Error(),
 			Config: *h.cfg,
 		}
-		err = h.templates(w, "me.go.tmpl", data)
-		if err != nil {
-			return
-		}
+		h.render(w, "me.go.tmpl", data)
 		return
 	}
 

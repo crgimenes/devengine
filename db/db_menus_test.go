@@ -266,10 +266,20 @@ func TestListSubmenuItems(t *testing.T) {
 	menu, _ := s.CreateMenu("submenu_test", "Submenu Test", "")
 
 	// Create items of different types
-	s.CreateMenuItem(menu.ID, nil, "home", "Home", "", "link", "/", "", "", 0)
-	s.CreateMenuItem(menu.ID, nil, "settings", "Settings", "", "submenu", "", "", "", 1)
-	s.CreateMenuItem(menu.ID, nil, "admin", "Admin", "", "submenu", "", "", "", 2)
-	s.CreateMenuItem(menu.ID, nil, "sep", "", "", "separator", "", "", "", 3)
+	for _, it := range []struct {
+		machine, label, kind, url string
+		order                     int
+	}{
+		{"home", "Home", "link", "/", 0},
+		{"settings", "Settings", "submenu", "", 1},
+		{"admin", "Admin", "submenu", "", 2},
+		{"sep", "", "separator", "", 3},
+	} {
+		_, err := s.CreateMenuItem(menu.ID, nil, it.machine, it.label, "", it.kind, it.url, "", "", it.order)
+		if err != nil {
+			t.Fatalf("CreateMenuItem(%s): %v", it.machine, err)
+		}
+	}
 
 	// List only submenus
 	submenus, err := s.ListSubmenuItems(menu.ID)
