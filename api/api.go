@@ -91,7 +91,6 @@ func MarkdownToHTMLHandler(w http.ResponseWriter, r *http.Request) {
 	_, _, _, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
 		true,  // check auth
-		false, // check ratelimit
 		true,  // prevent cache
 	)
 	if err != nil {
@@ -125,7 +124,6 @@ func GetUserFilesHandler(w http.ResponseWriter, r *http.Request) {
 	u, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
 		true,  // check auth
-		false, // check ratelimit
 		true,  // prevent cache
 	)
 	if err != nil {

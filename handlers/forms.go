@@ -9,6 +9,7 @@ import (
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
 	"github.com/crgimenes/devengine/eav/ui"
+	"github.com/crgimenes/devengine/i18n"
 )
 
 // FormWithEntityType combines a form with its linked entity type info.
@@ -21,9 +22,8 @@ type FormWithEntityType struct {
 func (h *Handlers) ToolsForms(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true,  // check auth
-		false, // check ratelimit
-		true,  // prevent cache
+		true, // check auth
+		true, // prevent cache
 	)
 	if err != nil {
 		h.serverError(w, r, "ToolsForms", err)
@@ -90,7 +90,7 @@ func (h *Handlers) ToolsForms(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) ToolsFormsNew(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		h.forbidden(w, r)
@@ -133,7 +133,7 @@ func (h *Handlers) ToolsFormsNew(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) ToolsFormsCreate(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		h.forbidden(w, r)
@@ -147,7 +147,7 @@ func (h *Handlers) ToolsFormsCreate(w http.ResponseWriter, r *http.Request) {
 
 	// Validate required fields
 	if machineName == "" || label == "" {
-		http.Redirect(w, r, "/tools/forms/new?message=Nome e Label são obrigatórios", http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/forms/new?message="+i18n.T("Name and label are required"), http.StatusSeeOther)
 		return
 	}
 
@@ -156,7 +156,7 @@ func (h *Handlers) ToolsFormsCreate(w http.ResponseWriter, r *http.Request) {
 	if entityTypeRefID != "" {
 		et, err := db.Storage.GetEAVEntityTypeByRefID(entityTypeRefID)
 		if err != nil {
-			http.Redirect(w, r, "/tools/forms/new?message=Tabela EAV não encontrada", http.StatusSeeOther)
+			http.Redirect(w, r, "/tools/forms/new?message="+i18n.T("EAV table not found"), http.StatusSeeOther)
 			return
 		}
 		eavEntityTypeID = &et.ID
@@ -166,18 +166,18 @@ func (h *Handlers) ToolsFormsCreate(w http.ResponseWriter, r *http.Request) {
 	form, err := db.Storage.CreateForm(machineName, label, description, eavEntityTypeID)
 	if err != nil {
 		ref := logRef("ToolsFormsCreate", err)
-		http.Redirect(w, r, "/tools/forms/new?message=Erro ao criar formulário (ref "+ref+")", http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/forms/new?message="+i18n.T("Could not create the form (ref %s)", ref), http.StatusSeeOther)
 		return
 	}
 
-	http.Redirect(w, r, "/tools/forms/"+form.ReferenceID+"/edit?message=Formulário criado com sucesso", http.StatusSeeOther)
+	http.Redirect(w, r, "/tools/forms/"+form.ReferenceID+"/edit?message="+i18n.T("Form created successfully"), http.StatusSeeOther)
 }
 
 // ToolsFormsEdit shows the form edit page.
 func (h *Handlers) ToolsFormsEdit(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		h.forbidden(w, r)
@@ -305,7 +305,7 @@ func (h *Handlers) ToolsFormsEdit(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) ToolsFormsUpdate(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		h.forbidden(w, r)
@@ -331,7 +331,7 @@ func (h *Handlers) ToolsFormsUpdate(w http.ResponseWriter, r *http.Request) {
 
 	// Validate required fields
 	if machineName == "" || label == "" {
-		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Nome e Label são obrigatórios", http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message="+i18n.T("Name and label are required"), http.StatusSeeOther)
 		return
 	}
 
@@ -351,7 +351,7 @@ func (h *Handlers) ToolsFormsUpdate(w http.ResponseWriter, r *http.Request) {
 	if menuRefID != "" {
 		menu, err := db.Storage.GetMenuByRefID(menuRefID)
 		if err != nil {
-			http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Menu não encontrado", http.StatusSeeOther)
+			http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message="+i18n.T("Menu not found"), http.StatusSeeOther)
 			return
 		}
 		menuID = &menu.ID
@@ -361,18 +361,18 @@ func (h *Handlers) ToolsFormsUpdate(w http.ResponseWriter, r *http.Request) {
 	err = db.Storage.UpdateForm(form.ID, machineName, label, description, eavEntityTypeID, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo, menuID)
 	if err != nil {
 		ref := logRef("ToolsFormsUpdate", err)
-		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Erro ao atualizar (ref "+ref+")", http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message="+i18n.T("Could not update (ref %s)", ref), http.StatusSeeOther)
 		return
 	}
 
-	http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Formulário atualizado com sucesso", http.StatusSeeOther)
+	http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message="+i18n.T("Form updated successfully"), http.StatusSeeOther)
 }
 
 // ToolsFormsDelete handles form deletion.
 func (h *Handlers) ToolsFormsDelete(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		h.forbidden(w, r)
@@ -389,18 +389,18 @@ func (h *Handlers) ToolsFormsDelete(w http.ResponseWriter, r *http.Request) {
 	err = db.Storage.SoftDeleteForm(form.ID)
 	if err != nil {
 		ref := logRef("ToolsFormsDelete", err)
-		http.Redirect(w, r, "/tools/forms?message=Erro ao excluir (ref "+ref+")", http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/forms?message="+i18n.T("Could not delete (ref %s)", ref), http.StatusSeeOther)
 		return
 	}
 
-	http.Redirect(w, r, "/tools/forms?message=Formulário excluído com sucesso", http.StatusSeeOther)
+	http.Redirect(w, r, "/tools/forms?message="+i18n.T("Form deleted successfully"), http.StatusSeeOther)
 }
 
 // ToolsFormsElementCreate handles creating a new form element.
 func (h *Handlers) ToolsFormsElementCreate(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		h.forbidden(w, r)
@@ -424,7 +424,7 @@ func (h *Handlers) ToolsFormsElementCreate(w http.ResponseWriter, r *http.Reques
 
 	// Validate
 	if machineName == "" {
-		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Nome do elemento é obrigatório", http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message="+i18n.T("Element name is required"), http.StatusSeeOther)
 		return
 	}
 
@@ -449,18 +449,18 @@ func (h *Handlers) ToolsFormsElementCreate(w http.ResponseWriter, r *http.Reques
 	)
 	if err != nil {
 		ref := logRef("ToolsFormsElementCreate", err)
-		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Erro ao criar elemento (ref "+ref+")", http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message="+i18n.T("Could not create the element (ref %s)", ref), http.StatusSeeOther)
 		return
 	}
 
-	http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Elemento adicionado", http.StatusSeeOther)
+	http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message="+i18n.T("Element added"), http.StatusSeeOther)
 }
 
 // ToolsFormsElementDelete handles deleting a form element.
 func (h *Handlers) ToolsFormsElementDelete(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		h.forbidden(w, r)
@@ -488,14 +488,14 @@ func (h *Handlers) ToolsFormsElementDelete(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Elemento removido", http.StatusSeeOther)
+	http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message="+i18n.T("Element removed"), http.StatusSeeOther)
 }
 
 // ToolsFormsElementMoveUp moves an element up in the z_order within its parent.
 func (h *Handlers) ToolsFormsElementMoveUp(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		h.forbidden(w, r)
@@ -529,7 +529,7 @@ func (h *Handlers) ToolsFormsElementMoveUp(w http.ResponseWriter, r *http.Reques
 func (h *Handlers) ToolsFormsElementMoveDown(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		h.forbidden(w, r)
@@ -635,7 +635,7 @@ func (h *Handlers) renderElementsTableRows(w http.ResponseWriter, formRefID stri
 func (h *Handlers) ToolsFormsElementEdit(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		h.forbidden(w, r)
@@ -753,7 +753,7 @@ func (h *Handlers) ToolsFormsElementEdit(w http.ResponseWriter, r *http.Request)
 func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		h.forbidden(w, r)
@@ -861,11 +861,11 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 	)
 	if err != nil {
 		ref := logRef("ToolsFormsElementUpdate", err)
-		http.Redirect(w, r, "/tools/forms/"+formRefID+"/elements/"+elementRefID+"/edit?message=Erro ao atualizar (ref "+ref+")", http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/forms/"+formRefID+"/elements/"+elementRefID+"/edit?message="+i18n.T("Could not update (ref %s)", ref), http.StatusSeeOther)
 		return
 	}
 
-	http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Elemento atualizado", http.StatusSeeOther)
+	http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message="+i18n.T("Element updated"), http.StatusSeeOther)
 }
 
 // ToolsFormsRecords shows the records of the form's linked entity_type. The
@@ -874,7 +874,7 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 func (h *Handlers) ToolsFormsRecords(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		h.forbidden(w, r)

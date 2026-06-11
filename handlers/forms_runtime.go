@@ -20,6 +20,7 @@ import (
 	"github.com/crgimenes/devengine/filofile"
 	"github.com/crgimenes/devengine/filolog"
 	"github.com/crgimenes/devengine/filosession"
+	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/devengine/utils"
 	"github.com/crgimenes/filo"
 	"github.com/crgimenes/filo/filostrings"
@@ -99,7 +100,7 @@ func BuildElementTree(elements []db.FormElement, attrMap map[int64]*db.EAVAttrib
 func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true, false, true,
+		true, true,
 	)
 	if err != nil {
 		h.serverError(w, r, "FormsRuntimeNew", err)
@@ -161,7 +162,7 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) FormsRuntimeCreate(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed {
 		h.forbidden(w, r)
@@ -198,7 +199,7 @@ func (h *Handlers) FormsRuntimeCreate(w http.ResponseWriter, r *http.Request) {
 
 	tx, err := db.Storage.BeginTransaction()
 	if err != nil {
-		h.renderRuntimeForm(w, user, ctx, nil, parsedValues, nil, "", "Erro ao iniciar transação", "")
+		h.renderRuntimeForm(w, user, ctx, nil, parsedValues, nil, "", i18n.T("Could not start the transaction"), "")
 		return
 	}
 	committed := false
@@ -219,12 +220,12 @@ func (h *Handlers) FormsRuntimeCreate(w http.ResponseWriter, r *http.Request) {
 	err = tx.Commit()
 	if err != nil {
 		ref := logRef("create commit", err)
-		h.renderRuntimeForm(w, user, ctx, nil, parsedValues, nil, "", "Erro ao finalizar (ref "+ref+")", "")
+		h.renderRuntimeForm(w, user, ctx, nil, parsedValues, nil, "", i18n.T("Could not finish saving (ref %s)", ref), "")
 		return
 	}
 	committed = true
 
-	http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message=Registro criado com sucesso", http.StatusSeeOther)
+	http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message="+i18n.T("Record created successfully"), http.StatusSeeOther)
 }
 
 // FormsRuntimeEdit shows a form for editing an existing record.
@@ -260,7 +261,7 @@ func recordValuesMap(eavValues []db.EAVValue, attributes []db.EAVAttribute) map[
 func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true, false, true,
+		true, true,
 	)
 	if err != nil {
 		h.serverError(w, r, "FormsRuntimeEdit", err)
@@ -318,7 +319,7 @@ func (h *Handlers) FormsRuntimeEdit(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed {
 		h.forbidden(w, r)
@@ -344,7 +345,7 @@ func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 	submittedRev, _ := strconv.Atoi(r.FormValue("rev"))
 	if submittedRev != record.Rev {
 		h.renderRuntimeForm(w, user, ctx, record, parsedValues, nil, "",
-			"Registro foi modificado por outro usuário. Revise os dados antes de salvar novamente.", "")
+			i18n.T("The record was modified by another user. Review the data before saving again."), "")
 		return
 	}
 
@@ -371,7 +372,7 @@ func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 
 	tx, err := db.Storage.BeginTransaction()
 	if err != nil {
-		h.renderRuntimeForm(w, user, ctx, record, parsedValues, nil, "", "Erro ao iniciar transação", "")
+		h.renderRuntimeForm(w, user, ctx, record, parsedValues, nil, "", i18n.T("Could not start the transaction"), "")
 		return
 	}
 	committed := false
@@ -391,12 +392,12 @@ func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 	err = tx.Commit()
 	if err != nil {
 		ref := logRef("update commit", err)
-		h.renderRuntimeForm(w, user, ctx, record, parsedValues, nil, "", "Erro ao finalizar (ref "+ref+")", "")
+		h.renderRuntimeForm(w, user, ctx, record, parsedValues, nil, "", i18n.T("Could not finish saving (ref %s)", ref), "")
 		return
 	}
 	committed = true
 
-	http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message=Registro atualizado com sucesso", http.StatusSeeOther)
+	http.Redirect(w, r, "/form/"+machineName+"/r/"+recordRefID+"?message="+i18n.T("Record updated successfully"), http.StatusSeeOther)
 }
 
 // FormsRuntimeButtonAction handles custom button actions.
@@ -404,7 +405,7 @@ func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) FormsRuntimeButtonAction(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil {
 		ref := logRef("FormsRuntimeButtonAction prelude", err)
@@ -620,7 +621,7 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 	// 4. Commit Transaction
 	if err := tx.Commit(); err != nil {
 		ref := logRef("button commit", err)
-		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Erro ao finalizar (ref " + ref + ")"})
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": i18n.T("Could not finish saving (ref %s)", ref)})
 		return
 	}
 	committed = true
@@ -820,7 +821,7 @@ func parseFormAttributes(r *http.Request, elements []db.FormElement, attributes 
 
 		if rawValue == "" {
 			if attr.IsRequired {
-				return nil, fmt.Errorf("campo obrigatório: %s", attr.Label)
+				return nil, fmt.Errorf("%s", i18n.T("required field: %s", attr.Label))
 			}
 			parsedValues[attr.MachineName] = ""
 			continue

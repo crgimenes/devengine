@@ -3,7 +3,6 @@ package handlers
 import (
 	"database/sql"
 	"encoding/json"
-	"fmt"
 	"maps"
 	"net/http"
 	"strconv"
@@ -12,6 +11,7 @@ import (
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
 	"github.com/crgimenes/devengine/filodb"
+	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/devengine/log"
 	"github.com/crgimenes/devengine/utils"
 	"github.com/crgimenes/filo"
@@ -49,9 +49,8 @@ func (a *txAdapter) Rollback() error {
 func (h *Handlers) ToolsDatabaseSchemaEAVRecords(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true,  // check auth
-		false, // check ratelimit
-		true,  // prevent cache
+		true, // check auth
+		true, // prevent cache
 	)
 	if err != nil {
 		h.serverError(w, r, "ToolsDatabaseSchemaEAVRecords", err)
@@ -191,9 +190,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecords(w http.ResponseWriter, r *http.
 func (h *Handlers) ToolsDatabaseSchemaEAVRecordsAPI(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true,  // check auth
-		false, // check ratelimit
-		true,  // prevent cache
+		true, // check auth
+		true, // prevent cache
 	)
 	if err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -296,7 +294,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordsAPI(w http.ResponseWriter, r *ht
 func (h *Handlers) ToolsDatabaseSchemaEAVRecordNew(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		h.forbidden(w, r)
@@ -382,7 +380,7 @@ func parseAdminRecordValues(r *http.Request, attributes []db.EAVAttribute) (db.E
 		value := r.FormValue("attr_" + attr.MachineName)
 
 		if value == "" && attr.IsRequired {
-			return nil, "Campo obrigatório: " + attr.Label
+			return nil, i18n.T("Required field: %s", attr.Label)
 		}
 		// Keep empty optionals visible to pre_save scripts.
 		if value == "" {
@@ -396,18 +394,18 @@ func parseAdminRecordValues(r *http.Request, attributes []db.EAVAttribute) (db.E
 		case "INT":
 			intVal, err := strconv.ParseInt(value, 10, 64)
 			if err != nil {
-				return nil, "Valor inválido para " + attr.Label
+				return nil, i18n.T("Invalid value for %s", attr.Label)
 			}
 			parsed[attr.MachineName] = intVal
 		case "REAL":
 			realVal, err := strconv.ParseFloat(value, 64)
 			if err != nil {
-				return nil, "Valor inválido para " + attr.Label
+				return nil, i18n.T("Invalid value for %s", attr.Label)
 			}
 			parsed[attr.MachineName] = realVal
 		case "TEXT":
 			if attr.MaxLength != nil && len(value) > *attr.MaxLength {
-				return nil, "Campo " + attr.Label + " excede o limite de " + fmt.Sprint(*attr.MaxLength) + " caracteres"
+				return nil, i18n.T("Field %s exceeds the limit of %d characters", attr.Label, *attr.MaxLength)
 			}
 			parsed[attr.MachineName] = value
 		case "DATETIME":
@@ -500,7 +498,7 @@ func runAdminPreSave(entityType *db.EAVEntityType, tx *db.Transaction, values db
 	}
 	modified, userError, execErr := db.ExecutePreSaveScriptWithSetup(entityType, values, scriptSetup)
 	if execErr != nil {
-		return nil, "Erro no script: " + execErr.Error()
+		return nil, i18n.T("Script error: %s", execErr.Error())
 	}
 	if userError != "" {
 		return nil, userError
@@ -512,7 +510,7 @@ func runAdminPreSave(entityType *db.EAVEntityType, tx *db.Transaction, values db
 func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		h.forbidden(w, r)
@@ -545,7 +543,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 	// pre_save script and EAV save share the same transaction.
 	tx, err := db.Storage.BeginTransaction()
 	if err != nil {
-		redirectBack("Erro ao iniciar transação")
+		redirectBack(i18n.T("Could not start the transaction"))
 		return
 	}
 	committed := false
@@ -566,7 +564,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 	var recordRefID string
 	err = tx.QueryRow(`INSERT INTO eav_records (reference_id, entity_type_id, status, rev) VALUES (?, ?, 'draft', 1) RETURNING id, reference_id`, refID, entityType.ID).Scan(&recordID, &recordRefID)
 	if err != nil {
-		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message=Erro ao criar registro", http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message="+i18n.T("Could not create the record"), http.StatusSeeOther)
 		return
 	}
 
@@ -593,11 +591,11 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 			isUnique, err := db.Storage.CheckEAVValueUnique(attr.ID, attr.PrimitiveKind, uniqueValue, 0)
 			if err != nil {
 				ref := logRef("ToolsDatabaseSchemaEAVRecordCreate", err)
-				redirectBack("Erro ao validar unicidade (ref " + ref + ")")
+				redirectBack(i18n.T("Could not validate uniqueness (ref %s)", ref))
 				return
 			}
 			if !isUnique {
-				redirectBack("O valor já existe para o campo " + attr.Label)
+				redirectBack(i18n.T("Value already exists for field %s", attr.Label))
 				return
 			}
 		}
@@ -615,7 +613,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 		`, recordID, attr.ID, vBool, vInt, vReal, vText, vDatetime)
 		if err != nil {
 			ref := logRef("ToolsDatabaseSchemaEAVRecordCreate", err)
-			redirectBack("Erro ao salvar valor (ref " + ref + ")")
+			redirectBack(i18n.T("Could not save the value (ref %s)", ref))
 			return
 		}
 	}
@@ -624,26 +622,26 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 	err = tx.Exec(`UPDATE eav_records SET status = 'active', rev = rev + 1 WHERE id = ?`, recordID)
 	if err != nil {
 		ref := logRef("ToolsDatabaseSchemaEAVRecordCreate", err)
-		redirectBack("Erro ao ativar registro (ref " + ref + ")")
+		redirectBack(i18n.T("Could not activate the record (ref %s)", ref))
 		return
 	}
 
 	err = tx.Commit()
 	if err != nil {
 		ref := logRef("ToolsDatabaseSchemaEAVRecordCreate", err)
-		redirectBack("Erro ao salvar (ref " + ref + ")")
+		redirectBack(i18n.T("Could not save (ref %s)", ref))
 		return
 	}
 	committed = true
 
-	http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message=Registro criado com sucesso", http.StatusSeeOther)
+	http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message="+i18n.T("Record created successfully"), http.StatusSeeOther)
 }
 
 // ToolsDatabaseSchemaEAVRecordEdit shows edit form
 func (h *Handlers) ToolsDatabaseSchemaEAVRecordEdit(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		h.forbidden(w, r)
@@ -769,7 +767,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordEdit(w http.ResponseWriter, r *ht
 func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		h.forbidden(w, r)
@@ -803,7 +801,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 
 	currentRev, err := strconv.Atoi(r.FormValue("rev"))
 	if err != nil {
-		redirectBack("Erro: rev inválida")
+		redirectBack(i18n.T("Error: invalid revision"))
 		return
 	}
 
@@ -818,7 +816,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 	if entityType.PreSave != "" {
 		tx, err := db.Storage.BeginTransaction()
 		if err != nil {
-			redirectBack("Erro ao iniciar transação")
+			redirectBack(i18n.T("Could not start the transaction"))
 			return
 		}
 		committed := false
@@ -836,7 +834,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 		err = tx.Commit()
 		if err != nil {
 			ref := logRef("ToolsDatabaseSchemaEAVRecordUpdate", err)
-			redirectBack("Erro ao salvar script (ref " + ref + ")")
+			redirectBack(i18n.T("Could not save the script (ref %s)", ref))
 			return
 		}
 		committed = true
@@ -865,11 +863,11 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 			isUnique, err := db.Storage.CheckEAVValueUnique(attr.ID, attr.PrimitiveKind, uniqueValue, record.ID)
 			if err != nil {
 				ref := logRef("ToolsDatabaseSchemaEAVRecordUpdate", err)
-				redirectBack("Erro ao validar unicidade (ref " + ref + ")")
+				redirectBack(i18n.T("Could not validate uniqueness (ref %s)", ref))
 				return
 			}
 			if !isUnique {
-				redirectBack("O valor já existe para o campo " + attr.Label)
+				redirectBack(i18n.T("Value already exists for field %s", attr.Label))
 				return
 			}
 		}
@@ -877,11 +875,11 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 		_, err = db.Storage.UpsertEAVValueWithRev(record.ID, attr.ID, currentRev, vBool, vInt, vReal, vText, vDatetime)
 		if err != nil {
 			if err == db.ErrConflict {
-				redirectBack("Conflito: registro foi modificado por outro usuário. Recarregue a página.")
+				redirectBack(i18n.T("Conflict: the record was modified by another user. Reload the page."))
 				return
 			}
 			ref := logRef("ToolsDatabaseSchemaEAVRecordUpdate", err)
-			redirectBack("Erro ao atualizar (ref " + ref + ")")
+			redirectBack(i18n.T("Could not update (ref %s)", ref))
 			return
 		}
 
@@ -892,18 +890,18 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 	err = db.Storage.UpdateEAVRecordStatus(record.ID, currentRev, "active")
 	if err != nil {
 		ref := logRef("ToolsDatabaseSchemaEAVRecordUpdate", err)
-		redirectBack("Erro ao ativar registro (ref " + ref + ")")
+		redirectBack(i18n.T("Could not activate the record (ref %s)", ref))
 		return
 	}
 
-	http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message=Registro atualizado com sucesso", http.StatusSeeOther)
+	http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message="+i18n.T("Record updated successfully"), http.StatusSeeOther)
 }
 
 // ToolsDatabaseSchemaEAVRecordDelete soft deletes a record
 func (h *Handlers) ToolsDatabaseSchemaEAVRecordDelete(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		h.forbidden(w, r)
@@ -915,7 +913,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordDelete(w http.ResponseWriter, r *
 
 	record, err := db.Storage.GetEAVRecordByRefID(recordRefID)
 	if err != nil {
-		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message=Registro não encontrado", http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message="+i18n.T("Record not found"), http.StatusSeeOther)
 		return
 	}
 
@@ -926,5 +924,5 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordDelete(w http.ResponseWriter, r *
 		return
 	}
 
-	http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message=Registro excluído com sucesso", http.StatusSeeOther)
+	http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message="+i18n.T("Record deleted successfully"), http.StatusSeeOther)
 }

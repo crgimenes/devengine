@@ -12,7 +12,7 @@
             <div class="col-md-5">
                 <div class="card">
                     <div class="card-body">
-                        <h1 class="card-title text-center mb-4">Entrar</h1>
+                        <h1 class="card-title text-center mb-4">{{t "Sign in"}}</h1>
 
                         {{if .Error}}
                         <div class="alert alert-danger" role="alert">
@@ -22,7 +22,7 @@
 
                         <form method="post" action="/login" autocomplete="on">
                             <div class="mb-3">
-                                <label for="username" class="form-label">Usuário</label>
+                                <label for="username" class="form-label">{{t "Username"}}</label>
                                 <input type="text"
                                        class="form-control"
                                        id="username"
@@ -31,7 +31,7 @@
                                        required>
                             </div>
                             <div class="mb-3">
-                                <label for="password" class="form-label">Senha</label>
+                                <label for="password" class="form-label">{{t "Password"}}</label>
                                 <input type="password"
                                        class="form-control"
                                        id="password"
@@ -40,18 +40,18 @@
                                        required>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">
-                                Entrar
+                                {{t "Sign in"}}
                             </button>
                         </form>
 
                         <p class="text-center text-muted mt-4 small mb-0">
-                            Acesso somente por convite. Solicite um link ao administrador.
+                            {{t "Invite-only access. Ask the administrator for a link."}}
                         </p>
                     </div>
                 </div>
 
                 <p class="text-center text-muted mt-4 small">
-                    <a href="/" class="text-decoration-none">Voltar a home</a>
+                    <a href="/" class="text-decoration-none">{{t "Back to home"}}</a>
                 </p>
             </div>
         </div>

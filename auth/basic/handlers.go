@@ -11,6 +11,8 @@ import (
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/i18n"
+	"github.com/crgimenes/devengine/ratelimit"
 	"github.com/crgimenes/devengine/session"
 	"github.com/crgimenes/devengine/utils"
 )
@@ -35,12 +37,23 @@ func New(cfg *config.Config, tmpl TemplateExecutor) *Handlers {
 	return &Handlers{cfg: cfg, templates: tmpl}
 }
 
+// rateLimited reports whether this client exhausted the auth-endpoint budget
+// and stamps Retry-After when it did. Limits come from the instance config
+// (init.filo via the application), RateLimitPerMin <= 0 disables the check.
+func (h *Handlers) rateLimited(w http.ResponseWriter, r *http.Request) bool {
+	ip := ratelimit.ClientIP(r, h.cfg.RateLimitTrustProxy)
+	if ratelimit.Default.Allow(ip, h.cfg.RateLimitPerMin, h.cfg.RateLimitBurst) {
+		return false
+	}
+	w.Header().Set("Retry-After", "60")
+	return true
+}
+
 // LoginPage renders the login form.
 func (h *Handlers) LoginPage(w http.ResponseWriter, r *http.Request) {
 	_, _, _, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
 		false, // check auth
-		false, // check ratelimit
 		true,  // prevent cache
 	)
 	if err != nil {
@@ -80,7 +93,6 @@ func (h *Handlers) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 	_, _, _, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
 		false, // check auth
-		false, // check ratelimit (TODO)
 		true,  // prevent cache
 	)
 	if err != nil {
@@ -88,11 +100,17 @@ func (h *Handlers) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if h.rateLimited(w, r) {
+		w.WriteHeader(http.StatusTooManyRequests)
+		h.renderLoginError(w, i18n.T("Too many attempts. Wait a moment and try again."))
+		return
+	}
+
 	username := strings.TrimSpace(r.FormValue("username"))
 	password := r.FormValue("password")
 
 	if username == "" || password == "" {
-		h.renderLoginError(w, "Informe usuário e senha.")
+		h.renderLoginError(w, i18n.T("Enter username and password."))
 		return
 	}
 
@@ -103,12 +121,12 @@ func (h *Handlers) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if u == nil || u.PasswordHash == "" || !u.Enabled {
-		h.renderLoginError(w, "Credenciais inválidas.")
+		h.renderLoginError(w, i18n.T("Invalid credentials."))
 		return
 	}
 
 	if !VerifyPassword(u.PasswordHash, password) {
-		h.renderLoginError(w, "Credenciais inválidas.")
+		h.renderLoginError(w, i18n.T("Invalid credentials."))
 		return
 	}
 
@@ -142,11 +160,15 @@ func (h *Handlers) SignupPage(w http.ResponseWriter, r *http.Request) {
 	_, _, _, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
 		false, // check auth
-		false, // check ratelimit
 		true,  // prevent cache
 	)
 	if err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	if h.rateLimited(w, r) {
+		http.Error(w, i18n.T("Too many attempts. Wait a moment and try again."), http.StatusTooManyRequests)
 		return
 	}
 
@@ -184,11 +206,15 @@ func (h *Handlers) SignupSubmit(w http.ResponseWriter, r *http.Request) {
 	_, _, _, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
 		false, // check auth
-		false, // check ratelimit
 		true,  // prevent cache
 	)
 	if err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
+
+	if h.rateLimited(w, r) {
+		http.Error(w, i18n.T("Too many attempts. Wait a moment and try again."), http.StatusTooManyRequests)
 		return
 	}
 
@@ -222,18 +248,18 @@ func (h *Handlers) SignupSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if username == "" || password == "" {
-		renderError("Informe nome de usuário e senha.")
+		renderError(i18n.T("Enter a username and password."))
 		return
 	}
 
 	if password != confirm {
-		renderError("As senhas não conferem.")
+		renderError(i18n.T("Passwords do not match."))
 		return
 	}
 
 	err = db.IsValidUsername(username)
 	if err != nil {
-		renderError(err.Error())
+		renderError(i18n.T(err.Error()))
 		return
 	}
 
@@ -244,7 +270,7 @@ func (h *Handlers) SignupSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if email == "" {
-		renderError("Link de convite inválido ou expirado.")
+		renderError(i18n.T("Invite link is invalid or expired."))
 		return
 	}
 
@@ -258,7 +284,7 @@ func (h *Handlers) SignupSubmit(w http.ResponseWriter, r *http.Request) {
 	u, err := db.Storage.CreateUser(username, email, hash, false)
 	if err != nil {
 		log.Printf("signup: CreateUser: %v", err)
-		renderError("Não foi possível criar o usuário: " + err.Error())
+		renderError(i18n.T("Could not create the user. The username may already be taken."))
 		return
 	}
 
@@ -275,9 +301,8 @@ func (h *Handlers) SignupSubmit(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) InvitesPage(w http.ResponseWriter, r *http.Request) {
 	u, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true,  // check auth
-		false, // check ratelimit
-		true,  // prevent cache
+		true, // check auth
+		true, // prevent cache
 	)
 	if err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -319,9 +344,8 @@ func (h *Handlers) InvitesPage(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) InviteCreate(w http.ResponseWriter, r *http.Request) {
 	u, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true,  // check auth
-		false, // check ratelimit
-		true,  // prevent cache
+		true, // check auth
+		true, // prevent cache
 	)
 	if err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -338,7 +362,7 @@ func (h *Handlers) InviteCreate(w http.ResponseWriter, r *http.Request) {
 	email := strings.TrimSpace(r.FormValue("email"))
 	if email == "" {
 		http.Redirect(w, r,
-			h.cfg.BaseURL+"/tools/invites?error="+url.QueryEscape("Informe um email."),
+			h.cfg.BaseURL+"/tools/invites?error="+url.QueryEscape(i18n.T("Enter an email.")),
 			http.StatusFound)
 		return
 	}

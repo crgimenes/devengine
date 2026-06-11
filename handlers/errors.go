@@ -7,6 +7,7 @@ import (
 
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/devengine/log"
 	"github.com/crgimenes/devengine/session"
 )
@@ -38,7 +39,7 @@ func errRef() string {
 // that answer with a redirect message instead of an error page.
 func logRef(scope string, err error) string {
 	ref := errRef()
-	log.Printf("[ref %s] %s: %v", ref, scope, err)
+	log.Errorw("handler error", "ref", ref, "scope", scope, "err", err)
 	return ref
 }
 
@@ -46,13 +47,13 @@ func logRef(scope string, err error) string {
 func errorTitle(status int) string {
 	switch status {
 	case http.StatusNotFound:
-		return "Página não encontrada"
+		return i18n.T("Page not found")
 	case http.StatusForbidden:
-		return "Acesso negado"
+		return i18n.T("Access denied")
 	case http.StatusBadRequest:
-		return "Requisição inválida"
+		return i18n.T("Bad request")
 	default:
-		return "Erro interno"
+		return i18n.T("Internal error")
 	}
 }
 
@@ -60,13 +61,13 @@ func errorTitle(status int) string {
 func errorMessage(status int) string {
 	switch status {
 	case http.StatusNotFound:
-		return "O endereço acessado não existe ou foi removido."
+		return i18n.T("The address you accessed does not exist or was removed.")
 	case http.StatusForbidden:
-		return "Você não tem permissão para acessar esta página."
+		return i18n.T("You do not have permission to access this page.")
 	case http.StatusBadRequest:
-		return "A solicitação não pôde ser entendida pelo servidor."
+		return i18n.T("The server could not understand the request.")
 	default:
-		return "Algo deu errado ao processar a solicitação. Tente novamente."
+		return i18n.T("Something went wrong while processing the request. Try again.")
 	}
 }
 

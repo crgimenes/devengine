@@ -33,7 +33,7 @@ func RegisterAppFS(fs http.FileSystem) {
 	appFS = fs
 }
 
-// Routes registra o handler de assets no mux.
+// Routes registers the asset handler on the mux.
 func Routes(mux *http.ServeMux) {
 	mux.HandleFunc("GET /assets/", Handler)
 }
@@ -54,7 +54,7 @@ func Init() error {
 		if err != nil {
 			return fmt.Errorf("build app assets index: %w", err)
 		}
-		// Assets da app sobrescrevem os do devengine
+		// Application assets override the engine ones
 		maps.Copy(index, appAssets)
 	}
 

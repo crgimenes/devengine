@@ -70,7 +70,6 @@ func Prelude(
 	r *http.Request,
 	allowedMethods []string,
 	chkAuth bool,
-	chkRatelimit bool,
 	preventCache bool,
 ) (
 	*db.User,
@@ -96,9 +95,6 @@ func Prelude(
 	if !chkAuth {
 		return nil, "", false, nil
 	}
-
-	// Rate limiting lands with roadmap Bloco 5.1.
-	_ = chkRatelimit
 
 	ref := r.Referer()
 	_ = ref

@@ -12,6 +12,7 @@ import (
 	"github.com/crgimenes/devengine/auth/basic"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/i18n"
 )
 
 const usersPageSize = 50
@@ -20,7 +21,7 @@ const usersPageSize = 50
 func (h *Handlers) ToolsUsers(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true, false, true,
+		true, true,
 	)
 	if err != nil {
 		h.serverError(w, r, "ToolsUsers", err)
@@ -89,7 +90,7 @@ func (h *Handlers) ToolsUsers(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) ToolsUsersEdit(w http.ResponseWriter, r *http.Request) {
 	current, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true, false, true,
+		true, true,
 	)
 	if err != nil {
 		h.serverError(w, r, "ToolsUsersEdit", err)
@@ -139,7 +140,7 @@ func (h *Handlers) ToolsUsersEdit(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) ToolsUsersUpdate(w http.ResponseWriter, r *http.Request) {
 	current, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil {
 		h.serverError(w, r, "ToolsUsersUpdate", err)
@@ -166,25 +167,25 @@ func (h *Handlers) ToolsUsersUpdate(w http.ResponseWriter, r *http.Request) {
 	_, err = db.Storage.UpdateUserProfile(target.ID, username, target.AvatarURL, email)
 	if err != nil {
 		ref := logRef("UpdateUserProfile", err)
-		usersEditRedirect(w, r, target.ReferenceID, "error", "Erro ao atualizar perfil (ref "+ref+")")
+		usersEditRedirect(w, r, target.ReferenceID, "error", i18n.T("Could not update the profile (ref %s)", ref))
 		return
 	}
 
 	err = db.Storage.UpdateUserSysop(target.ID, sysop, current.ID)
 	if err != nil {
 		ref := logRef("UpdateUserSysop", err)
-		usersEditRedirect(w, r, target.ReferenceID, "error", "Erro ao atualizar sysop (ref "+ref+")")
+		usersEditRedirect(w, r, target.ReferenceID, "error", i18n.T("Could not update the sysop flag (ref %s)", ref))
 		return
 	}
 
 	err = db.Storage.UpdateUserEnabled(target.ID, enabled, current.ID)
 	if err != nil {
 		ref := logRef("UpdateUserEnabled", err)
-		usersEditRedirect(w, r, target.ReferenceID, "error", "Erro ao atualizar enabled (ref "+ref+")")
+		usersEditRedirect(w, r, target.ReferenceID, "error", i18n.T("Could not update the enabled flag (ref %s)", ref))
 		return
 	}
 
-	usersEditRedirect(w, r, target.ReferenceID, "message", "Usuário atualizado.")
+	usersEditRedirect(w, r, target.ReferenceID, "message", i18n.T("User updated."))
 }
 
 // ToolsUsersResetPassword generates a fresh random password for the target
@@ -192,7 +193,7 @@ func (h *Handlers) ToolsUsersUpdate(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) ToolsUsersResetPassword(w http.ResponseWriter, r *http.Request) {
 	current, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil {
 		h.serverError(w, r, "ToolsUsersResetPassword", err)

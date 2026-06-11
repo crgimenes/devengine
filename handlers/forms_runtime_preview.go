@@ -63,7 +63,7 @@ func coercePrefill(primitive, raw string) any {
 func (h *Handlers) FormsRuntimePreview(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed {
 		http.Error(w, "forbidden", http.StatusForbidden)

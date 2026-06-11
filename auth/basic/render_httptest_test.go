@@ -84,7 +84,7 @@ func TestSignupSubmitErrorRendersRealTemplates(t *testing.T) {
 	mux.ServeHTTP(rr, req)
 
 	assertRendered(t, rr, "POST /signup/{token}")
-	if !strings.Contains(rr.Body.String(), "Informe nome de usuário e senha.") {
+	if !strings.Contains(rr.Body.String(), "Enter a username and password.") {
 		t.Fatalf("error message not rendered")
 	}
 }

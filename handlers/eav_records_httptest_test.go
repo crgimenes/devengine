@@ -117,7 +117,7 @@ func TestAdminRecordCreateAllKinds(t *testing.T) {
 		t.Fatalf("create = %d, want 303", rr.Code)
 	}
 	loc := location(t, rr)
-	if !strings.Contains(loc, "sucesso") {
+	if !strings.Contains(loc, "successfully") {
 		t.Fatalf("create redirected with: %s", loc)
 	}
 
@@ -153,7 +153,7 @@ func TestAdminRecordCreateEmptyOptionals(t *testing.T) {
 	form := url.Values{"attr_titulo": {"Minimo"}}
 	rr := doPostForm(t, mux, adminRecordsBase(ent)+"/new", form, admin)
 	loc := location(t, rr)
-	if !strings.Contains(loc, "sucesso") {
+	if !strings.Contains(loc, "successfully") {
 		t.Fatalf("create with empty optionals redirected with: %s", loc)
 	}
 
@@ -173,9 +173,9 @@ func TestAdminRecordCreateValidation(t *testing.T) {
 		mutate  func(url.Values)
 		wantMsg string
 	}{
-		{"missing required", func(f url.Values) { f.Del("attr_titulo") }, "obrigat"},
-		{"invalid int", func(f url.Values) { f.Set("attr_prioridade", "abc") }, "inválido"},
-		{"text over max length", func(f url.Values) { f.Set("attr_titulo", "12345678901") }, "excede"},
+		{"missing required", func(f url.Values) { f.Del("attr_titulo") }, "Required field"},
+		{"invalid int", func(f url.Values) { f.Set("attr_prioridade", "abc") }, "Invalid value"},
+		{"text over max length", func(f url.Values) { f.Set("attr_titulo", "12345678901") }, "exceeds the limit"},
 	}
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
@@ -196,7 +196,7 @@ func TestAdminRecordCreateUniqueViolation(t *testing.T) {
 	admin := plantUser(t, "admin", true)
 
 	rr := doPostForm(t, mux, adminRecordsBase(ent)+"/new", fullRecordForm(), admin)
-	if !strings.Contains(location(t, rr), "sucesso") {
+	if !strings.Contains(location(t, rr), "successfully") {
 		t.Fatalf("first create failed: %s", location(t, rr))
 	}
 
@@ -204,7 +204,7 @@ func TestAdminRecordCreateUniqueViolation(t *testing.T) {
 	dup.Set("attr_titulo", "Outro")
 	rr = doPostForm(t, mux, adminRecordsBase(ent)+"/new", dup, admin)
 	loc := location(t, rr)
-	if !strings.Contains(loc, "existe") {
+	if !strings.Contains(loc, "already exists") {
 		t.Fatalf("want unique violation, got: %s", loc)
 	}
 }
@@ -259,7 +259,7 @@ func TestAdminRecordUpdateHappyPath(t *testing.T) {
 
 	rr := doPostForm(t, mux, adminRecordsBase(ent)+"/"+rec.ReferenceID+"/update", form, admin)
 	loc := location(t, rr)
-	if !strings.Contains(loc, "atualizado") {
+	if !strings.Contains(loc, "updated successfully") {
 		t.Fatalf("update redirected with: %s", loc)
 	}
 
@@ -291,7 +291,7 @@ func TestAdminRecordUpdateStaleRevConflict(t *testing.T) {
 
 	rr := doPostForm(t, mux, adminRecordsBase(ent)+"/"+rec.ReferenceID+"/update", form, admin)
 	loc := location(t, rr)
-	if !strings.Contains(loc, "Conflito") {
+	if !strings.Contains(loc, "Conflict") {
 		t.Fatalf("want optimistic-lock conflict, got: %s", loc)
 	}
 }

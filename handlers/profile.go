@@ -13,6 +13,7 @@ import (
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/devengine/session"
 )
 
@@ -22,9 +23,8 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 			http.MethodGet,
 			http.MethodPost,
 		},
-		true,  // check auth
-		false, // check ratelimit
-		true,  // prevent cache
+		true, // check auth
+		true, // prevent cache
 	)
 	if err != nil {
 		h.serverError(w, r, "Profile", err)
@@ -176,7 +176,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 		}{
 			Authed: true,
 			User:   *u,
-			Error:  "Erro ao atualizar perfil (ref " + logRef("UpdateUserProfile", err) + ")",
+			Error:  i18n.T("Could not update the profile (ref %s)", logRef("UpdateUserProfile", err)),
 			Config: *h.cfg,
 		}
 		h.render(w, "me.go.tmpl", data)

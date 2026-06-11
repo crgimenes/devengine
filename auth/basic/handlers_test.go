@@ -15,6 +15,7 @@ import (
 	"github.com/crgimenes/devengine/auth/basic"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/ratelimit"
 	"github.com/crgimenes/devengine/session"
 	"github.com/crgimenes/devengine/utils"
 )
@@ -115,7 +116,7 @@ func TestLoginSubmit_EmptyForm(t *testing.T) {
 	if rr.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200 (render error page)", rr.Code)
 	}
-	if !strings.Contains(rr.Body.String(), "Informe usuário e senha") {
+	if !strings.Contains(rr.Body.String(), "Enter username and password") {
 		t.Fatalf("body did not include expected error: %s", rr.Body.String())
 	}
 }
@@ -129,7 +130,7 @@ func TestLoginSubmit_UnknownUser(t *testing.T) {
 	if rr.Code != http.StatusOK {
 		t.Fatalf("status = %d", rr.Code)
 	}
-	if !strings.Contains(rr.Body.String(), "Credenciais inválidas") {
+	if !strings.Contains(rr.Body.String(), "Invalid credentials") {
 		t.Fatalf("body: %s", rr.Body.String())
 	}
 }
@@ -141,7 +142,7 @@ func TestLoginSubmit_WrongPassword(t *testing.T) {
 
 	body := url.Values{"username": {"alice"}, "password": {"wrongpw"}}
 	rr := postForm(h.LoginSubmit, body)
-	if !strings.Contains(rr.Body.String(), "Credenciais inválidas") {
+	if !strings.Contains(rr.Body.String(), "Invalid credentials") {
 		t.Fatalf("body: %s", rr.Body.String())
 	}
 }
@@ -208,7 +209,7 @@ func TestSignupSubmit_TokenNotInDB(t *testing.T) {
 	rr := httptest.NewRecorder()
 	h.SignupSubmit(rr, req)
 
-	if !strings.Contains(rr.Body.String(), "inválido ou expirado") {
+	if !strings.Contains(rr.Body.String(), "invalid or expired") {
 		t.Fatalf("body: %s", rr.Body.String())
 	}
 }
@@ -229,7 +230,7 @@ func TestSignupSubmit_PasswordMismatch(t *testing.T) {
 	rr := httptest.NewRecorder()
 	h.SignupSubmit(rr, req)
 
-	if !strings.Contains(rr.Body.String(), "não conferem") {
+	if !strings.Contains(rr.Body.String(), "do not match") {
 		t.Fatalf("body: %s", rr.Body.String())
 	}
 
@@ -367,5 +368,62 @@ func TestInviteCreate_Success(t *testing.T) {
 	created := parsed.Query().Get("created")
 	if !strings.HasPrefix(created, "http://localhost:3210/signup/") {
 		t.Fatalf("created = %q, want /signup/ URL", created)
+	}
+}
+
+// ---------- Rate limiting ----------
+
+// Exhausting the burst must block further login attempts with 429 and the
+// friendly message, even with correct credentials.
+func TestLoginSubmit_RateLimited(t *testing.T) {
+	h, cleanup := setupHandler(t)
+	defer cleanup()
+
+	config.Cfg.RateLimitPerMin = 60
+	config.Cfg.RateLimitBurst = 2
+	ratelimit.Default.Reset()
+	defer ratelimit.Default.Reset()
+
+	createSysop(t, "admin", "correct-password")
+	wrong := url.Values{"username": {"admin"}, "password": {"wrong"}}
+
+	for i := range 2 {
+		rr := postForm(h.LoginSubmit, wrong)
+		if rr.Code == http.StatusTooManyRequests {
+			t.Fatalf("request %d inside burst already limited", i)
+		}
+	}
+
+	rr := postForm(h.LoginSubmit, wrong)
+	if rr.Code != http.StatusTooManyRequests {
+		t.Fatalf("over-burst login = %d, want 429", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "Too many attempts") {
+		t.Fatalf("429 body missing message: %.200s", rr.Body.String())
+	}
+	if rr.Header().Get("Retry-After") == "" {
+		t.Fatal("429 missing Retry-After header")
+	}
+
+	// Correct credentials are also blocked while the bucket is empty: the
+	// limiter must not become a password oracle.
+	good := url.Values{"username": {"admin"}, "password": {"correct-password"}}
+	rr = postForm(h.LoginSubmit, good)
+	if rr.Code != http.StatusTooManyRequests {
+		t.Fatalf("limited client logged in: %d", rr.Code)
+	}
+}
+
+// Zero PerMin (the test default) disables the limiter entirely.
+func TestLoginSubmit_RateLimitDisabledByDefault(t *testing.T) {
+	h, cleanup := setupHandler(t)
+	defer cleanup()
+
+	wrong := url.Values{"username": {"admin"}, "password": {"wrong"}}
+	for i := range 50 {
+		rr := postForm(h.LoginSubmit, wrong)
+		if rr.Code == http.StatusTooManyRequests {
+			t.Fatalf("disabled limiter blocked request %d", i)
+		}
 	}
 }

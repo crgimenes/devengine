@@ -115,7 +115,7 @@ func resolveReferenceDisplays(form *db.Form, attributes []db.EAVAttribute, rows 
 func (h *Handlers) FormsRuntimeList(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true, false, true,
+		true, true,
 	)
 	if err != nil {
 		h.serverError(w, r, "FormsRuntimeList", err)
@@ -182,7 +182,7 @@ func (h *Handlers) FormsRuntimeList(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) FormsRuntimeListRows(w http.ResponseWriter, r *http.Request) {
 	_, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed {
 		return

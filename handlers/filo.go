@@ -12,6 +12,7 @@ import (
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/filo"
 )
 
@@ -28,7 +29,7 @@ type FiloGlobalView struct {
 func (h *Handlers) ToolsFilo(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true, false, true,
+		true, true,
 	)
 	if err != nil {
 		h.serverError(w, r, "ToolsFilo", err)
@@ -63,7 +64,7 @@ func (h *Handlers) ToolsFilo(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) ToolsFiloRun(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true, false, true,
+		true, true,
 	)
 	if err != nil {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
@@ -106,7 +107,7 @@ func (h *Handlers) runFiloScript(user *db.User, script, globalsJSON string) filo
 		raw := map[string]any{}
 		err := json.Unmarshal([]byte(globalsJSON), &raw)
 		if err != nil {
-			return filoResult{Script: script, UserError: "Globals JSON inválido: " + err.Error()}
+			return filoResult{Script: script, UserError: i18n.T("Invalid globals JSON: %s", err.Error())}
 		}
 		for k, v := range raw {
 			globals[k] = goToFilo(v)

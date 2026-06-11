@@ -6,6 +6,7 @@ import (
 
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/i18n"
 )
 
 // formRuntimePage is the data rendered by forms_runtime.go.tmpl.
@@ -163,7 +164,7 @@ func parseFormAttributesLenient(r *http.Request, elements []db.FormElement, attr
 		raw := r.FormValue(el.MachineName)
 		if raw == "" {
 			if attr.IsRequired {
-				fieldErrors[el.MachineName] = "campo obrigatório"
+				fieldErrors[el.MachineName] = i18n.T("required field")
 			}
 			values[attr.MachineName] = ""
 			continue
@@ -171,7 +172,7 @@ func parseFormAttributesLenient(r *http.Request, elements []db.FormElement, attr
 
 		v, err := parseElementValue(el, attr, raw)
 		if err != nil {
-			fieldErrors[el.MachineName] = "valor inválido"
+			fieldErrors[el.MachineName] = i18n.T("invalid value")
 			values[attr.MachineName] = raw
 			continue
 		}

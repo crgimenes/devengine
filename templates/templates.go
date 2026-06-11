@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/devengine/log"
 )
 
@@ -362,6 +363,7 @@ func tmplGetMenuMachineName(data any) string {
 // templateFuncMap registers the helper functions available to templates.
 func templateFuncMap() template.FuncMap {
 	return template.FuncMap{
+		"t":     i18n.T,
 		"split": strings.Split,
 		"join":  strings.Join,
 		"trim":  strings.TrimSpace,

@@ -14,9 +14,9 @@
                 <h2 class="mb-3">{{.Title}}</h2>
                 <p class="text-muted mb-4">{{.Message}}</p>
                 {{if .Ref}}
-                <p class="text-muted small">Código de referência: <code>{{.Ref}}</code></p>
+                <p class="text-muted small">{{t "Reference code"}}: <code>{{.Ref}}</code></p>
                 {{end}}
-                <a href="/" class="btn btn-primary px-4">Voltar ao início</a>
+                <a href="/" class="btn btn-primary px-4">{{t "Back to home"}}</a>
             </div>
         </div>
     </main>

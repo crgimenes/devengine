@@ -74,7 +74,7 @@ func TestElementValidateExprAuthoringAndRuntime(t *testing.T) {
 	rr = doPostForm(t, mux, "/form/"+form.MachineName,
 		url.Values{"titulo": {"permitido"}}, user)
 	loc := location(t, rr)
-	if !strings.Contains(loc, "sucesso") {
+	if !strings.Contains(loc, "successfully") {
 		t.Fatalf("valid value rejected, redirect: %s", loc)
 	}
 }
@@ -140,7 +140,7 @@ func TestAttributeComputedAuthoringAndRuntime(t *testing.T) {
 	rr = doPostForm(t, mux, "/form/venda",
 		url.Values{"valor": {"2.5"}, "quantidade": {"4"}}, user)
 	loc := location(t, rr)
-	if !strings.Contains(loc, "sucesso") {
+	if !strings.Contains(loc, "successfully") {
 		t.Fatalf("runtime create failed: %s", loc)
 	}
 
@@ -303,7 +303,7 @@ func TestCreateParseErrorPreservesValues(t *testing.T) {
 		t.Fatalf("bad submit = %d, want re-render", rr.Code)
 	}
 	page := rr.Body.String()
-	if !strings.Contains(page, "valor inválido") {
+	if !strings.Contains(page, "invalid value") {
 		t.Fatalf("parse error message missing")
 	}
 	if !strings.Contains(page, `value="abc"`) {

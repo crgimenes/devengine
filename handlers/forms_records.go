@@ -9,6 +9,7 @@ import (
 
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/devengine/log"
 )
 
@@ -27,7 +28,7 @@ type RecordRow struct {
 func (h *Handlers) ToolsFormsRecordsRows(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		http.Error(w, "forbidden", http.StatusForbidden)
@@ -85,7 +86,7 @@ func (h *Handlers) ToolsFormsRecordsRows(w http.ResponseWriter, r *http.Request)
 func (h *Handlers) ToolsFormsRecordsExport(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true, false, true,
+		true, true,
 	)
 	if err != nil || !authed || !user.Sysop {
 		http.Error(w, "forbidden", http.StatusForbidden)
@@ -209,7 +210,7 @@ func loadFormAndEntity(r *http.Request, w http.ResponseWriter) (*db.Form, *db.EA
 	}
 	if form.EAVEntityTypeID == nil {
 		http.Redirect(w, r,
-			"/tools/forms/"+formRefID+"/edit?message=Formulário não possui tabela EAV vinculada",
+			"/tools/forms/"+formRefID+"/edit?message="+i18n.T("Form has no linked EAV table"),
 			http.StatusSeeOther)
 		return nil, nil, fmt.Errorf("no entity type")
 	}

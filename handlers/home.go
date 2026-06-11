@@ -10,6 +10,7 @@ import (
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/devengine/session"
 )
 
@@ -62,7 +63,6 @@ func (h *Handlers) Home(w http.ResponseWriter, r *http.Request) {
 			http.MethodHead,
 		},
 		false, // check auth
-		false, // check ratelimit
 		true,  // prevent cache
 	)
 	if err != nil {
@@ -128,9 +128,8 @@ func (h *Handlers) Home(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) Tools(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true,  // check auth - must be logged in
-		false, // check ratelimit
-		true,  // prevent cache
+		true, // check auth - must be logged in
+		true, // prevent cache
 	)
 	if err != nil {
 		h.serverError(w, r, "Tools", err)
@@ -174,9 +173,8 @@ func (h *Handlers) Tools(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) ToolsDatabaseSchema(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true,  // check auth - must be logged in
-		false, // check ratelimit
-		true,  // prevent cache
+		true, // check auth - must be logged in
+		true, // prevent cache
 	)
 	if err != nil {
 		h.serverError(w, r, "ToolsDatabaseSchema", err)
@@ -266,9 +264,8 @@ func (h *Handlers) ToolsDatabaseSchema(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) ToolsSearchForms(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true,  // check auth - must be logged in
-		false, // check ratelimit
-		true,  // prevent cache
+		true, // check auth - must be logged in
+		true, // prevent cache
 	)
 	if err != nil {
 		h.serverError(w, r, "ToolsSearchForms", err)
@@ -312,9 +309,8 @@ func (h *Handlers) ToolsSearchForms(w http.ResponseWriter, r *http.Request) {
 func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet, http.MethodPost},
-		true,  // check auth - must be logged in
-		false, // check ratelimit
-		true,  // prevent cache
+		true, // check auth - must be logged in
+		true, // prevent cache
 	)
 	if err != nil {
 		h.serverError(w, r, "ToolsDatabaseSchemaEAVNew", err)
@@ -350,15 +346,15 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 		// Validation
 		var errorMsg string
 		if name == "" {
-			errorMsg = "Nome é obrigatório"
+			errorMsg = i18n.T("Name is required")
 		} else if machineName == "" {
-			errorMsg = "Nome da máquina é obrigatório"
+			errorMsg = i18n.T("Machine name is required")
 		} else if len(name) > 100 {
-			errorMsg = "Nome deve ter no máximo 100 caracteres"
+			errorMsg = i18n.T("Name must be at most 100 characters")
 		} else if len(machineName) > 100 {
-			errorMsg = "Nome da máquina deve ter no múximo 100 caracteres"
+			errorMsg = i18n.T("Machine name must be at most 100 characters")
 		} else if len(description) > 500 {
-			errorMsg = "Descrição deve ter no máximo 500 caracteres"
+			errorMsg = i18n.T("Description must be at most 500 characters")
 		}
 
 		// Validate machine_name format
@@ -380,7 +376,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 				}
 			}
 			if !validMachineName {
-				errorMsg = "Nome da máquina deve conter apenas letras minúsculas, números e underscores, e começar com letra"
+				errorMsg = i18n.T("Machine name must contain only lowercase letters, numbers and underscores, and start with a letter")
 			}
 		}
 
@@ -426,7 +422,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 				User:        *user,
 				Config:      *h.cfg,
 				CurrentPage: "database-schema",
-				Error:       "Erro ao criar tabela EAV (ref " + logRef("CreateEAVEntityType", err) + ")",
+				Error:       i18n.T("Could not create the EAV table (ref %s)", logRef("CreateEAVEntityType", err)),
 				FormData: FormData{
 					Name:        name,
 					MachineName: machineName,
@@ -467,9 +463,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet, http.MethodPost},
-		true,  // check auth - must be logged in
-		false, // check ratelimit
-		true,  // prevent cache
+		true, // check auth - must be logged in
+		true, // prevent cache
 	)
 	if err != nil {
 		h.serverError(w, r, "ToolsDatabaseSchemaEAVEdit", err)
@@ -521,11 +516,11 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 		// Validation
 		var errorMsg string
 		if name == "" {
-			errorMsg = "Nome é obrigatório"
+			errorMsg = i18n.T("Name is required")
 		} else if len(name) > 100 {
-			errorMsg = "Nome deve ter no máximo 100 caracteres"
+			errorMsg = i18n.T("Name must be at most 100 characters")
 		} else if len(description) > 500 {
-			errorMsg = "Descrição deve ter no máximo 500 caracteres"
+			errorMsg = i18n.T("Description must be at most 500 characters")
 		}
 
 		if errorMsg != "" {
@@ -569,7 +564,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 			}{
 				Authed:      true,
 				User:        *user,
-				Error:       "Erro ao atualizar tabela (ref " + logRef("UpdateEAVEntityType", err) + ")",
+				Error:       i18n.T("Could not update the table (ref %s)", logRef("UpdateEAVEntityType", err)),
 				Config:      *h.cfg,
 				CurrentPage: "database-schema",
 				EntityID:    id,
@@ -581,7 +576,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 		}
 
 		// Redirect with success message
-		http.Redirect(w, r, "/tools/database-schema/eav/"+updatedET.ReferenceID+"/edit?message=Tabela atualizada com sucesso", http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/database-schema/eav/"+updatedET.ReferenceID+"/edit?message="+i18n.T("Table updated successfully"), http.StatusSeeOther)
 		return
 	}
 

@@ -13,6 +13,15 @@ type Config struct {
 	SiteDescription string
 	SiteTitle       string
 	UploadPath      string // file upload storage path (temporary before processing)
+
+	// Rate limiting for the public auth endpoints (login, signup). Token
+	// bucket per client IP: PerMin is the sustained budget, Burst the
+	// instant allowance. PerMin <= 0 disables it. TrustProxy switches the
+	// client key to the first X-Forwarded-For hop — only behind a reverse
+	// proxy, never with the port exposed directly.
+	RateLimitPerMin     int
+	RateLimitBurst      int
+	RateLimitTrustProxy bool
 }
 
 var Cfg = &Config{
@@ -26,4 +35,6 @@ var Cfg = &Config{
 	SessionDuration: 10 * 24 * time.Hour, // 10 days
 	UploadPath:      "./uploads",
 	DataPath:        "./data",
+	RateLimitPerMin: 20,
+	RateLimitBurst:  10,
 }

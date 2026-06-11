@@ -16,7 +16,7 @@ func TestUnknownPathRenders404Page(t *testing.T) {
 		t.Fatalf("GET /does-not-exist = %d, want 404", rr.Code)
 	}
 	body := rr.Body.String()
-	if !strings.Contains(body, "Página não encontrada") {
+	if !strings.Contains(body, "Page not found") {
 		t.Fatalf("404 page missing title: %.300s", body)
 	}
 	if strings.Contains(body, "template error") {
@@ -39,7 +39,7 @@ func TestForbiddenPageForNonSysop(t *testing.T) {
 	if rr.Code != http.StatusForbidden {
 		t.Fatalf("GET /tools/forms as non-sysop = %d, want 403", rr.Code)
 	}
-	if !strings.Contains(rr.Body.String(), "Acesso negado") {
+	if !strings.Contains(rr.Body.String(), "Access denied") {
 		t.Fatalf("403 page missing title: %.300s", rr.Body.String())
 	}
 }
@@ -53,7 +53,7 @@ func TestUnknownFormRenders404Page(t *testing.T) {
 	if rr.Code != http.StatusNotFound {
 		t.Fatalf("GET /form/no-such-form = %d, want 404", rr.Code)
 	}
-	if !strings.Contains(rr.Body.String(), "Página não encontrada") {
+	if !strings.Contains(rr.Body.String(), "Page not found") {
 		t.Fatalf("404 page missing title: %.300s", rr.Body.String())
 	}
 }
@@ -72,7 +72,7 @@ func TestServerErrorHidesDetailAndShowsRef(t *testing.T) {
 		t.Fatalf("GET with dead storage = %d, want 500", rr.Code)
 	}
 	body := rr.Body.String()
-	if !strings.Contains(body, "Código de referência") {
+	if !strings.Contains(body, "Reference code") {
 		t.Fatalf("500 page missing reference id: %.300s", body)
 	}
 	if strings.Contains(body, "database") || strings.Contains(body, "sql") {

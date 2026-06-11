@@ -1,9 +1,11 @@
 package log
 
 import (
+	"context"
 	"fmt"
 	"io"
 	stdlog "log"
+	"log/slog"
 	"os"
 	"runtime"
 	"strings"
@@ -43,6 +45,8 @@ type Logger struct {
 	timeLayout atomic.Value
 	prefix     atomic.Value
 	flags      atomic.Int32
+	json       atomic.Bool
+	jsonOut    atomic.Value // slog.Handler, rebuilt on SetOutput/SetJSON
 }
 
 func init() {
@@ -68,7 +72,22 @@ func Default() *Logger { return defaultLogger }
 func (l *Logger) SetOutput(w io.Writer) {
 	if w != nil {
 		l.out.SetOutput(w)
+		l.rebuildJSONHandler()
 	}
+}
+
+// SetJSON switches the output to one slog JSON record per line (stdlib
+// log/slog), for production diagnostics. The colored text format stays the
+// default for terminals.
+func (l *Logger) SetJSON(enable bool) {
+	l.json.Store(enable)
+	if enable {
+		l.rebuildJSONHandler()
+	}
+}
+
+func (l *Logger) rebuildJSONHandler() {
+	l.jsonOut.Store(slog.NewJSONHandler(l.out.Writer(), &slog.HandlerOptions{AddSource: true}))
 }
 func (l *Logger) Writer() io.Writer    { return l.out.Writer() }
 func (l *Logger) SetPrefix(p string)   { l.prefix.Store(p) }
@@ -93,6 +112,7 @@ func Flags() int                  { return defaultLogger.Flags() }
 func SetLevel(level Level)        { defaultLogger.SetLevel(level) }
 func SetUTC(enable bool)          { defaultLogger.SetUTC(enable) }
 func SetTimeLayout(layout string) { defaultLogger.SetTimeLayout(layout) }
+func SetJSON(enable bool)         { defaultLogger.SetJSON(enable) }
 
 // API drop-in
 func Print(v ...any)                 { defaultLogger.outputf(LevelInfo, 3, "%s", fmt.Sprint(v...)) }
@@ -109,6 +129,12 @@ func Warn(v ...any)                  { defaultLogger.outputf(LevelWarn, 3, "%s",
 func Warnf(format string, v ...any)  { defaultLogger.outputf(LevelWarn, 3, format, v...) }
 func Error(v ...any)                 { defaultLogger.outputf(LevelError, 3, "%s", fmt.Sprint(v...)) }
 func Errorf(format string, v ...any) { defaultLogger.outputf(LevelError, 3, format, v...) }
+
+// Structured variants: message plus alternating key/value pairs, slog-style.
+func Debugw(msg string, kv ...any) { defaultLogger.outputw(LevelDebug, 3, msg, kv...) }
+func Infow(msg string, kv ...any)  { defaultLogger.outputw(LevelInfo, 3, msg, kv...) }
+func Warnw(msg string, kv ...any)  { defaultLogger.outputw(LevelWarn, 3, msg, kv...) }
+func Errorw(msg string, kv ...any) { defaultLogger.outputw(LevelError, 3, msg, kv...) }
 
 func Fatal(v ...any)                 { defaultLogger.outputf(LevelError, 3, "%s", fmt.Sprint(v...)); os.Exit(1) }
 func Fatalf(format string, v ...any) { defaultLogger.outputf(LevelError, 3, format, v...); os.Exit(1) }
@@ -166,6 +192,10 @@ func (l *Logger) outputf(lv Level, callerSkip int, format string, args ...any) {
 	if lv < Level(l.level.Load()) {
 		return
 	}
+	if l.json.Load() {
+		l.emitJSON(lv, callerSkip+1, fmt.Sprintf(format, args...))
+		return
+	}
 	now := time.Now()
 	if l.useUTC.Load() {
 		now = now.UTC()
@@ -203,6 +233,63 @@ func (l *Logger) outputf(lv Level, callerSkip int, format string, args ...any) {
 		b.WriteString(coloredMsg)
 	}
 	l.out.Println(b.String())
+}
+
+// outputw renders msg plus alternating key/value pairs: " k=v" appended in
+// text mode, real attributes in JSON mode.
+func (l *Logger) outputw(lv Level, callerSkip int, msg string, kv ...any) {
+	if lv < Level(l.level.Load()) {
+		return
+	}
+	if l.json.Load() {
+		l.emitJSON(lv, callerSkip+1, msg, kv...)
+		return
+	}
+	l.outputf(lv, callerSkip+1, "%s%s", msg, kvString(kv))
+}
+
+func (l *Logger) emitJSON(lv Level, callerSkip int, msg string, kv ...any) {
+	h, _ := l.jsonOut.Load().(slog.Handler)
+	if h == nil {
+		l.rebuildJSONHandler()
+		h, _ = l.jsonOut.Load().(slog.Handler)
+	}
+	var pcs [1]uintptr
+	runtime.Callers(callerSkip, pcs[:])
+	rec := slog.NewRecord(time.Now(), slogLevel(lv), msg, pcs[0])
+	rec.Add(kv...)
+	_ = h.Handle(context.Background(), rec)
+}
+
+func kvString(kv []any) string {
+	if len(kv) == 0 {
+		return ""
+	}
+	var b strings.Builder
+	for i := 0; i < len(kv); i += 2 {
+		key := fmt.Sprint(kv[i])
+		var val any = "<missing>"
+		if i+1 < len(kv) {
+			val = kv[i+1]
+		}
+		b.WriteByte(' ')
+		b.WriteString(colorize(colorBlue, key+"="))
+		fmt.Fprint(&b, val)
+	}
+	return b.String()
+}
+
+func slogLevel(lv Level) slog.Level {
+	switch lv {
+	case LevelDebug:
+		return slog.LevelDebug
+	case LevelWarn:
+		return slog.LevelWarn
+	case LevelError:
+		return slog.LevelError
+	default:
+		return slog.LevelInfo
+	}
 }
 
 func caller(skip int) (file string, line int, funcName string) {

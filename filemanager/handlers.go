@@ -39,7 +39,6 @@ func quotaHandler(w http.ResponseWriter, r *http.Request) {
 			http.MethodGet, // get user quota
 		},
 		true,  // check auth
-		false, // check ratelimit
 		true,  // prevent cache
 	)
 	if err != nil {
@@ -65,7 +64,6 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 			http.MethodGet, // list user files
 		},
 		true,  // check auth
-		false, // check ratelimit
 		true,  // prevent cache
 	)
 	if err != nil {
@@ -151,7 +149,6 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 			http.MethodGet, // list user files
 		},
 		true,  // check auth
-		false, // check ratelimit
 		true,  // prevent cache
 	)
 	if err != nil {
@@ -270,7 +267,6 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 			http.MethodPost, // process file upload
 		},
 		true,  // check auth
-		false, // check ratelimit
 		true,  // prevent cache
 	)
 	if err != nil {
@@ -505,7 +501,6 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 	u, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet, http.MethodPost},
 		true,  // check auth
-		false, // check ratelimit
 		true,  // prevent cache
 	)
 	if err != nil {
@@ -625,7 +620,6 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 			http.MethodPost, // soft delete file (mark as deleted)
 		},
 		true,  // check auth
-		false, // check ratelimit
 		true,  // prevent cache
 	)
 	if err != nil {
@@ -751,7 +745,6 @@ func serveFileHandler(w http.ResponseWriter, r *http.Request) {
 			http.MethodHead, // ETag and Last-Modified support
 		},
 		true,  // check auth
-		false, // check ratelimit
 		false, // prevent cache
 	)
 	if err != nil {
