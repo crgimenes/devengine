@@ -105,6 +105,14 @@
                                     Ocultar botão Cancelar
                                 </label>
                             </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="is_search" name="is_search"
+                                       {{if .Form.IsSearch}}checked{{end}}>
+                                <label class="form-check-label" for="is_search">
+                                    Formulário de pesquisa (abre na listagem)
+                                </label>
+                                <div class="form-text">Acessar /form/{nome} mostra a listagem com busca; os campos do formulário definem as colunas.</div>
+                            </div>
                             <div class="form-check mt-3">
                                 <input class="form-check-input" type="checkbox" id="show_system_info" name="show_system_info"
                                        {{if .Form.ShowSystemInfo}}checked{{end}}>

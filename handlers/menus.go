@@ -440,14 +440,18 @@ func (h *Handlers) ToolsMenusItemCreate(w http.ResponseWriter, r *http.Request) 
 		}
 	}
 
-	_, err = db.Storage.CreateMenuItem(menu.ID, parentID, machineName, label, icon, "link", "", "", "", maxZOrder)
+	item, err := db.Storage.CreateMenuItem(menu.ID, parentID, machineName, label, icon, "link", "", "", "", maxZOrder)
 	if err != nil {
 		ref := logRef("ToolsMenusItemCreate", err)
 		http.Redirect(w, r, "/tools/menu-editor/"+id+"/edit?message="+i18n.T("Could not create the item (ref %s)", ref), http.StatusSeeOther)
 		return
 	}
 
-	http.Redirect(w, r, "/tools/menu-editor/"+id+"/edit?message="+i18n.T("Item created successfully"), http.StatusSeeOther)
+	// Drop straight into the item editor: a fresh item is a bare link and
+	// almost always needs URL/type/code filled in next.
+	http.Redirect(w, r,
+		"/tools/menu-editor/"+id+"/items/"+item.ReferenceID+"/edit?message="+i18n.T("Item created successfully"),
+		http.StatusSeeOther)
 }
 
 // ToolsMenusItemEdit shows the item edit page.

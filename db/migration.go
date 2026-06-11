@@ -242,6 +242,15 @@ func RunMigrationOn(s *SQLite) error {
 		return fmt.Errorf("failed to get applied migrations: %w", err)
 	}
 
+	// Snapshot of what THIS database had already applied, for the drift
+	// check after commit: a brand-new migration must not look like drift.
+	var appliedBefore []migrationEntry
+	for _, m := range allMigrations {
+		if applied[m.id] {
+			appliedBefore = append(appliedBefore, m)
+		}
+	}
+
 	// Apply pending migrations
 	appliedCount := 0
 	for _, m := range allMigrations {
@@ -275,7 +284,7 @@ func RunMigrationOn(s *SQLite) error {
 	}
 	tx = nil
 
-	checkSchemaDrift(s, allMigrations)
+	checkSchemaDrift(s, appliedBefore, allMigrations)
 
 	if appliedCount == 0 {
 		log.Printf("no new migrations to apply")
@@ -290,34 +299,43 @@ func RunMigrationOn(s *SQLite) error {
 // already-migrated database silently keeps the old schema and fails later
 // with confusing SQL errors. The fingerprint lives in PRAGMA user_version and
 // is refreshed after warning, so the warning fires once per change.
-func checkSchemaDrift(s *SQLite, migrations []migrationEntry) {
-	h := fnv.New32a()
-	for _, m := range migrations {
-		content, err := fs.ReadFile(m.fsys, m.filename)
-		if err != nil {
-			return
-		}
-		_, _ = h.Write([]byte(m.id))
-		_, _ = h.Write(content)
-	}
-	// Mask to a positive int32 so the PRAGMA round-trips unchanged.
-	fingerprint := int64(h.Sum32() & 0x7fffffff)
+func checkSchemaDrift(s *SQLite, appliedBefore, all []migrationEntry) {
+	expected := migrationsFingerprint(appliedBefore)
+	full := migrationsFingerprint(all)
 
 	var stored int64
 	err := s.QueryRow(`PRAGMA user_version`).Scan(&stored)
 	if err != nil {
 		return
 	}
-	if stored == fingerprint {
-		return
-	}
-	if stored != 0 {
+	// Drift means the files this database ALREADY applied changed on disk.
+	// A stored value matching neither full (no change at all) nor expected
+	// (only new migrations appended) is exactly that.
+	if stored != 0 && stored != full && stored != expected {
 		log.Printf("WARNING: migration files changed after this database applied them (in-place edits during early development); the schema may be outdated. Recreate the database file to pick up the changes.")
 	}
-	err = s.Exec(fmt.Sprintf("PRAGMA user_version = %d", fingerprint))
+	if stored == full {
+		return
+	}
+	err = s.Exec(fmt.Sprintf("PRAGMA user_version = %d", full))
 	if err != nil {
 		log.Printf("schema fingerprint: %v", err)
 	}
+}
+
+// migrationsFingerprint hashes id+content of the given migrations into a
+// positive int32 that round-trips through PRAGMA user_version.
+func migrationsFingerprint(migrations []migrationEntry) int64 {
+	h := fnv.New32a()
+	for _, m := range migrations {
+		content, err := fs.ReadFile(m.fsys, m.filename)
+		if err != nil {
+			continue
+		}
+		_, _ = h.Write([]byte(m.id))
+		_, _ = h.Write(content)
+	}
+	return int64(h.Sum32() & 0x7fffffff)
 }
 
 func findMigrationFile(fsys fs.FS, version int) (string, error) {

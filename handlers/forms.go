@@ -328,6 +328,7 @@ func (h *Handlers) ToolsFormsUpdate(w http.ResponseWriter, r *http.Request) {
 	hideCancelButton := r.FormValue("hide_cancel_button") == "on"
 	hideTitle := r.FormValue("hide_title") == "on"
 	showSystemInfo := r.FormValue("show_system_info") == "on"
+	isSearch := r.FormValue("is_search") == "on"
 
 	// Validate required fields
 	if machineName == "" || label == "" {
@@ -340,7 +341,7 @@ func (h *Handlers) ToolsFormsUpdate(w http.ResponseWriter, r *http.Request) {
 	if entityTypeRefID != "" {
 		et, err := db.Storage.GetEAVEntityTypeByRefID(entityTypeRefID)
 		if err != nil {
-			http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message=Tabela EAV não encontrada", http.StatusSeeOther)
+			http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message="+i18n.T("EAV table not found"), http.StatusSeeOther)
 			return
 		}
 		eavEntityTypeID = &et.ID
@@ -358,7 +359,7 @@ func (h *Handlers) ToolsFormsUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update form
-	err = db.Storage.UpdateForm(form.ID, machineName, label, description, eavEntityTypeID, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo, menuID)
+	err = db.Storage.UpdateForm(form.ID, machineName, label, description, eavEntityTypeID, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo, menuID, isSearch)
 	if err != nil {
 		ref := logRef("ToolsFormsUpdate", err)
 		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message="+i18n.T("Could not update (ref %s)", ref), http.StatusSeeOther)

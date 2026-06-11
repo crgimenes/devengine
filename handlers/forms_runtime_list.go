@@ -58,24 +58,24 @@ func (h *Handlers) formListContext(w http.ResponseWriter, r *http.Request) (*db.
 		h.serverError(w, r, "formListContext", err)
 		return nil, nil, nil, false
 	}
+	attributes = listColumns(form, attributes)
 	return form, et, attributes, true
 }
 
-// resolveReferenceDisplays swaps raw reference ids for their display labels
-// in listing rows, using the same choices source as the form select. Failures
-// leave the raw ids in place — the listing still works.
-func resolveReferenceDisplays(form *db.Form, attributes []db.EAVAttribute, rows []RecordRow) {
-	if len(rows) == 0 {
-		return
-	}
+// referenceLabelMaps returns, per reference attribute machine name, the map
+// from stored record refID to its display label, using the same choices
+// source as the form select. Lookup failures simply yield smaller maps — the
+// caller keeps the raw ids.
+func referenceLabelMaps(form *db.Form, attributes []db.EAVAttribute) map[string]map[string]string {
 	elements, err := db.Storage.ListFormElements(form.ID)
 	if err != nil {
-		return
+		return nil
 	}
 	attrByID := make(map[int64]*db.EAVAttribute, len(attributes))
 	for i := range attributes {
 		attrByID[attributes[i].ID] = &attributes[i]
 	}
+	out := make(map[string]map[string]string)
 	for _, el := range elements {
 		if el.UIKind != "reference" || el.EAVAttributeID == nil {
 			continue
@@ -96,14 +96,58 @@ func resolveReferenceDisplays(form *db.Form, attributes []db.EAVAttribute, rows 
 		for _, c := range templates.ReferenceChoices(meta.Entity, meta.Display) {
 			byValue[c.Value] = c.Label
 		}
+		out[attr.MachineName] = byValue
+	}
+	return out
+}
+
+// listColumns restricts the listing to the attributes bound to the form's
+// elements, in element order, so each form over an entity is its own view.
+// A form without bound fields keeps every attribute (legacy behavior).
+func listColumns(form *db.Form, attributes []db.EAVAttribute) []db.EAVAttribute {
+	elements, err := db.Storage.ListFormElements(form.ID)
+	if err != nil {
+		return attributes
+	}
+	attrByID := make(map[int64]*db.EAVAttribute, len(attributes))
+	for i := range attributes {
+		attrByID[attributes[i].ID] = &attributes[i]
+	}
+	var out []db.EAVAttribute
+	seen := make(map[int64]bool)
+	for _, el := range elements {
+		if el.EAVAttributeID == nil || seen[*el.EAVAttributeID] {
+			continue
+		}
+		attr := attrByID[*el.EAVAttributeID]
+		if attr == nil {
+			continue
+		}
+		seen[*el.EAVAttributeID] = true
+		out = append(out, *attr)
+	}
+	if len(out) == 0 {
+		return attributes
+	}
+	return out
+}
+
+// resolveReferenceDisplays swaps raw reference ids for their display labels
+// in listing rows. Failures leave the raw ids in place — the listing still
+// works.
+func resolveReferenceDisplays(form *db.Form, attributes []db.EAVAttribute, rows []RecordRow) {
+	if len(rows) == 0 {
+		return
+	}
+	for machineName, byValue := range referenceLabelMaps(form, attributes) {
 		for i := range rows {
-			v, ok := rows[i].Values[attr.MachineName].(string)
+			v, ok := rows[i].Values[machineName].(string)
 			if !ok {
 				continue
 			}
 			label, ok := byValue[v]
 			if ok {
-				rows[i].Values[attr.MachineName] = label
+				rows[i].Values[machineName] = label
 			}
 		}
 	}

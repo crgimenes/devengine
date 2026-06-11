@@ -121,6 +121,15 @@ func init() {
 		"Select a file to upload":                 "Por favor, selecione um arquivo",
 		"Invalid file: %s":                        "Arquivo inválido: %s",
 
+		// record search
+		"Global search": "Busca global",
+		"One query across the text fields of every table.": "Uma consulta sobre os campos de texto de todas as tabelas.",
+		"Type and press Enter":                             "Digite e pressione Enter",
+		"Search":                                           "Buscar",
+		"See all results":                                  "Ver todos os resultados",
+		"See all records":                                  "Ver todos os registros",
+		"No records match %q":                              "Nenhum registro corresponde a %q",
+
 		// Filo REPL
 		"Invalid globals JSON: %s": "Globals JSON inválido: %s",
 	})

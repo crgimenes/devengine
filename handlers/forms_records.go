@@ -112,9 +112,17 @@ func (h *Handlers) ToolsFormsRecordsExport(w http.ResponseWriter, r *http.Reques
 	cw := csv.NewWriter(w)
 	defer cw.Flush()
 
+	// Reference columns export the display label in the main column plus a
+	// "<name>_ref" column carrying the raw record id, so spreadsheets read
+	// naturally and integrations keep the stable key.
+	refLabels := referenceLabelMaps(form, attributes)
+
 	header := []string{"reference_id", "created_at"}
 	for _, a := range attributes {
 		header = append(header, a.MachineName)
+		if _, ok := refLabels[a.MachineName]; ok {
+			header = append(header, a.MachineName+"_ref")
+		}
 	}
 	err = cw.Write(header)
 	if err != nil {
@@ -135,7 +143,17 @@ func (h *Handlers) ToolsFormsRecordsExport(w http.ResponseWriter, r *http.Reques
 		for _, row := range rows {
 			line := []string{row.Record.ReferenceID, row.Record.CreatedAt.Format("2006-01-02T15:04:05Z07:00")}
 			for _, a := range attributes {
-				line = append(line, formatValue(row.Values[a.MachineName]))
+				raw := formatValue(row.Values[a.MachineName])
+				byValue, isRef := refLabels[a.MachineName]
+				if !isRef {
+					line = append(line, raw)
+					continue
+				}
+				display := raw
+				if label, ok := byValue[raw]; ok {
+					display = label
+				}
+				line = append(line, display, raw)
 			}
 			err := cw.Write(line)
 			if err != nil {

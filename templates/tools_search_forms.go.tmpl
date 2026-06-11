@@ -8,23 +8,61 @@
     {{template "navbar" .}}
 
     <main class="container-fluid py-4 py-md-5">
-        {{if .Message}}
-            <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
-                {{.Message}}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        {{end}}
-        
         <div class="row">
             <div class="col-md-3">
                 {{template "tools_sidebar" .}}
             </div>
             <div class="col-md-9">
-                <div class="card p-4">
-                    <h2 class="mb-3">Forms de Pesquisa</h2>
-                    <p>Ferramenta para criação de formulários de pesquisa e enquetes.</p>
-                    <p class="text-muted">Esta funcionalidade será implementada em breve.</p>
+                <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-2">
+                    <div>
+                        <h2 class="mb-1">{{t "Global search"}}</h2>
+                        <p class="text-muted mb-0">{{t "One query across the text fields of every table."}}</p>
+                    </div>
                 </div>
+
+                <form method="get" action="/tools/search-forms" class="mb-4">
+                    <div class="input-group">
+                        <input type="text" name="q" class="form-control" maxlength="100"
+                               value="{{.Query}}" placeholder="{{t "Type and press Enter"}}"
+                               autofocus>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-search me-1"></i>{{t "Search"}}
+                        </button>
+                    </div>
+                </form>
+
+                {{if .Searched}}
+                    {{if .Groups}}
+                        {{range .Groups}}
+                        <div class="card mb-3">
+                            <div class="card-header d-flex justify-content-between align-items-center">
+                                <span><i class="bi bi-database me-2"></i>{{.EntityType.Name}}</span>
+                                {{if .HasMore}}
+                                    {{if .FormRefID}}
+                                    <a href="/tools/forms/{{.FormRefID}}/records?q={{$.Query}}" class="small">{{t "See all results"}}</a>
+                                    {{else}}
+                                    <a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/records" class="small">{{t "See all records"}}</a>
+                                    {{end}}
+                                {{end}}
+                            </div>
+                            <div class="list-group list-group-flush">
+                                {{$et := .EntityType}}
+                                {{range .Hits}}
+                                <a href="/tools/database-schema/eav/{{$et.ReferenceID}}/records/{{.RefID}}/edit"
+                                   class="list-group-item list-group-item-action">
+                                    {{.Summary}}
+                                </a>
+                                {{end}}
+                            </div>
+                        </div>
+                        {{end}}
+                    {{else}}
+                        <div class="text-center text-muted py-5">
+                            <i class="bi bi-search fs-1 d-block mb-2"></i>
+                            {{t "No records match %q" .Query}}
+                        </div>
+                    {{end}}
+                {{end}}
             </div>
         </div>
     </main>

@@ -22,6 +22,7 @@ type Form struct {
 	HideTitle        bool   // When true, form does not display title header
 	ShowSystemInfo   bool   // When true, displays record ID and status in runtime
 	MenuID           *int64 // Associated menu for navbar display when form is active
+	IsSearch         bool   // When true, /form/{name} opens the record listing (search view)
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 	DeletedAt        *time.Time
@@ -197,9 +198,10 @@ func (s *SQLite) GetFormByRefID(refID string) (*Form, error) {
 		hide_title,         -- 9
 		show_system_info,   -- 10
 		menu_id,            -- 11
-		created_at,         -- 12
-		updated_at,         -- 13
-		deleted_at          -- 14
+		is_search,          -- 12
+		created_at,         -- 13
+		updated_at,         -- 14
+		deleted_at          -- 15
 	FROM forms
 	WHERE reference_id = ? -- 1
 	AND deleted_at IS NULL`
@@ -220,9 +222,10 @@ func (s *SQLite) GetFormByRefID(refID string) (*Form, error) {
 		&f.HideTitle,        // 9
 		&f.ShowSystemInfo,   // 10
 		&f.MenuID,           // 11
-		&f.CreatedAt,        // 12
-		&f.UpdatedAt,        // 13
-		&f.DeletedAt,        // 14
+		&f.IsSearch,         // 12
+		&f.CreatedAt,        // 13
+		&f.UpdatedAt,        // 14
+		&f.DeletedAt,        // 15
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -248,9 +251,10 @@ func (s *SQLite) GetFormByMachineName(machineName string) (*Form, error) {
 		hide_title,         -- 9
 		show_system_info,   -- 10
 		menu_id,            -- 11
-		created_at,         -- 12
-		updated_at,         -- 13
-		deleted_at          -- 14
+		is_search,          -- 12
+		created_at,         -- 13
+		updated_at,         -- 14
+		deleted_at          -- 15
 	FROM forms
 	WHERE machine_name = ? -- 1
 	AND deleted_at IS NULL`
@@ -271,9 +275,10 @@ func (s *SQLite) GetFormByMachineName(machineName string) (*Form, error) {
 		&f.HideTitle,        // 9
 		&f.ShowSystemInfo,   // 10
 		&f.MenuID,           // 11
-		&f.CreatedAt,        // 12
-		&f.UpdatedAt,        // 13
-		&f.DeletedAt,        // 14
+		&f.IsSearch,         // 12
+		&f.CreatedAt,        // 13
+		&f.UpdatedAt,        // 14
+		&f.DeletedAt,        // 15
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -298,8 +303,9 @@ func (s *SQLite) ListForms() ([]Form, error) {
 		hide_title,         -- 9
 		show_system_info,   -- 10
 		menu_id,            -- 11
-		created_at,         -- 12
-		updated_at          -- 13
+		is_search,          -- 12
+		created_at,         -- 13
+		updated_at          -- 14
 	FROM forms
 	WHERE deleted_at IS NULL
 	ORDER BY label`
@@ -325,8 +331,9 @@ func (s *SQLite) ListForms() ([]Form, error) {
 			&f.HideTitle,        // 9
 			&f.ShowSystemInfo,   // 10
 			&f.MenuID,           // 11
-			&f.CreatedAt,        // 12
-			&f.UpdatedAt,        // 13
+			&f.IsSearch,         // 12
+			&f.CreatedAt,        // 13
+			&f.UpdatedAt,        // 14
 		); err != nil {
 			return nil, fmt.Errorf("scan form: %w", err)
 		}
@@ -336,7 +343,7 @@ func (s *SQLite) ListForms() ([]Form, error) {
 }
 
 // UpdateForm updates a form's basic info.
-func (s *SQLite) UpdateForm(id int64, machineName, label, description string, eavEntityTypeID *int64, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo bool, menuID *int64) error {
+func (s *SQLite) UpdateForm(id int64, machineName, label, description string, eavEntityTypeID *int64, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo bool, menuID *int64, isSearch bool) error {
 	const q = `UPDATE forms
 	SET
 		machine_name = ?,       -- 1
@@ -348,8 +355,9 @@ func (s *SQLite) UpdateForm(id int64, machineName, label, description string, ea
 		hide_title = ?,         -- 7
 		show_system_info = ?,   -- 8
 		menu_id = ?,            -- 9
+		is_search = ?,          -- 10
 		updated_at = CURRENT_TIMESTAMP
-	WHERE id = ?                -- 10
+	WHERE id = ?                -- 11
 	AND deleted_at IS NULL`
 	return s.Exec(
 		q,
@@ -362,7 +370,8 @@ func (s *SQLite) UpdateForm(id int64, machineName, label, description string, ea
 		hideTitle,        // 7
 		showSystemInfo,   // 8
 		menuID,           // 9
-		id,               // 10
+		isSearch,         // 10
+		id,               // 11
 	)
 }
 

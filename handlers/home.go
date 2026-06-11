@@ -261,51 +261,6 @@ func (h *Handlers) ToolsDatabaseSchema(w http.ResponseWriter, r *http.Request) {
 	h.render(w, "tools_database_schema.go.tmpl", data)
 }
 
-func (h *Handlers) ToolsSearchForms(w http.ResponseWriter, r *http.Request) {
-	user, _, authed, err := auth.Prelude(w, r,
-		[]string{http.MethodGet},
-		true, // check auth - must be logged in
-		true, // prevent cache
-	)
-	if err != nil {
-		h.serverError(w, r, "ToolsSearchForms", err)
-		return
-	}
-
-	if !authed {
-		return
-	}
-
-	// Sysop-only check
-	if !user.Sysop {
-		h.forbidden(w, r)
-		return
-	}
-
-	message := r.URL.Query().Get("message")
-	if len(message) > 200 {
-		h.errorPage(w, r, http.StatusBadRequest, "message too long")
-		return
-	}
-
-	data := struct {
-		Authed      bool
-		User        db.User
-		Error       string
-		Message     string
-		Config      config.Config
-		CurrentPage string
-	}{
-		Authed:      true,
-		User:        *user,
-		Message:     message,
-		Config:      *h.cfg,
-		CurrentPage: "search-forms",
-	}
-
-	h.render(w, "tools_search_forms.go.tmpl", data)
-}
-
 func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet, http.MethodPost},

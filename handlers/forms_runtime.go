@@ -115,6 +115,13 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// A search form's entry point is its listing (text search + rows), not
+	// the create view.
+	if ctx.form.IsSearch {
+		h.FormsRuntimeList(w, r)
+		return
+	}
+
 	// Initial values come from the attribute defaults.
 	values := make(map[string]any)
 	for _, attr := range ctx.attributes {
