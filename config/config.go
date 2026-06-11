@@ -22,6 +22,11 @@ type Config struct {
 	RateLimitPerMin     int
 	RateLimitBurst      int
 	RateLimitTrustProxy bool
+
+	// FileQuotaMB caps the total bytes each user may keep in the file
+	// manager (soft-deleted files count: they stay on disk until purged).
+	// 0 disables the quota.
+	FileQuotaMB int
 }
 
 var Cfg = &Config{
@@ -37,4 +42,5 @@ var Cfg = &Config{
 	DataPath:        "./data",
 	RateLimitPerMin: 20,
 	RateLimitBurst:  10,
+	FileQuotaMB:     1024,
 }

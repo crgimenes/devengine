@@ -573,3 +573,18 @@ func (s *SQLite) UpdateFileMetadataByUserAndFilename(
 		userID,      // 4
 	)
 }
+
+// SumFileSizesByUserID returns the total bytes a user occupies on disk.
+// Soft-deleted files COUNT: deletion only flags the row, the file stays on
+// disk until a purge job exists, so the quota must see it.
+func (s *SQLite) SumFileSizesByUserID(userID int64) (int64, error) {
+	const sqlSelect = `SELECT COALESCE(SUM(filesize), 0)
+        FROM filemanager_files
+        WHERE user_id = ?`
+	var total int64
+	err := s.QueryRow(sqlSelect, userID).Scan(&total)
+	if err != nil {
+		return 0, fmt.Errorf("sum file sizes: %w", err)
+	}
+	return total, nil
+}

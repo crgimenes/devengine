@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"fmt"
+	"html"
 	"io"
 	"net/http"
 	"net/url"
@@ -16,6 +17,7 @@ import (
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/devengine/log"
 	"github.com/crgimenes/devengine/session"
 	"github.com/crgimenes/devengine/utils"
@@ -38,8 +40,8 @@ func quotaHandler(w http.ResponseWriter, r *http.Request) {
 		[]string{
 			http.MethodGet, // get user quota
 		},
-		true,  // check auth
-		true,  // prevent cache
+		true, // check auth
+		true, // prevent cache
 	)
 	if err != nil {
 		log.Printf("auth.Prelude error: %v", err)
@@ -51,10 +53,50 @@ func quotaHandler(w http.ResponseWriter, r *http.Request) {
 		return // auth.Prelude already handled redirect
 	}
 
-	log.Printf("getting file manager quota for user %s", u.Email)
+	used, err := db.Storage.SumFileSizesByUserID(u.ID)
+	if err != nil {
+		log.Printf("quota: SumFileSizesByUserID: %v", err)
+		http.Error(w, "internal server error", http.StatusInternalServerError)
+		return
+	}
 
-	// TODO: implement quota retrieval and return as JSON or HTML (htmx compatible)
+	// HTMX swaps this fragment into the #quota div on the listing page.
+	w.Header().Set("Content-Type", "text/html; charset=utf-8")
+	if config.Cfg.FileQuotaMB <= 0 {
+		_, _ = fmt.Fprintf(w, `<div id="quota" class="text-body-secondary small">%s</div>`,
+			html.EscapeString(i18n.T("%s used", fmtBytes(used))))
+		return
+	}
+	quota := int64(config.Cfg.FileQuotaMB) << 20
+	_, _ = fmt.Fprintf(w, `<div id="quota" class="text-body-secondary small">%s</div>`,
+		html.EscapeString(i18n.T("%s of %s used", fmtBytes(used), fmtBytes(quota))))
+}
 
+// overQuota reports whether adding size bytes would push the user past the
+// configured quota. Zero FileQuotaMB disables the check.
+func overQuota(userID, size int64) (bool, error) {
+	if config.Cfg.FileQuotaMB <= 0 {
+		return false, nil
+	}
+	used, err := db.Storage.SumFileSizesByUserID(userID)
+	if err != nil {
+		return false, err
+	}
+	return used+size > int64(config.Cfg.FileQuotaMB)<<20, nil
+}
+
+// fmtBytes renders a byte count for humans (B, KB, MB, GB; one decimal).
+func fmtBytes(n int64) string {
+	switch {
+	case n >= 1<<30:
+		return fmt.Sprintf("%.1f GB", float64(n)/float64(1<<30))
+	case n >= 1<<20:
+		return fmt.Sprintf("%.1f MB", float64(n)/float64(1<<20))
+	case n >= 1<<10:
+		return fmt.Sprintf("%.1f KB", float64(n)/float64(1<<10))
+	default:
+		return fmt.Sprintf("%d B", n)
+	}
 }
 
 // indexHandler serves the file manager interface
@@ -63,8 +105,8 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		[]string{
 			http.MethodGet, // list user files
 		},
-		true,  // check auth
-		true,  // prevent cache
+		true, // check auth
+		true, // prevent cache
 	)
 	if err != nil {
 		log.Printf("auth.Prelude error: %v", err)
@@ -148,8 +190,8 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		[]string{
 			http.MethodGet, // list user files
 		},
-		true,  // check auth
-		true,  // prevent cache
+		true, // check auth
+		true, // prevent cache
 	)
 	if err != nil {
 		log.Printf("auth.Prelude error: %v", err)
@@ -260,14 +302,36 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// renderUploadError re-renders the upload form with a message. It must carry
+// a fresh CSRF token: the template requires .Csrf, and the old inline error
+// structs without it killed the render (blank 500 on any invalid upload).
+func renderUploadError(w http.ResponseWriter, r *http.Request, u *db.User, message string) {
+	csrf := session.GenerateCSRFToken(w, r)
+	data := struct {
+		Authed  bool
+		User    db.User
+		Error   string
+		Message string
+		Config  config.Config
+		Csrf    string
+	}{
+		Authed: true,
+		User:   *u,
+		Error:  message,
+		Config: *config.Cfg,
+		Csrf:   csrf,
+	}
+	renderOr500(w, "filemanager_upload.go.tmpl", data)
+}
+
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
 	u, sid, authed, err := auth.Prelude(w, r,
 		[]string{
 			http.MethodGet,  // show upload form
 			http.MethodPost, // process file upload
 		},
-		true,  // check auth
-		true,  // prevent cache
+		true, // check auth
+		true, // prevent cache
 	)
 	if err != nil {
 		log.Printf("auth.Prelude error: %v", err)
@@ -321,19 +385,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		file, fh, err := r.FormFile("file")
 		if err != nil {
 			log.Printf("no file in form: %v", err)
-			data := struct {
-				Authed  bool
-				User    db.User
-				Error   string
-				Message string
-				Config  config.Config
-			}{
-				Authed: true,
-				User:   *u,
-				Error:  "Por favor, selecione um arquivo",
-				Config: *config.Cfg,
-			}
-			renderOr500(w, "filemanager_upload.go.tmpl", data)
+			renderUploadError(w, r, u, i18n.T("Select a file to upload"))
 			return
 		}
 		defer file.Close()
@@ -364,23 +416,22 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		)
 		if err != nil {
 			log.Printf("file validation error: %v", err)
-			data := struct {
-				Authed  bool
-				User    db.User
-				Error   string
-				Message string
-				Config  config.Config
-			}{
-				Authed: true,
-				User:   *u,
-				Error:  "Arquivo inválido: " + err.Error(),
-				Config: *config.Cfg,
-			}
-			renderOr500(w, "filemanager_upload.go.tmpl", data)
+			renderUploadError(w, r, u, i18n.T("Invalid file: %s", err.Error()))
 			return
 		}
 
 		log.Printf("file validated: name %q type=%q size=%d", fh.Filename, typeDetected, size)
+
+		over, qerr := overQuota(u.ID, size)
+		if qerr != nil {
+			log.Printf("quota check error: %v", qerr)
+			http.Error(w, "internal server error", http.StatusInternalServerError)
+			return
+		}
+		if over {
+			renderUploadError(w, r, u, i18n.T("Upload exceeds your storage quota of %s", fmtBytes(int64(config.Cfg.FileQuotaMB)<<20)))
+			return
+		}
 
 		// Reset file pointer after validation
 		seeker, ok := file.(io.Seeker)
@@ -500,8 +551,8 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 func editHandler(w http.ResponseWriter, r *http.Request) {
 	u, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet, http.MethodPost},
-		true,  // check auth
-		true,  // prevent cache
+		true, // check auth
+		true, // prevent cache
 	)
 	if err != nil {
 		log.Printf("auth.Prelude error: %v", err)
@@ -619,8 +670,8 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 			http.MethodGet,
 			http.MethodPost, // soft delete file (mark as deleted)
 		},
-		true,  // check auth
-		true,  // prevent cache
+		true, // check auth
+		true, // prevent cache
 	)
 	if err != nil {
 		log.Printf("auth.Prelude error: %v", err)

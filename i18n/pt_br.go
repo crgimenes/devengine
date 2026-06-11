@@ -114,6 +114,13 @@ func init() {
 		"Could not update the sysop flag (ref %s)":   "Erro ao atualizar sysop (ref %s)",
 		"Could not update the enabled flag (ref %s)": "Erro ao atualizar enabled (ref %s)",
 
+		// file manager
+		"%s used":       "%s usados",
+		"%s of %s used": "%s de %s usados",
+		"Upload exceeds your storage quota of %s": "O upload excede sua cota de armazenamento de %s",
+		"Select a file to upload":                 "Por favor, selecione um arquivo",
+		"Invalid file: %s":                        "Arquivo inválido: %s",
+
 		// Filo REPL
 		"Invalid globals JSON: %s": "Globals JSON inválido: %s",
 	})
