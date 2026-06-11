@@ -61,13 +61,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeEdit(w http.ResponseWriter, r 
 	}
 
 	entityRefID := r.PathValue("id")
-	attrIDStr := r.PathValue("attr_id")
-
-	attrID, err := strconv.ParseInt(attrIDStr, 10, 64)
-	if err != nil {
-		http.Error(w, "Invalid attribute ID", http.StatusBadRequest)
-		return
-	}
+	attrRefID := r.PathValue("attr_id")
 
 	entityType, err := db.Storage.GetEAVEntityTypeByRefID(entityRefID)
 	if err != nil {
@@ -75,7 +69,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeEdit(w http.ResponseWriter, r 
 		return
 	}
 
-	attribute, err := db.Storage.GetEAVAttributeByID(attrID)
+	// External URLs carry reference ids, never internal numeric ids.
+	attribute, err := db.Storage.GetEAVAttributeByRefID(attrRefID)
 	if err != nil {
 		http.Error(w, "Attribute not found", http.StatusNotFound)
 		return
@@ -150,6 +145,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeCreate(w http.ResponseWriter, 
 	primitiveKind := r.FormValue("primitive_kind")
 	defaultValue := r.FormValue("default_value")
 	isRequired := r.FormValue("is_required") == "1"
+	isComputed := r.FormValue("is_computed") == "1"
+	computedExpr := strings.TrimSpace(r.FormValue("computed_expr"))
 	isUnique := r.FormValue("is_unique") == "1"
 	isIndexed := r.FormValue("is_indexed") == "1"
 
@@ -224,8 +221,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeCreate(w http.ResponseWriter, 
 		isUnique,
 		isIndexed,
 		maxLength,
-		false, // isComputed
-		"",    // computedExpr
+		isComputed,
+		computedExpr,
 		defaultVBool,
 		defaultVInt,
 		defaultVReal,
@@ -346,6 +343,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeUpdate(w http.ResponseWriter, 
 	defaultValue := r.FormValue("default_value")
 
 	isRequired := r.FormValue("is_required") == "1"
+	isComputed := r.FormValue("is_computed") == "1"
+	computedExpr := strings.TrimSpace(r.FormValue("computed_expr"))
 	isUnique := r.FormValue("is_unique") == "1"
 	isIndexed := r.FormValue("is_indexed") == "1"
 
@@ -420,8 +419,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeUpdate(w http.ResponseWriter, 
 		isUnique,
 		isIndexed,
 		maxLength,
-		false, // isComputed
-		"",    // computedExpr
+		isComputed,
+		computedExpr,
 		defaultVBool,
 		defaultVInt,
 		defaultVReal,

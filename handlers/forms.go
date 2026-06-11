@@ -8,6 +8,7 @@ import (
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/eav/ui"
 )
 
 // FormWithEntityType combines a form with its linked entity type info.
@@ -723,6 +724,7 @@ func (h *Handlers) ToolsFormsElementEdit(w http.ResponseWriter, r *http.Request)
 		AllElements       []db.FormElement
 		ParentLabel       string
 		EAVAttributeLabel string
+		UIKinds           []string
 	}{
 		Authed:            true,
 		User:              *user,
@@ -737,6 +739,7 @@ func (h *Handlers) ToolsFormsElementEdit(w http.ResponseWriter, r *http.Request)
 		AllElements:       allElements,
 		ParentLabel:       parentLabel,
 		EAVAttributeLabel: eavAttributeLabel,
+		UIKinds:           ui.IDs(),
 	}
 
 	h.render(w, "tools_forms_element_edit.go.tmpl", data)
@@ -785,6 +788,7 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 	hideHelpTextStr := r.FormValue("hide_help_text")
 
 	// Button-specific fields
+	validateExpr := r.FormValue("validate_expr")
 	buttonFiloCode := r.FormValue("button_filo_code")
 	buttonRunSaveStr := r.FormValue("button_run_save")
 	buttonJSCode := r.FormValue("button_js_code")
@@ -848,6 +852,7 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 		uiKind, uiMetaJSON,
 		eavAttrID,
 		isUIOnly, isReadonly, hideLabel, hideHelpText,
+		validateExpr,
 		buttonFiloCode, buttonRunSave, buttonJSCode, buttonStyle, buttonConfirmMsg,
 	)
 	if err != nil {
@@ -888,6 +893,7 @@ func (h *Handlers) ToolsFormsRecords(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Failed to list records", http.StatusInternalServerError)
 		return
 	}
+	resolveReferenceDisplays(form, attributes, rows)
 
 	message := r.URL.Query().Get("message")
 	if len(message) > 200 {

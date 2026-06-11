@@ -268,6 +268,15 @@ func parseMetaWithDefaults(jsonStr string, defaults map[string]any) map[string]a
 	return defaults
 }
 
+// ReferenceChoices returns the choice list for an entity, using the provider
+// installed by the reference plugin. Empty when no provider is registered.
+func ReferenceChoices(entity, displayAttr string) []ReferenceChoice {
+	if referenceChoicesFn == nil {
+		return nil
+	}
+	return referenceChoicesFn(entity, displayAttr)
+}
+
 // tmplReferenceChoices returns the list of choices for a reference field.
 // Accepts any-typed args so it composes cleanly with `(index .Meta "...")`.
 func tmplReferenceChoices(entity, displayAttr any) []ReferenceChoice {

@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"net/http"
 	"strconv"
 	"strings"
@@ -9,6 +10,7 @@ import (
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
 	"github.com/crgimenes/devengine/log"
+	"github.com/crgimenes/devengine/templates"
 )
 
 // loadFormMenu resolves the navbar menu bound to a form, if any. Returns the
@@ -60,6 +62,54 @@ func (h *Handlers) formListContext(w http.ResponseWriter, r *http.Request) (*db.
 	return form, et, attributes, true
 }
 
+// resolveReferenceDisplays swaps raw reference ids for their display labels
+// in listing rows, using the same choices source as the form select. Failures
+// leave the raw ids in place — the listing still works.
+func resolveReferenceDisplays(form *db.Form, attributes []db.EAVAttribute, rows []RecordRow) {
+	if len(rows) == 0 {
+		return
+	}
+	elements, err := db.Storage.ListFormElements(form.ID)
+	if err != nil {
+		return
+	}
+	attrByID := make(map[int64]*db.EAVAttribute, len(attributes))
+	for i := range attributes {
+		attrByID[attributes[i].ID] = &attributes[i]
+	}
+	for _, el := range elements {
+		if el.UIKind != "reference" || el.EAVAttributeID == nil {
+			continue
+		}
+		attr := attrByID[*el.EAVAttributeID]
+		if attr == nil {
+			continue
+		}
+		var meta struct {
+			Entity  string `json:"entity"`
+			Display string `json:"display"`
+		}
+		err = json.Unmarshal([]byte(el.UIMetaJSON), &meta)
+		if err != nil || meta.Entity == "" {
+			continue
+		}
+		byValue := make(map[string]string)
+		for _, c := range templates.ReferenceChoices(meta.Entity, meta.Display) {
+			byValue[c.Value] = c.Label
+		}
+		for i := range rows {
+			v, ok := rows[i].Values[attr.MachineName].(string)
+			if !ok {
+				continue
+			}
+			label, ok := byValue[v]
+			if ok {
+				rows[i].Values[attr.MachineName] = label
+			}
+		}
+	}
+}
+
 // FormsRuntimeList renders the end-user listing of a form's records with the
 // ordered, cursor-based infinite scroll. Each row links to the runtime editor
 // and a "Novo" button points at the create view.
@@ -88,6 +138,8 @@ func (h *Handlers) FormsRuntimeList(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
+
+	resolveReferenceDisplays(form, attributes, rows)
 
 	menuItems, menuMachineName := loadFormMenu(form)
 
@@ -152,6 +204,8 @@ func (h *Handlers) FormsRuntimeListRows(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
+
+	resolveReferenceDisplays(form, attributes, rows)
 
 	data := struct {
 		Form       *db.Form

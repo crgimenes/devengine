@@ -78,16 +78,10 @@
                                 <label for="ui_kind" class="form-label">Plugin de UI</label>
                                 <select class="form-select" id="ui_kind" name="ui_kind">
                                     <option value="" {{if eq .Element.UIKind ""}}selected{{end}}>-- Padrão --</option>
-                                    <option value="text" {{if eq .Element.UIKind "text"}}selected{{end}}>Texto</option>
-                                    <option value="textarea" {{if eq .Element.UIKind "textarea"}}selected{{end}}>Área de Texto</option>
-                                    <option value="int" {{if eq .Element.UIKind "int"}}selected{{end}}>Número Inteiro</option>
-                                    <option value="decimal" {{if eq .Element.UIKind "decimal"}}selected{{end}}>Decimal</option>
-                                    <option value="bool" {{if eq .Element.UIKind "bool"}}selected{{end}}>Booleano</option>
-                                    <option value="datetime" {{if eq .Element.UIKind "datetime"}}selected{{end}}>Data/Hora</option>
-                                    <option value="select" {{if eq .Element.UIKind "select"}}selected{{end}}>Seleção</option>
-                                    <option value="image" {{if eq .Element.UIKind "image"}}selected{{end}}>Imagem</option>
-                                    <option value="video" {{if eq .Element.UIKind "video"}}selected{{end}}>Vídeo</option>
-                                    <option value="audio" {{if eq .Element.UIKind "audio"}}selected{{end}}>Áudio</option>
+                                    {{$current := .Element.UIKind}}
+                                    {{range .UIKinds}}
+                                    <option value="{{.}}" {{if eq $current .}}selected{{end}}>{{.}}</option>
+                                    {{end}}
                                 </select>
                             </div>
                             <div class="col-md-4">
@@ -193,6 +187,19 @@
                             <label for="ui_meta_json" class="form-label">Metadados do Plugin</label>
                             <textarea class="form-control font-monospace" id="ui_meta_json" name="ui_meta_json" 
                                       rows="4" placeholder='{"placeholder": "Digite aqui...", "maxLength": 100}'>{{.Element.UIMetaJSON}}</textarea>
+                            <div class="form-text">JSON livre interpretado pelo plugin (ex.: reference: {"entity": "cliente", "display": "nome"}).</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="validate_expr" class="form-label">Validação (Filo)</label>
+                            <textarea class="form-control font-monospace"
+                                      id="validate_expr"
+                                      name="validate_expr"
+                                      rows="3"
+                                      placeholder='(if (< field:quantidade 1) "Quantidade deve ser ao menos 1" "")'>{{.Element.ValidateExpr}}</textarea>
+                            <div class="form-text">
+                                Executa ao salvar. Retorne uma string de erro (vazia = ok) ou um
+                                booleano (false = inválido). Campos como <code>field:&lt;nome&gt;</code>.
                             <div class="form-text">Este campo é atualizado automaticamente pelas opções acima</div>
                         </div>
 

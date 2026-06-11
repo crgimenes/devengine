@@ -158,6 +158,28 @@
                             </div>
                         </div>
 
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="attr_is_computed" name="is_computed" value="1" {{if .Attribute}}{{if .Attribute.IsComputed}}checked{{end}}{{end}}>
+                                <label class="form-check-label" for="attr_is_computed">
+                                    Campo calculado (Filo)
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="attr_computed_expr" class="form-label">Expressão de Cálculo (Filo)</label>
+                            <textarea class="form-control font-monospace"
+                                      id="attr_computed_expr"
+                                      name="computed_expr"
+                                      rows="3"
+                                      placeholder='(* field:valor field:quantidade)'>{{if .Attribute}}{{.Attribute.ComputedExpr}}{{end}}</textarea>
+                            <div class="form-text">
+                                Recalculado a cada salvamento, sobrescrevendo o valor digitado.
+                                Campos disponíveis como <code>field:&lt;nome&gt;</code>.
+                            </div>
+                        </div>
+
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
                                 {{if .Attribute}}Atualizar{{else}}Criar{{end}} Atributo

@@ -329,7 +329,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordNew(w http.ResponseWriter, r *htt
 		} else if attr.DefaultVText != nil {
 			values[attr.MachineName] = *attr.DefaultVText
 		} else if attr.DefaultVDatetime != nil {
-			values[attr.MachineName] = *attr.DefaultVDatetime
+			values[attr.MachineName] = datetimeDefault(*attr.DefaultVDatetime)
 		}
 	}
 
@@ -709,7 +709,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordEdit(w http.ResponseWriter, r *ht
 			} else if attr.DefaultVText != nil {
 				valueMap[attr.MachineName] = *attr.DefaultVText
 			} else if attr.DefaultVDatetime != nil {
-				valueMap[attr.MachineName] = *attr.DefaultVDatetime
+				valueMap[attr.MachineName] = datetimeDefault(*attr.DefaultVDatetime)
 			}
 		}
 	}

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/crgimenes/devengine/log"
 
@@ -16,7 +17,10 @@ import (
 	"github.com/crgimenes/devengine/db"
 	"github.com/crgimenes/devengine/eav/ui"
 	"github.com/crgimenes/devengine/filodb"
+	"github.com/crgimenes/devengine/filoeav"
+	"github.com/crgimenes/devengine/filofile"
 	"github.com/crgimenes/devengine/filolog"
+	"github.com/crgimenes/devengine/filosession"
 	"github.com/crgimenes/devengine/utils"
 	"github.com/crgimenes/filo"
 	"github.com/crgimenes/filo/filostrings"
@@ -173,7 +177,7 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 		} else if attr.DefaultVText != nil {
 			values[attr.MachineName] = *attr.DefaultVText
 		} else if attr.DefaultVDatetime != nil {
-			values[attr.MachineName] = *attr.DefaultVDatetime
+			values[attr.MachineName] = datetimeDefault(*attr.DefaultVDatetime)
 		}
 	}
 
@@ -340,6 +344,15 @@ func (h *Handlers) FormsRuntimeCreate(w http.ResponseWriter, r *http.Request) {
 }
 
 // FormsRuntimeEdit shows a form for editing an existing record.
+// datetimeDefault resolves the special default "now" to the current
+// timestamp in the HTML5 datetime-local layout; other values pass through.
+func datetimeDefault(v string) string {
+	if strings.EqualFold(strings.TrimSpace(v), "now") {
+		return time.Now().Format("2006-01-02T15:04")
+	}
+	return v
+}
+
 // recordValuesMap flattens typed EAV values into machine_name → Go value.
 func recordValuesMap(eavValues []db.EAVValue, attributes []db.EAVAttribute) map[string]any {
 	attrByID := make(map[int64]*db.EAVAttribute, len(attributes))
@@ -770,7 +783,7 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 	// =========================================================
 	if button.ButtonFiloCode != "" {
 		globals := buttonFiloGlobals(form, user, currentRecord, parsedValues)
-		newGlobals, execErr := runButtonFilo(r.Context(), tx, button.ButtonFiloCode, globals)
+		newGlobals, execErr := runButtonFilo(r.Context(), tx, user, button.ButtonFiloCode, globals)
 		if execErr != nil {
 			log.Printf("[ERROR] Button '%s' Filo script error: %v", button.MachineName, execErr)
 			jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "Script error: " + execErr.Error()})
@@ -789,6 +802,23 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 	// 3. Execute Save (AFTER Filo, using potentially modified values)
 	// =========================================================
 	if button.ButtonRunSave {
+		parsedValues, err = applyComputedExprs(r.Context(), user, attributes, parsedValues)
+		if err != nil {
+			log.Printf("[ERROR] button computed_expr: %v", err)
+			jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "computed_expr failed"})
+			return
+		}
+		userErr, sysErr := evaluateValidateExprs(r.Context(), user, elements, attributes, parsedValues)
+		if sysErr != nil {
+			log.Printf("[ERROR] button validate_expr: %v", sysErr)
+			jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "validate_expr failed"})
+			return
+		}
+		if userErr != "" {
+			jsonResponse(w, http.StatusBadRequest, map[string]string{"error": userErr})
+			return
+		}
+
 		if isUpdate {
 			// Optimistic locking check
 			revStr := r.FormValue("rev")
@@ -862,7 +892,9 @@ func buttonFiloGlobals(form *db.Form, user *db.User, currentRecord *db.EAVRecord
 
 // runButtonFilo executes the script with the engine wired to the SAME
 // transaction, so script-issued DB ops roll back together with the save.
-func runButtonFilo(ctx context.Context, tx *db.Transaction, code string, globals map[string]filo.Value) (map[string]filo.Value, error) {
+// Button scripts get the full builtin set of the other form contexts plus
+// filodb for raw statements.
+func runButtonFilo(ctx context.Context, tx *db.Transaction, user *db.User, code string, globals map[string]filo.Value) (map[string]filo.Value, error) {
 	eng := filo.NewEngine()
 
 	dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
@@ -870,6 +902,9 @@ func runButtonFilo(ctx context.Context, tx *db.Transaction, code string, globals
 
 	filostrings.RegisterBuiltins(eng)
 	filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
+	filoeav.RegisterEAVBuiltins(eng, filoeav.NewContextTx(db.Storage, &txAdapter{tx: tx}))
+	filofile.RegisterFileBuiltins(eng, filofile.NewContext(db.Storage))
+	filosession.RegisterSessionBuiltins(eng, filosession.NewContext(user))
 	filolog.RegisterLogBuiltins(eng, filolog.NewContext(globals))
 
 	cfg := filo.EvalConfig{
@@ -883,20 +918,27 @@ func runButtonFilo(ctx context.Context, tx *db.Transaction, code string, globals
 }
 
 // applyButtonGlobals maps the script's resulting globals back onto the parsed
-// values and the response control variables.
+// values (typed per attribute, so a whole-number Filo value still lands as
+// REAL when the attribute says so) and the response control variables.
 func applyButtonGlobals(newGlobals map[string]filo.Value, attributes []db.EAVAttribute, parsedValues db.EAVRecordValues, response map[string]any) {
+	attrByName := make(map[string]*db.EAVAttribute, len(attributes))
+	for i := range attributes {
+		attrByName[attributes[i].MachineName] = &attributes[i]
+	}
+
 	for kRaw, val := range newGlobals {
-		var goVal any
+		if kRaw == "error" && val.Kind == filo.KString && val.Str != "" {
+			response["error"] = val.Str
+		}
+		if kRaw == "message" && val.Kind == filo.KString && val.Str != "" {
+			response["message"] = val.Str
+		}
+		if kRaw == "redirect_to" && val.Kind == filo.KString && val.Str != "" {
+			response["redirect_to"] = val.Str
+		}
+
 		switch val.Kind {
-		case filo.KNumber:
-			goVal = int64(val.Num)
-			if val.Num != float64(int64(val.Num)) {
-				goVal = val.Num
-			}
-		case filo.KString:
-			goVal = val.Str
-		case filo.KBool:
-			goVal = val.Bool
+		case filo.KNumber, filo.KString, filo.KBool:
 		default:
 			continue
 		}
@@ -907,27 +949,11 @@ func applyButtonGlobals(newGlobals map[string]filo.Value, attributes []db.EAVAtt
 		if after, ok := strings.CutPrefix(k, "field:"); ok {
 			k = after
 		}
-
-		if _, exists := parsedValues[k]; exists {
-			parsedValues[k] = goVal
-		} else {
-			for _, attr := range attributes {
-				if attr.MachineName == k {
-					parsedValues[k] = goVal
-					break
-				}
-			}
+		attr := attrByName[k]
+		if attr == nil {
+			continue
 		}
-
-		if kRaw == "error" && val.Kind == filo.KString && val.Str != "" {
-			response["error"] = val.Str
-		}
-		if kRaw == "message" && val.Kind == filo.KString && val.Str != "" {
-			response["message"] = val.Str
-		}
-		if kRaw == "redirect_to" && val.Kind == filo.KString && val.Str != "" {
-			response["redirect_to"] = val.Str
-		}
+		parsedValues[k] = filoToGoTyped(attr.PrimitiveKind, val)
 	}
 }
 
@@ -1180,9 +1206,11 @@ func saveValuesTx(tx *db.Transaction, recordID int64, attributes []db.EAVAttribu
 				break
 			}
 		}
-		if attr == nil || attr.IsComputed {
+		if attr == nil {
 			continue
 		}
+		// Computed values persist too: applyComputedExprs already overwrote
+		// any user input upstream, and lists/CSV read straight from eav_values.
 
 		var vBool, vInt, vReal, vText, vDatetime any
 		switch attr.PrimitiveKind {
@@ -1197,6 +1225,8 @@ func saveValuesTx(tx *db.Transaction, recordID int64, attributes []db.EAVAttribu
 		case "REAL":
 			if f, ok := rawValue.(float64); ok {
 				vReal = f
+			} else if i, ok := rawValue.(int64); ok {
+				vReal = float64(i)
 			}
 		case "DATETIME":
 			if s, ok := rawValue.(string); ok && s != "" {

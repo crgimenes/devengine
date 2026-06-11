@@ -558,8 +558,9 @@ func (s *SQLite) ListFormElements(formID int64) ([]FormElement, error) {
 		button_js_code,     -- 21
 		button_style,       -- 22
 		button_confirm_msg, -- 23
-		created_at,         -- 24
-		updated_at          -- 25
+		COALESCE(validate_expr, ''), -- 24
+		created_at,         -- 25
+		updated_at          -- 26
 	FROM form_elements
 	WHERE form_id = ?       -- 1
 	AND deleted_at IS NULL
@@ -604,8 +605,9 @@ func (s *SQLite) ListFormElements(formID int64) ([]FormElement, error) {
 			&e.ButtonJSCode,     // 21
 			&e.ButtonStyle,      // 22
 			&e.ButtonConfirmMsg, // 23
-			&e.CreatedAt,        // 24
-			&e.UpdatedAt,        // 25
+			&e.ValidateExpr,     // 24
+			&e.CreatedAt,        // 25
+			&e.UpdatedAt,        // 26
 		); err != nil {
 			return nil, fmt.Errorf("scan form element: %w", err)
 		}
@@ -648,8 +650,9 @@ func (s *SQLite) GetFormElementByRefID(refID string) (*FormElement, error) {
 		button_js_code,     -- 21
 		button_style,       -- 22
 		button_confirm_msg, -- 23
-		created_at,         -- 24
-		updated_at          -- 25
+		COALESCE(validate_expr, ''), -- 24
+		created_at,         -- 25
+		updated_at          -- 26
 	FROM form_elements
 	WHERE reference_id = ? -- 1
 	AND deleted_at IS NULL`
@@ -685,8 +688,9 @@ func (s *SQLite) GetFormElementByRefID(refID string) (*FormElement, error) {
 		&e.ButtonJSCode,     // 21
 		&e.ButtonStyle,      // 22
 		&e.ButtonConfirmMsg, // 23
-		&e.CreatedAt,        // 24
-		&e.UpdatedAt,        // 25
+		&e.ValidateExpr,     // 24
+		&e.CreatedAt,        // 25
+		&e.UpdatedAt,        // 26
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -721,6 +725,7 @@ func (s *SQLite) UpdateFormElement(
 	uiKind, uiMetaJSON string,
 	eavAttributeID *int64,
 	isUIOnly, isReadonly, hideLabel, hideHelpText bool,
+	validateExpr string,
 	buttonFiloCode string, buttonRunSave bool, buttonJSCode, buttonStyle, buttonConfirmMsg string,
 ) error {
 	// Default col_span to 12 if not set
@@ -748,13 +753,14 @@ func (s *SQLite) UpdateFormElement(
 		is_readonly = ?,        -- 13
 		hide_label = ?,         -- 14
 		hide_help_text = ?,     -- 15
-		button_filo_code = ?,   -- 16
-		button_run_save = ?,    -- 17
-		button_js_code = ?,     -- 18
-		button_style = ?,       -- 19
-		button_confirm_msg = ?, -- 20
+		validate_expr = ?,      -- 16
+		button_filo_code = ?,   -- 17
+		button_run_save = ?,    -- 18
+		button_js_code = ?,     -- 19
+		button_style = ?,       -- 20
+		button_confirm_msg = ?, -- 21
 		updated_at = CURRENT_TIMESTAMP
-	WHERE id = ?                -- 21
+	WHERE id = ?                -- 22
 	AND deleted_at IS NULL`
 
 	var parentIDVal sql.NullInt64
@@ -783,12 +789,13 @@ func (s *SQLite) UpdateFormElement(
 		boolToInt(isReadonly),    // 13
 		boolToInt(hideLabel),     // 14
 		boolToInt(hideHelpText),  // 15
-		buttonFiloCode,           // 16
-		boolToInt(buttonRunSave), // 17
-		buttonJSCode,             // 18
-		buttonStyle,              // 19
-		buttonConfirmMsg,         // 20
-		id,                       // 21
+		validateExpr,             // 16
+		buttonFiloCode,           // 17
+		boolToInt(buttonRunSave), // 18
+		buttonJSCode,             // 19
+		buttonStyle,              // 20
+		buttonConfirmMsg,         // 21
+		id,                       // 22
 	)
 }
 

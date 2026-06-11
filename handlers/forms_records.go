@@ -55,6 +55,7 @@ func (h *Handlers) ToolsFormsRecordsRows(w http.ResponseWriter, r *http.Request)
 		http.Error(w, "internal server error", http.StatusInternalServerError)
 		return
 	}
+	resolveReferenceDisplays(form, attributes, rows)
 
 	data := struct {
 		FormRefID       string

@@ -82,11 +82,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     defaultValueInput.placeholder = 'String vazia';
                     break;
                 case 'DATETIME':
-                    defaultValueInput.type = 'datetime-local';
+                    // Plain text so the special default "now" can be typed.
+                    defaultValueInput.type = 'text';
                     defaultValueInput.removeAttribute('step');
                     defaultValueInput.removeAttribute('min');
                     defaultValueInput.removeAttribute('max');
-                    defaultValueInput.placeholder = 'NULL (deixe vazio para NULL)';
+                    defaultValueInput.placeholder = 'now ou 2026-01-01T12:00 (vazio = NULL)';
                     defaultValueInput.required = false;
                     break;
                 default:

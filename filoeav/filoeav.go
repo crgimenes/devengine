@@ -8,10 +8,15 @@
 //	(eav-count "<entity>")
 //	(eav-count-where "<entity>" "<attribute>" value)
 //	(eav-get-value "<entity>" "<record-ref-id>" "<attribute>")
+//	(eav-set-value "<entity>" "<record-ref-id>" "<attribute>" value)
 //
 // The "entity" string is the entity_type machine_name. "<record-ref-id>" is
 // the opaque reference_id of the record. Soft-deleted records and
 // attributes are excluded.
+//
+// eav-set-value writes through the executor given to NewContextTx when one
+// is set, so script writes join the caller's transaction (button actions);
+// otherwise it writes straight through the storage.
 package filoeav
 
 import (
@@ -23,12 +28,25 @@ import (
 	"github.com/crgimenes/filo"
 )
 
+// Execer runs a write statement. A transaction adapter satisfies it so
+// script writes join the caller's transaction.
+type Execer interface {
+	Exec(query string, args ...any) error
+}
+
 type Context struct {
 	storage *db.SQLite
+	exec    Execer // nil: writes go straight through storage
 }
 
 func NewContext(storage *db.SQLite) *Context {
 	return &Context{storage: storage}
+}
+
+// NewContextTx routes eav-set-value writes through the given executor,
+// typically the surrounding action's transaction.
+func NewContextTx(storage *db.SQLite, exec Execer) *Context {
+	return &Context{storage: storage, exec: exec}
 }
 
 func RegisterEAVBuiltins(eng *filo.Engine, ctx *Context) {
@@ -36,6 +54,108 @@ func RegisterEAVBuiltins(eng *filo.Engine, ctx *Context) {
 	eng.MustRegisterBuiltin("eav-count", ctx.count)
 	eng.MustRegisterBuiltin("eav-count-where", ctx.countWhere)
 	eng.MustRegisterBuiltin("eav-get-value", ctx.getValue)
+	eng.MustRegisterBuiltin("eav-set-value", ctx.setValue)
+}
+
+// setValue persists one typed value on a record and bumps the record rev so
+// concurrent editors' optimistic locking notices the change.
+func (c *Context) setValue(_ context.Context, args []filo.Value) (filo.Value, error) {
+	if len(args) != 4 {
+		return filo.Value{}, fmt.Errorf("eav-set-value expects 4 arguments (entity, record-ref-id, attribute, value)")
+	}
+	entityName, err := args[0].AsString()
+	if err != nil {
+		return filo.Value{}, fmt.Errorf("eav-set-value: entity must be string: %w", err)
+	}
+	refID, err := args[1].AsString()
+	if err != nil {
+		return filo.Value{}, fmt.Errorf("eav-set-value: record-ref-id must be string: %w", err)
+	}
+	attrName, err := args[2].AsString()
+	if err != nil {
+		return filo.Value{}, fmt.Errorf("eav-set-value: attribute must be string: %w", err)
+	}
+
+	et, attr, err := c.resolveAttr(entityName, attrName)
+	if err != nil {
+		return filo.Value{}, err
+	}
+	if et == nil || attr == nil {
+		return filo.Value{}, fmt.Errorf("eav-set-value: unknown entity or attribute %q.%q", entityName, attrName)
+	}
+
+	rec, err := c.storage.GetEAVRecordByRefID(refID)
+	if err != nil {
+		return filo.Value{}, fmt.Errorf("eav-set-value: record %q: %w", refID, err)
+	}
+	if rec.EntityTypeID != et.ID {
+		return filo.Value{}, fmt.Errorf("eav-set-value: record %q does not belong to %q", refID, entityName)
+	}
+
+	vBool, vInt, vReal, vText, vDatetime, err := typedColumns(attr.PrimitiveKind, args[3])
+	if err != nil {
+		return filo.Value{}, fmt.Errorf("eav-set-value (%s.%s): %w", entityName, attrName, err)
+	}
+
+	exec := c.exec
+	if exec == nil {
+		exec = c.storage
+	}
+	err = exec.Exec(`
+		INSERT INTO eav_values (record_id, attribute_id, v_bool, v_int, v_real, v_text, v_datetime)
+		VALUES (?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(record_id, attribute_id) DO UPDATE SET
+			v_bool = excluded.v_bool,
+			v_int = excluded.v_int,
+			v_real = excluded.v_real,
+			v_text = excluded.v_text,
+			v_datetime = excluded.v_datetime,
+			updated_at = datetime('now')
+	`, rec.ID, attr.ID, vBool, vInt, vReal, vText, vDatetime)
+	if err != nil {
+		return filo.Value{}, fmt.Errorf("eav-set-value: %w", err)
+	}
+	err = exec.Exec(`UPDATE eav_records SET rev = rev + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, rec.ID)
+	if err != nil {
+		return filo.Value{}, fmt.Errorf("eav-set-value: bump rev: %w", err)
+	}
+	return filo.VBool(true), nil
+}
+
+// typedColumns converts a Filo value into the typed column set expected by
+// eav_values for the given primitive kind.
+func typedColumns(kind string, v filo.Value) (vBool *bool, vInt *int64, vReal *float64, vText, vDatetime *string, err error) {
+	switch kind {
+	case "BOOL":
+		if v.Kind != filo.KBool {
+			return nil, nil, nil, nil, nil, errors.New("value must be a bool")
+		}
+		vBool = &v.Bool
+	case "INT":
+		if v.Kind != filo.KNumber {
+			return nil, nil, nil, nil, nil, errors.New("value must be a number")
+		}
+		n := int64(v.Num)
+		vInt = &n
+	case "REAL":
+		if v.Kind != filo.KNumber {
+			return nil, nil, nil, nil, nil, errors.New("value must be a number")
+		}
+		vReal = &v.Num
+	case "TEXT":
+		if v.Kind != filo.KString {
+			return nil, nil, nil, nil, nil, errors.New("value must be a string")
+		}
+		vText = &v.Str
+	case "DATETIME":
+		if v.Kind != filo.KString {
+			return nil, nil, nil, nil, nil, errors.New("value must be a string")
+		}
+		vDatetime = &v.Str
+	default:
+		return nil, nil, nil, nil, nil, fmt.Errorf("unsupported primitive kind %q", kind)
+	}
+	return vBool, vInt, vReal, vText, vDatetime, nil
 }
 
 func (c *Context) exists(_ context.Context, args []filo.Value) (filo.Value, error) {
