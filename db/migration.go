@@ -109,7 +109,7 @@ func collectMigrations(fsys fs.FS) ([]migrationEntry, error) {
 	return migrations, nil
 }
 
-func chkTableExists(tx *Transaction) (bool, error) {
+func chkTableExists(tx Tx) (bool, error) {
 	const query = `SELECT count(*)
                        FROM sqlite_master
                        WHERE type='table'
@@ -122,7 +122,7 @@ func chkTableExists(tx *Transaction) (bool, error) {
 	return count > 0, nil
 }
 
-func createMigrationsTable(tx *Transaction) error {
+func createMigrationsTable(tx Tx) error {
 	const createTableSQL = `CREATE TABLE IF NOT EXISTS schema_migrations (
 		id TEXT PRIMARY KEY,
 		applied_at TEXT DEFAULT CURRENT_TIMESTAMP)`
@@ -134,7 +134,7 @@ func createMigrationsTable(tx *Transaction) error {
 }
 
 // getAppliedMigrations returns a set of migration IDs that have already been applied.
-func getAppliedMigrations(tx *Transaction) (map[string]bool, error) {
+func getAppliedMigrations(tx Tx) (map[string]bool, error) {
 	const query = "SELECT id FROM schema_migrations"
 	rows, err := tx.Query(query)
 	if err != nil {
@@ -159,7 +159,7 @@ func getAppliedMigrations(tx *Transaction) (map[string]bool, error) {
 }
 
 // recordMigration inserts a migration ID into the schema_migrations table.
-func recordMigration(tx *Transaction, id string) error {
+func recordMigration(tx Tx, id string) error {
 	const query = "INSERT INTO schema_migrations (id) VALUES (?)"
 	if err := tx.Exec(query, id); err != nil {
 		return fmt.Errorf("failed to record migration %q: %w", id, err)
@@ -178,8 +178,8 @@ func RunMigration() error {
 	return RunMigrationOn(Storage)
 }
 
-// RunMigrationOn applies all pending migrations on the provided SQLite instance.
-func RunMigrationOn(s *SQLite) error {
+// RunMigrationOn applies all pending migrations on the provided store.
+func RunMigrationOn(s Store) error {
 	// Collect engine migrations
 	engineMigrations, err := collectMigrations(engineMigrationsFS)
 	if err != nil {
@@ -299,7 +299,7 @@ func RunMigrationOn(s *SQLite) error {
 // already-migrated database silently keeps the old schema and fails later
 // with confusing SQL errors. The fingerprint lives in PRAGMA user_version and
 // is refreshed after warning, so the warning fires once per change.
-func checkSchemaDrift(s *SQLite, appliedBefore, all []migrationEntry) {
+func checkSchemaDrift(s Store, appliedBefore, all []migrationEntry) {
 	expected := migrationsFingerprint(appliedBefore)
 	full := migrationsFingerprint(all)
 

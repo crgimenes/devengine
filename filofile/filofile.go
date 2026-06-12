@@ -20,11 +20,17 @@ import (
 	"github.com/crgimenes/filo"
 )
 
-type Context struct {
-	storage *db.SQLite
+// Storage is the slice of the db contract these builtins need.
+// Implemented by db.Store.
+type Storage interface {
+	GetFileByFilename(filename string) (*db.File, error)
 }
 
-func NewContext(storage *db.SQLite) *Context {
+type Context struct {
+	storage Storage
+}
+
+func NewContext(storage Storage) *Context {
 	return &Context{storage: storage}
 }
 

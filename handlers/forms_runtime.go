@@ -672,15 +672,15 @@ func buttonFiloGlobals(form *db.Form, user *db.User, currentRecord *db.EAVRecord
 // transaction, so script-issued DB ops roll back together with the save.
 // Button scripts get the full builtin set of the other form contexts plus
 // filodb for raw statements.
-func runButtonFilo(ctx context.Context, tx *db.Transaction, user *db.User, code string, globals map[string]filo.Value) (map[string]filo.Value, error) {
+func runButtonFilo(ctx context.Context, tx db.Tx, user *db.User, code string, globals map[string]filo.Value) (map[string]filo.Value, error) {
 	eng := filo.NewEngine()
 
 	dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
-	dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
+	dbCtxWithTx := filodb.NewContext(dbAdapter, tx)
 
 	filostrings.RegisterBuiltins(eng)
 	filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
-	filoeav.RegisterEAVBuiltins(eng, filoeav.NewContextTx(db.Storage, &txAdapter{tx: tx}))
+	filoeav.RegisterEAVBuiltins(eng, filoeav.NewContextTx(db.Storage, tx))
 	filofile.RegisterFileBuiltins(eng, filofile.NewContext(db.Storage))
 	filosession.RegisterSessionBuiltins(eng, filosession.NewContext(user))
 	filolog.RegisterLogBuiltins(eng, filolog.NewContext(globals))
@@ -905,12 +905,12 @@ func parseElementValue(el db.FormElement, attr *db.EAVAttribute, raw string) (an
 // runPreSave executes the entity's pre_save script inside the transaction.
 // A script-authored block comes back as db.UserError (meant for the user);
 // anything else is infrastructure.
-func runPreSave(tx *db.Transaction, entityType *db.EAVEntityType, values db.EAVRecordValues) (db.EAVRecordValues, error) {
+func runPreSave(tx db.Tx, entityType *db.EAVEntityType, values db.EAVRecordValues) (db.EAVRecordValues, error) {
 	if entityType.PreSave == "" {
 		return values, nil
 	}
 	dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
-	dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
+	dbCtxWithTx := filodb.NewContext(dbAdapter, tx)
 	scriptSetup := func(eng *filo.Engine) {
 		filostrings.RegisterBuiltins(eng)
 		filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
@@ -939,7 +939,7 @@ func saveErrorMessage(r *http.Request, scope string, err error) string {
 
 // insertRecordTx runs pre_save and creates the record with its values, all
 // inside the given transaction.
-func insertRecordTx(tx *db.Transaction, entityType *db.EAVEntityType, attributes []db.EAVAttribute, values db.EAVRecordValues) (int64, string, error) {
+func insertRecordTx(tx db.Tx, entityType *db.EAVEntityType, attributes []db.EAVAttribute, values db.EAVRecordValues) (int64, string, error) {
 	values, err := runPreSave(tx, entityType, values)
 	if err != nil {
 		return 0, "", err
@@ -957,7 +957,7 @@ func insertRecordTx(tx *db.Transaction, entityType *db.EAVEntityType, attributes
 
 // updateRecordTx runs pre_save, bumps the revision and replaces the values,
 // all inside the given transaction.
-func updateRecordTx(tx *db.Transaction, entityType *db.EAVEntityType, record *db.EAVRecord, attributes []db.EAVAttribute, values db.EAVRecordValues) error {
+func updateRecordTx(tx db.Tx, entityType *db.EAVEntityType, record *db.EAVRecord, attributes []db.EAVAttribute, values db.EAVRecordValues) error {
 	values, err := runPreSave(tx, entityType, values)
 	if err != nil {
 		return err

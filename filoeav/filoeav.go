@@ -28,24 +28,35 @@ import (
 	"github.com/crgimenes/filo"
 )
 
-// Execer runs a write statement. A transaction adapter satisfies it so
-// script writes join the caller's transaction.
+// Execer runs a write statement. A transaction satisfies it so script
+// writes join the caller's transaction.
 type Execer interface {
 	Exec(query string, args ...any) error
 }
 
+// Storage is the slice of the db contract these builtins need.
+// Implemented by db.Store.
+type Storage interface {
+	GetEAVEntityTypeByMachineName(machineName string) (*db.EAVEntityType, error)
+	GetEAVRecordByRefID(refID string) (*db.EAVRecord, error)
+	GetEAVValuesByRecordID(recordID int64) ([]db.EAVValue, error)
+	ListEAVAttributesByEntityTypeID(entityTypeID int64) ([]db.EAVAttribute, error)
+	QueryRow(query string, args ...any) *db.Row
+	Execer // eav-set-value fallback when no transaction is given
+}
+
 type Context struct {
-	storage *db.SQLite
+	storage Storage
 	exec    Execer // nil: writes go straight through storage
 }
 
-func NewContext(storage *db.SQLite) *Context {
+func NewContext(storage Storage) *Context {
 	return &Context{storage: storage}
 }
 
 // NewContextTx routes eav-set-value writes through the given executor,
 // typically the surrounding action's transaction.
-func NewContextTx(storage *db.SQLite, exec Execer) *Context {
+func NewContextTx(storage Storage, exec Execer) *Context {
 	return &Context{storage: storage, exec: exec}
 }
 

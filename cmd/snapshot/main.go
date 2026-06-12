@@ -92,6 +92,14 @@ func tarDir(src, dest string) error {
 	}
 	defer out.Close()
 
+	// Opening files through os.Root confines reads to the data directory,
+	// so a symlink swapped in mid-walk cannot escape it.
+	root, err := os.OpenRoot(src)
+	if err != nil {
+		return fmt.Errorf("open data dir: %w", err)
+	}
+	defer func() { _ = root.Close() }()
+
 	gz := gzip.NewWriter(out)
 	tw := tar.NewWriter(gz)
 
@@ -120,7 +128,7 @@ func tarDir(src, dest string) error {
 			return nil
 		}
 
-		f, ferr := os.Open(filepath.Clean(path))
+		f, ferr := root.Open(hdr.Name)
 		if ferr != nil {
 			return ferr
 		}

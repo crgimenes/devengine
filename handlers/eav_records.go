@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"maps"
 	"net/http"
@@ -21,27 +20,6 @@ import (
 type RecordWithValues struct {
 	Record db.EAVRecord
 	Values map[string]any // attribute machine_name -> value
-}
-
-// txAdapter adapts *db.Transaction to filodb.DBTransaction interface
-type txAdapter struct {
-	tx *db.Transaction
-}
-
-func (a *txAdapter) Query(query string, args ...any) (*sql.Rows, error) {
-	return a.tx.Query(query, args...)
-}
-
-func (a *txAdapter) Exec(query string, args ...any) error {
-	return a.tx.Exec(query, args...)
-}
-
-func (a *txAdapter) Commit() error {
-	return a.tx.Commit()
-}
-
-func (a *txAdapter) Rollback() error {
-	return a.tx.Rollback()
 }
 
 // ToolsDatabaseSchemaEAVRecords shows list of records with card-based UI
@@ -489,12 +467,12 @@ func eavUniquePointer(kind string, vBool *bool, vInt *int64, vReal *float64, vTe
 // runAdminPreSave executes the entity's pre_save script inside the given
 // transaction context. It returns the (possibly modified) values, or the
 // user-facing message when the script blocks or fails.
-func runAdminPreSave(r *http.Request, entityType *db.EAVEntityType, tx *db.Transaction, values db.EAVRecordValues) (db.EAVRecordValues, string) {
+func runAdminPreSave(r *http.Request, entityType *db.EAVEntityType, tx db.Tx, values db.EAVRecordValues) (db.EAVRecordValues, string) {
 	if entityType.PreSave == "" {
 		return values, ""
 	}
 	dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
-	dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
+	dbCtxWithTx := filodb.NewContext(dbAdapter, tx)
 	scriptSetup := func(eng *filo.Engine) {
 		filostrings.RegisterBuiltins(eng)
 		filodb.RegisterDBBuiltins(eng, dbCtxWithTx)

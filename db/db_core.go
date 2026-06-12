@@ -40,8 +40,9 @@ type Row struct {
 }
 
 var (
-	// Storage keeps a global handle for convenience (preserves your original pattern).
-	Storage *SQLite
+	// Storage keeps a global handle for convenience. It holds whichever
+	// Store implementation the application wired at boot (*SQLite today).
+	Storage Store
 
 	ErrNoRows = sql.ErrNoRows
 )
@@ -151,7 +152,7 @@ func NewWithPath(path string) (*SQLite, error) {
 // IMPORTANT: We intentionally do not propagate context timeouts in this package.
 // Callers should avoid long-lived transactions; SQLite busy_timeout handles
 // transient contention, and application code should keep critical sections short.
-func (s *SQLite) BeginTransaction() (*Transaction, error) {
+func (s *SQLite) BeginTransaction() (Tx, error) {
 	if s == nil || s.rw == nil {
 		return nil, errors.New("db not initialized")
 	}

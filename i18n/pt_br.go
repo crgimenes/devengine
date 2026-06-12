@@ -4,7 +4,7 @@ package i18n
 // built in because the engine and its first applications serve PT-BR users;
 // applications extend it via Register.
 func init() {
-	Register("pt-BR", map[string]string{
+	Register("pt-BR", map[string]string{ // #nosec G101 -- UI translation strings, not credentials; some keys mention "password"
 		// error pages
 		"Page not found": "Página não encontrada",
 		"Access denied":  "Acesso negado",
