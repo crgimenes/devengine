@@ -138,7 +138,6 @@ BEGIN
     SELECT NEW.id, NEW.original_filename, NEW.filename, NEW.filetag, NEW.filedescription WHERE NEW.deleted = 0;
 END;
 
--- 0002_eav.up.sql
 -- EAV core (single-tenant, no workspaces, no UI/forms metadata).
 -- SQLite-first design: typed value columns, opaque reference_id, optimistic locking via rev.
 
@@ -356,7 +355,6 @@ END;
 -- - Forms/UI plugins are defined in separate tables and migrations (not here).
 -- ----------------------------------------------------------------------
 
--- 0005_menus.up.sql
 -- Menus / Navigation layer (single-tenant).
 -- Menus are reusable navigation components that can be assigned to forms.
 -- Menu items are recursive: any item can contain other items via parent_id.
@@ -476,7 +474,6 @@ END;
 -- - Actions (Filo scripts, etc.) will be added in a future phase.
 -- ----------------------------------------------------------------------
 
--- 0003_forms.up.sql
 -- Forms / UI projection layer (single-tenant).
 -- Forms are UI projections over data sources (EAV entity types or relational tables).
 -- A form does not own data; it references a data source.
@@ -700,7 +697,6 @@ WHERE
     AND et.deleted_at IS NULL
     AND a.deleted_at  IS NULL;
 
--- 0008_i18n_overrides.up.sql
 -- User adjustments to UI translations, layered over the built-in
 -- dictionaries at boot. The key IS the US English source string.
 
@@ -714,7 +710,6 @@ CREATE TABLE IF NOT EXISTS i18n_overrides (
     UNIQUE (locale, msg_key)
 );
 
--- 0009_content_translations.up.sql
 -- Translations for user-created content (form labels, element labels and
 -- help text, attribute labels, menu item labels). ref_id is the object's
 -- reference_id; field names the translated column. Applied at render time
