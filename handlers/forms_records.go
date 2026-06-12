@@ -58,6 +58,7 @@ func (h *Handlers) ToolsFormsRecordsRows(w http.ResponseWriter, r *http.Request)
 	resolveReferenceDisplays(form, attributes, rows)
 
 	data := struct {
+		Locale          string
 		FormRefID       string
 		EntityTypeRefID string
 		Attributes      []db.EAVAttribute
@@ -66,6 +67,7 @@ func (h *Handlers) ToolsFormsRecordsRows(w http.ResponseWriter, r *http.Request)
 		Filter          string
 		ColCount        int
 	}{
+		Locale:          auth.RequestLocale(r),
 		FormRefID:       form.ReferenceID,
 		EntityTypeRefID: et.ReferenceID,
 		Attributes:      attributes,

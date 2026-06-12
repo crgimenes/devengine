@@ -29,12 +29,12 @@
                         </div>
                         <div class="d-flex gap-2">
                             <a href="/form/{{.Form.MachineName}}" class="btn btn-success{{if not .EntityType}} disabled{{end}}"{{if not .EntityType}} aria-disabled="true"{{end}} target="_blank">
-                                <i class="bi bi-play-fill me-1"></i>Testar
+                                <i class="bi bi-play-fill me-1"></i>{{t $.Locale "Try it"}}
                             </a>
                             <a href="/tools/forms/{{.Form.ReferenceID}}/records" class="btn btn-outline-secondary{{if not .EntityType}} disabled{{end}}"{{if not .EntityType}} aria-disabled="true"{{end}}>
-                                Registros
+                                {{t $.Locale "Records"}}
                             </a>
-                            <a href="/tools/forms" class="btn btn-secondary">Voltar</a>
+                            <a href="/tools/forms" class="btn btn-secondary">{{t $.Locale "Back"}}</a>
                         </div>
                     </div>
                     
@@ -46,21 +46,21 @@
                                        value="{{.Form.Label}}" required>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label for="machine_name" class="form-label">Nome (machine_name)</label>
+                                <label for="machine_name" class="form-label">{{t $.Locale "Machine name"}}</label>
                                 <input type="text" class="form-control" id="machine_name" name="machine_name" 
                                        value="{{.Form.MachineName}}" required pattern="[a-zA-Z][a-zA-Z0-9_]*">
                             </div>
                         </div>
                         
                         <div class="mb-3">
-                            <label for="description" class="form-label">Descrição</label>
+                            <label for="description" class="form-label">{{t $.Locale "Description"}}</label>
                             <textarea class="form-control" id="description" name="description" rows="2">{{.Form.Description}}</textarea>
                         </div>
                         
                         <div class="mb-3">
-                            <label for="entity_type_id" class="form-label">Tabela EAV</label>
+                            <label for="entity_type_id" class="form-label">{{t $.Locale "EAV table"}}</label>
                             <select class="form-select" id="entity_type_id" name="entity_type_id">
-                                <option value="">-- Sem vínculo --</option>
+                                <option value="">-- {{t $.Locale "Not bound"}} --</option>
                                 {{range .EntityTypes}}
                                 <option value="{{.ReferenceID}}" {{if $.EntityType}}{{if eq .ID $.EntityType.ID}}selected{{end}}{{end}}>
                                     {{.Name}} ({{.MachineName}})
@@ -72,46 +72,46 @@
                         <div class="mb-3">
                             <label for="menu_id" class="form-label">Menu</label>
                             <select class="form-select" id="menu_id" name="menu_id">
-                                <option value="">-- Sem menu --</option>
+                                <option value="">-- {{t $.Locale "No menu"}} --</option>
                                 {{range .Menus}}
                                 <option value="{{.ReferenceID}}" {{if eq .ID $.SelectedMenuID}}selected{{end}}>
                                     {{.Label}} ({{.MachineName}})
                                 </option>
                                 {{end}}
                             </select>
-                            <div class="form-text">Menu exibido na navbar quando o formulário está ativo.</div>
+                            <div class="form-text">{{t $.Locale "Menu shown on the navbar while this form is active."}}</div>
                         </div>
                         
                         <div class="mb-3">
-                            <label class="form-label">Opções de Exibição</label>
+                            <label class="form-label">{{t $.Locale "Display options"}}</label>
                              <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="hide_title" name="hide_title"
                                        {{if .Form.HideTitle}}checked{{end}}>
                                 <label class="form-check-label" for="hide_title">
-                                    Ocultar título do formulário
+                                    {{t $.Locale "Hide the form title"}}
                                 </label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="hide_submit_button" name="hide_submit_button"
                                        {{if .Form.HideSubmitButton}}checked{{end}}>
                                 <label class="form-check-label" for="hide_submit_button">
-                                    Ocultar botão de envio (Criar/Salvar)
+                                    {{t $.Locale "Hide the submit button"}}
                                 </label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="hide_cancel_button" name="hide_cancel_button"
                                        {{if .Form.HideCancelButton}}checked{{end}}>
                                 <label class="form-check-label" for="hide_cancel_button">
-                                    Ocultar botão Cancelar
+                                    {{t $.Locale "Hide the cancel button"}}
                                 </label>
                             </div>
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="is_search" name="is_search"
                                        {{if .Form.IsSearch}}checked{{end}}>
                                 <label class="form-check-label" for="is_search">
-                                    Formulário de pesquisa (abre na listagem)
+                                    {{t $.Locale "Search form (opens on the listing)"}}
                                 </label>
-                                <div class="form-text">Acessar /form/{nome} mostra a listagem com busca; os campos do formulário definem as colunas.</div>
+                                <div class="form-text">{{t $.Locale "Opening /form/{name} shows the searchable listing; the form fields define the columns."}}</div>
                             </div>
                             <div class="form-check mt-3">
                                 <input class="form-check-input" type="checkbox" id="show_system_info" name="show_system_info"
@@ -119,18 +119,18 @@
                                 <label class="form-check-label" for="show_system_info">
                                     Mostrar dados do registro (Debug)
                                 </label>
-                                <div class="form-text">Exibe ID, RefID e Status no topo do formulário.</div>
+                                <div class="form-text">{{t $.Locale "Shows ID, RefID and status at the top of the form."}}</div>
                             </div>
-                            <div class="form-text">Marque para formulários que não gerenciam registros diretamente.</div>
+                            <div class="form-text">{{t $.Locale "Check for forms that do not manage records directly."}}</div>
                         </div>
                         
-                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        <button type="submit" class="btn btn-primary">{{t $.Locale "Save changes"}}</button>
                     </form>
                 </div>
                 
                 <!-- Elements Card -->
                 <div class="card p-4">
-                    <h4 class="mb-3">Elementos do Formulário</h4>
+                    <h4 class="mb-3">{{t $.Locale "Form elements"}}</h4>
                     
                     {{if .Elements}}
                     <div class="table-responsive mb-4">
@@ -138,13 +138,13 @@
                             <thead>
                                 <tr>
                                     <th class="w-60px">Ordem</th>
-                                    <th>Nome</th>
+                                    <th>{{t $.Locale "Name"}}</th>
                                     <th class="w-90px">Tipo</th>
                                     <th>Label</th>
                                     <th class="w-60px" title="Largura em colunas Bootstrap (1-12)">Col</th>
                                     <th>Pai</th>
                                     <th>Campo EAV</th>
-                                    <th class="text-end text-nowrap w-160px">Ações</th>
+                                    <th class="text-end text-nowrap w-160px">{{t $.Locale "Actions"}}</th>
                                 </tr>
                             </thead>
                             <tbody id="elements-tbody">
@@ -172,7 +172,7 @@
                                         <option value="card">Card</option>
                                         <option value="tabs">Tabs</option>
                                         <option value="carousel">Carousel</option>
-                                        <option value="button">Botão de Ação</option>
+                                        <option value="button">{{t $.Locale "Action button"}}</option>
                                         <option value="divider">Divisor</option>
                                     </select>
                                 </div>
@@ -187,12 +187,12 @@
                                 </div>
                                 <div class="col-md-3">
                                     <label class="form-label">Label</label>
-                                    <input type="text" class="form-control form-control-sm" name="label" id="element_label" placeholder="Nome visível">
+                                    <input type="text" class="form-control form-control-sm" name="label" id="element_label" placeholder="{{t $.Locale "Visible name"}}">
                                 </div>
                                 <div class="col-md-2">
-                                    <label class="form-label">Nome</label>
+                                    <label class="form-label">{{t $.Locale "Name"}}</label>
                                     <input type="text" class="form-control form-control-sm" name="machine_name" id="element_machine_name"
-                                           required placeholder="campo_nome">
+                                           required placeholder="{{t $.Locale "field_name"}}">
                                 </div>
                                 <div class="col-md-1 d-flex align-items-end">
                                     <button type="submit" class="btn btn-sm btn-primary w-100">+</button>

@@ -35,14 +35,14 @@
                             <a href="/tools/forms/{{.Form.ReferenceID}}/records/export.csv"
                                class="btn btn-outline-secondary">CSV</a>
                             <a href="/tools/forms/{{.Form.ReferenceID}}/edit"
-                               class="btn btn-outline-primary">Editar form</a>
+                               class="btn btn-outline-primary">{{t $.Locale "Edit form"}}</a>
                         </div>
                     </div>
 
                     <form method="get" action="/tools/forms/{{.Form.ReferenceID}}/records" class="mb-3">
                         <div class="input-group">
                             <input type="text" name="q" class="form-control"
-                                   placeholder="Buscar em campos de texto…"
+                                   placeholder="{{t $.Locale "Search text fields…"}}"
                                    value="{{.Filter}}">
                             {{if .Filter}}
                             <a href="/tools/forms/{{.Form.ReferenceID}}/records"
@@ -61,7 +61,7 @@
                                     {{range .Attributes}}
                                     <th>{{.Label}}</th>
                                     {{end}}
-                                    <th class="text-end">Ações</th>
+                                    <th class="text-end">{{t $.Locale "Actions"}}</th>
                                 </tr>
                             </thead>
                             <tbody id="records-body">
@@ -72,7 +72,7 @@
                     {{else}}
                     <p class="text-muted">
                         {{if .Filter}}Nenhum registro corresponde a "{{.Filter}}".
-                        {{else}}Nenhum registro ainda. Use <a href="/form/{{.Form.MachineName}}">Novo</a> para criar o primeiro.
+                        {{else}}{{t $.Locale "No records yet."}} <a href="/form/{{.Form.MachineName}}">{{t $.Locale "New"}}</a>
                         {{end}}
                     </p>
                     {{end}}

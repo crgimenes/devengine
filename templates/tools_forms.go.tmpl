@@ -22,22 +22,22 @@
             <div class="col-md-9">
                 <div class="card p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2 class="mb-0">Formulários</h2>
+                        <h2 class="mb-0">{{t $.Locale "Forms"}}</h2>
                         <a href="/tools/forms/new" class="btn btn-primary">
-                            <i class="bi bi-plus-lg"></i> Novo Formulário
+                            <i class="bi bi-plus-lg"></i> {{t $.Locale "New form"}}
                         </a>
                     </div>
-                    <p class="text-muted">Gerenciamento de formulários dinâmicos.</p>
+                    <p class="text-muted">{{t $.Locale "Manage the dynamic forms."}}</p>
                     
                     {{if .Forms}}
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
                                 <tr>
-                                    <th>Nome</th>
-                                    <th>Tabela EAV</th>
-                                    <th>Descrição</th>
-                                    <th class="text-end">Ações</th>
+                                    <th>{{t $.Locale "Name"}}</th>
+                                    <th>{{t $.Locale "EAV table"}}</th>
+                                    <th>{{t $.Locale "Description"}}</th>
+                                    <th class="text-end">{{t $.Locale "Actions"}}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -56,10 +56,10 @@
                                     </td>
                                     <td>{{.Form.Description}}</td>
                                     <td class="text-end">
-                                        <a href="/form/{{.Form.MachineName}}" class="btn btn-sm btn-success me-1">Novo</a>
-                                        <a href="/tools/forms/{{.Form.ReferenceID}}/edit" class="btn btn-sm btn-outline-primary me-1">Editar</a>
-                                        <form method="post" action="/tools/forms/{{.Form.ReferenceID}}/delete" class="d-inline" onsubmit="return confirm('Excluir este formulário?')">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                                        <a href="/form/{{.Form.MachineName}}" class="btn btn-sm btn-success me-1">{{t $.Locale "New"}}</a>
+                                        <a href="/tools/forms/{{.Form.ReferenceID}}/edit" class="btn btn-sm btn-outline-primary me-1">{{t $.Locale "Edit"}}</a>
+                                        <form method="post" action="/tools/forms/{{.Form.ReferenceID}}/delete" class="d-inline" onsubmit="return confirm('{{t $.Locale "Delete this form?"}}')">
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">{{t $.Locale "Delete"}}</button>
                                         </form>
                                     </td>
                                 </tr>
@@ -69,8 +69,8 @@
                     </div>
                     {{else}}
                     <div class="alert alert-secondary">
-                        <i class="bi bi-info-circle"></i> Nenhum formulário cadastrado.
-                        <a href="/tools/forms/new">Criar o primeiro formulário</a>.
+                        <i class="bi bi-info-circle"></i> {{t $.Locale "No forms yet."}}
+                        <a href="/tools/forms/new">{{t $.Locale "Create the first form"}}</a>.
                     </div>
                     {{end}}
                 </div>

@@ -23,7 +23,7 @@
                 <!-- Breadcrumb -->
                 <nav aria-label="breadcrumb" class="mb-3">
                     <ol class="breadcrumb">
-                        <li class="breadcrumb-item"><a href="/tools/forms">Formulários</a></li>
+                        <li class="breadcrumb-item"><a href="/tools/forms">{{t $.Locale "Forms"}}</a></li>
                         <li class="breadcrumb-item"><a href="/tools/forms/{{.Form.ReferenceID}}/edit">{{.Form.Label}}</a></li>
                         <li class="breadcrumb-item active" aria-current="page">{{.Element.MachineName}}</li>
                     </ol>
@@ -35,28 +35,28 @@
                             <h2 class="mb-1">Editar Elemento</h2>
                             <small class="text-muted">{{.Element.MachineName}}</small>
                         </div>
-                        <a href="/tools/forms/{{.Form.ReferenceID}}/edit" class="btn btn-secondary">Voltar</a>
+                        <a href="/tools/forms/{{.Form.ReferenceID}}/edit" class="btn btn-secondary">{{t $.Locale "Back"}}</a>
                     </div>
                     
                     <form method="post" action="/tools/forms/{{.Form.ReferenceID}}/elements/{{.Element.ReferenceID}}/update">
                         <!-- Basic Info -->
-                        <h5 class="mb-3 border-bottom pb-2">Informações Básicas</h5>
+                        <h5 class="mb-3 border-bottom pb-2">{{t $.Locale "Basics"}}</h5>
                         <div class="row mb-3">
                             <div class="col-md-6">
-                                <label for="machine_name" class="form-label">Nome (machine_name) <span class="text-danger">*</span></label>
+                                <label for="machine_name" class="form-label">{{t $.Locale "Machine name"}} <span class="text-danger">*</span></label>
                                 <input type="text" class="form-control" id="machine_name" name="machine_name" 
                                        value="{{.Element.MachineName}}" required pattern="[a-zA-Z][a-zA-Z0-9_]*">
-                                <div class="form-text">Identificador único no formulário</div>
+                                <div class="form-text">{{t $.Locale "Unique identifier within the form"}}</div>
                             </div>
                             <div class="col-md-6">
                                 <label for="label" class="form-label">Label</label>
                                 <input type="text" class="form-control" id="label" name="label" 
-                                       value="{{.Element.Label}}" placeholder="Título visível">
+                                       value="{{.Element.Label}}" placeholder="{{t $.Locale "Visible title"}}">
                             </div>
                         </div>
                         
                         <div class="mb-3">
-                            <label for="help_text" class="form-label">Texto de Ajuda</label>
+                            <label for="help_text" class="form-label">{{t $.Locale "Help text"}}</label>
                             <textarea class="form-control" id="help_text" name="help_text" rows="2">{{.Element.HelpText}}</textarea>
                         </div>
                         
@@ -70,14 +70,14 @@
                                     <option value="card" {{if eq .Element.ElementKind "card"}}selected{{end}}>Card</option>
                                     <option value="tabs" {{if eq .Element.ElementKind "tabs"}}selected{{end}}>Tabs</option>
                                     <option value="carousel" {{if eq .Element.ElementKind "carousel"}}selected{{end}}>Carousel</option>
-                                    <option value="button" {{if eq .Element.ElementKind "button"}}selected{{end}}>Botão de Ação</option>
+                                    <option value="button" {{if eq .Element.ElementKind "button"}}selected{{end}}>{{t $.Locale "Action button"}}</option>
                                     <option value="divider" {{if eq .Element.ElementKind "divider"}}selected{{end}}>Divisor</option>
                                 </select>
                             </div>
                             <div class="col-md-4">
                                 <label for="ui_kind" class="form-label">Plugin de UI</label>
                                 <select class="form-select" id="ui_kind" name="ui_kind">
-                                    <option value="" {{if eq .Element.UIKind ""}}selected{{end}}>-- Padrão --</option>
+                                    <option value="" {{if eq .Element.UIKind ""}}selected{{end}}>-- {{t $.Locale "Default"}} --</option>
                                     {{$current := .Element.UIKind}}
                                     {{range .UIKinds}}
                                     <option value="{{.}}" {{if eq $current .}}selected{{end}}>{{.}}</option>
@@ -103,7 +103,7 @@
                             <div class="col-md-3">
                                 <label for="parent_id" class="form-label">Grupo Pai</label>
                                 <select class="form-select" id="parent_id" name="parent_id">
-                                    <option value="">-- Raiz do formulário --</option>
+                                    <option value="">-- {{t $.Locale "Form root"}} --</option>
                                     {{range .GroupElements}}
                                     <option value="{{.ReferenceID}}" {{if $.Element.ParentID}}{{if eq .ID (deref $.Element.ParentID)}}selected{{end}}{{end}}>
                                         {{if .Label}}{{.Label}}{{else}}{{.MachineName}}{{end}} ({{.ElementKind}})
@@ -113,13 +113,13 @@
                                 <div class="form-text">Coloque este elemento dentro de um grupo</div>
                             </div>
                             <div class="col-md-2">
-                                <label for="z_order" class="form-label">Ordem</label>
+                                <label for="z_order" class="form-label">{{t $.Locale "Order"}}</label>
                                 <input type="number" class="form-control" id="z_order" name="z_order" 
                                        value="{{.Element.ZOrder}}" min="0">
                                 <div class="form-text">Menor = primeiro</div>
                             </div>
                             <div class="col-md-3">
-                                <label for="col_span" class="form-label">Largura (Colunas)</label>
+                                <label for="col_span" class="form-label">{{t $.Locale "Width (columns)"}}</label>
                                 <select class="form-select" id="col_span" name="col_span">
                                     {{range $i := (seq 1 12)}}
                                     <option value="{{$i}}" {{if eq $i $.Element.ColSpan}}selected{{end}}>
@@ -130,25 +130,25 @@
                                 <div class="form-text">Sistema de 12 colunas</div>
                             </div>
                             <div class="col-md-4">
-                                <label for="alignment" class="form-label">Alinhamento Horizontal</label>
+                                <label for="alignment" class="form-label">{{t $.Locale "Horizontal alignment"}}</label>
                                 <select class="form-select" id="alignment" name="alignment">
                                     <option value="left" {{if eq .Element.Alignment "left"}}selected{{end}}>Esquerda</option>
                                     <option value="center" {{if eq .Element.Alignment "center"}}selected{{end}}>Centralizado</option>
                                     <option value="right" {{if eq .Element.Alignment "right"}}selected{{end}}>Direita</option>
                                 </select>
-                                <div class="form-text">Posição quando menor que 12 colunas</div>
+                                <div class="form-text">{{t $.Locale "Position when narrower than 12 columns"}}</div>
                             </div>
                         </div>
 
                         <!-- Options -->
-                        <h5 class="mb-3 border-bottom pb-2">Opções</h5>
+                        <h5 class="mb-3 border-bottom pb-2">{{t $.Locale "Options"}}</h5>
                         <div class="row mb-4">
                             <div class="col-md-6">
                                 <div class="form-check mb-2">
                                     <input class="form-check-input" type="checkbox" id="is_ui_only" name="is_ui_only" 
                                            {{if .Element.IsUIOnly}}checked{{end}}>
                                     <label class="form-check-label" for="is_ui_only">
-                                        Apenas UI (não persiste dados)
+                                        {{t $.Locale "UI only (does not persist data)"}}
                                     </label>
                                 </div>
                                 <div class="form-check mb-2">
@@ -164,25 +164,25 @@
                                     <input class="form-check-input" type="checkbox" id="hide_label" name="hide_label"
                                            {{if .Element.HideLabel}}checked{{end}}>
                                     <label class="form-check-label" for="hide_label">
-                                        Ocultar Título
+                                        {{t $.Locale "Hide title"}}
                                     </label>
                                 </div>
                                 <div class="form-check mb-2">
                                     <input class="form-check-input" type="checkbox" id="hide_help_text" name="hide_help_text"
                                            {{if .Element.HideHelpText}}checked{{end}}>
                                     <label class="form-check-label" for="hide_help_text">
-                                        Ocultar Descrição
+                                        {{t $.Locale "Hide description"}}
                                     </label>
                                 </div>
                             </div>
                         </div>
 
                         <!-- Plugin Options Panel -->
-                        <h5 class="mb-3 border-bottom pb-2">Opções do Plugin</h5>
+                        <h5 class="mb-3 border-bottom pb-2">{{t $.Locale "Plugin options"}}</h5>
                         {{template "plugin_options_panel" (dict "Meta" (parseGroupMeta .Element.UIMetaJSON .Element.ElementKind) "ElementKind" .Element.ElementKind)}}
 
                         <!-- UI Meta JSON -->
-                        <h5 class="mb-3 border-bottom pb-2">Configurações Avançadas (JSON)</h5>
+                        <h5 class="mb-3 border-bottom pb-2">{{t $.Locale "Advanced settings (JSON)"}}</h5>
                         <div class="mb-4">
                             <label for="ui_meta_json" class="form-label">Metadados do Plugin</label>
                             <textarea class="form-control font-monospace" id="ui_meta_json" name="ui_meta_json" 
@@ -191,21 +191,20 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="validate_expr" class="form-label">Validação (Filo)</label>
+                            <label for="validate_expr" class="form-label">{{t $.Locale "Validation (Filo)"}}</label>
                             <textarea class="form-control font-monospace"
                                       id="validate_expr"
                                       name="validate_expr"
                                       rows="3"
                                       placeholder='(if (< field:quantidade 1) "Quantidade deve ser ao menos 1" "")'>{{.Element.ValidateExpr}}</textarea>
                             <div class="form-text">
-                                Executa ao salvar. Retorne uma string de erro (vazia = ok) ou um
-                                booleano (false = inválido). Campos como <code>field:&lt;nome&gt;</code>.
-                            <div class="form-text">Este campo é atualizado automaticamente pelas opções acima</div>
+                                {{t $.Locale "Runs on save. Return an error string (empty = ok) or a boolean (false = invalid). Fields read as"}} <code>field:&lt;name&gt;</code>.
+                            <div class="form-text">{{t $.Locale "Updated automatically by the options above"}}</div>
                         </div>
 
                         <!-- Button-specific Options (only shown when element_kind = button) -->
                         <div id="button_options" class="{{if ne .Element.ElementKind "button"}}d-none{{end}}">
-                            <h5 class="mb-3 border-bottom pb-2">Configurações do Botão</h5>
+                            <h5 class="mb-3 border-bottom pb-2">{{t $.Locale "Button settings"}}</h5>
                             
                             <div class="row mb-3">
                                 <div class="col-md-6">
@@ -222,11 +221,11 @@
                                     </select>
                                 </div>
                                 <div class="col-md-6">
-                                    <label for="button_confirm_msg" class="form-label">Mensagem de Confirmação</label>
+                                    <label for="button_confirm_msg" class="form-label">{{t $.Locale "Confirmation message"}}</label>
                                     <input type="text" class="form-control" id="button_confirm_msg" name="button_confirm_msg"
                                            value="{{.Element.ButtonConfirmMsg}}"
-                                           placeholder="Tem certeza que deseja continuar?">
-                                    <div class="form-text">Deixe vazio para não pedir confirmação</div>
+                                           placeholder="{{t $.Locale "Are you sure you want to continue?"}}">
+                                    <div class="form-text">{{t $.Locale "Leave empty to skip the confirmation"}}</div>
                                 </div>
                             </div>
                             
@@ -234,17 +233,17 @@
                                 <input class="form-check-input" type="checkbox" id="button_run_save" name="button_run_save"
                                        {{if .Element.ButtonRunSave}}checked{{end}}>
                                 <label class="form-check-label" for="button_run_save">
-                                    Executar ação de salvar (mesma transação)
+                                    {{t $.Locale "Run the save action (same transaction)"}}
                                 </label>
-                                <div class="form-text">Salva o registro antes de executar o código Filo</div>
+                                <div class="form-text">{{t $.Locale "Saves the record before running the Filo code"}}</div>
                             </div>
                             
                             <div class="mb-3">
-                                <label for="button_filo_code" class="form-label">Código Filo (servidor)</label>
+                                <label for="button_filo_code" class="form-label">{{t $.Locale "Filo code (server)"}}</label>
                                 <textarea class="form-control font-monospace" id="button_filo_code" name="button_filo_code" 
                                           rows="6" placeholder=";; Variáveis disponíveis: form_*, user_*, campos do formulário
 ;; Variáveis de controle: error, message, redirect_to">{{.Element.ButtonFiloCode}}</textarea>
-                                <div class="form-text">Executado no servidor. Nunca visível para o usuário.</div>
+                                <div class="form-text">{{t $.Locale "Runs on the server. Never visible to the user."}}</div>
                             </div>
                             
                             <div class="mb-3">
@@ -258,8 +257,8 @@
 
                         <hr>
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">Salvar Alterações</button>
-                            <a href="/tools/forms/{{.Form.ReferenceID}}/edit" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">{{t $.Locale "Save changes"}}</button>
+                            <a href="/tools/forms/{{.Form.ReferenceID}}/edit" class="btn btn-secondary">{{t $.Locale "Cancel"}}</a>
                         </div>
                     </form>
                 </div>

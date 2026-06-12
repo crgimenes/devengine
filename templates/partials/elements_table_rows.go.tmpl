@@ -50,12 +50,12 @@
         {{end}}
     </td>
     <td class="text-end text-nowrap">
-        <a href="/tools/forms/{{$.Form.ReferenceID}}/elements/{{.ReferenceID}}/edit" class="btn btn-sm btn-outline-secondary me-1">Editar</a>
+        <a href="/tools/forms/{{$.Form.ReferenceID}}/elements/{{.ReferenceID}}/edit" class="btn btn-sm btn-outline-secondary me-1">{{t $.Locale "Edit"}}</a>
         <button type="button" class="btn btn-sm btn-outline-danger" 
                 hx-post="/tools/forms/{{$.Form.ReferenceID}}/elements/{{.ReferenceID}}/delete"
                 hx-target="#elements-tbody"
                 hx-swap="innerHTML"
-                hx-confirm="Remover este elemento?">Excluir</button>
+                hx-confirm="{{t $.Locale "Remove this element?"}}">{{t $.Locale "Delete"}}</button>
     </td>
 </tr>
 {{end}}

@@ -21,44 +21,44 @@
             </div>
             <div class="col-md-9">
                 <div class="card p-4">
-                    <h2 class="mb-4">Novo Formulário</h2>
+                    <h2 class="mb-4">{{t $.Locale "New form"}}</h2>
                     
                     <form method="post" action="/tools/forms/new">
                         <div class="mb-3">
                             <label for="label" class="form-label">Label *</label>
                             <input type="text" class="form-control" id="label" name="label" 
-                                   required placeholder="ex: Cadastro de Usuário">
-                            <div class="form-text">Nome visível para o usuário</div>
+                                   required placeholder="{{t $.Locale "e.g. Customer registration"}}">
+                            <div class="form-text">{{t $.Locale "Name shown to the user"}}</div>
                         </div>
                         
                         <div class="mb-3">
-                            <label for="machine_name" class="form-label">Nome (machine_name) *</label>
+                            <label for="machine_name" class="form-label">{{t $.Locale "Machine name"}} *</label>
                             <input type="text" class="form-control" id="machine_name" name="machine_name" 
                                    required pattern="[a-zA-Z][a-zA-Z0-9_]*" 
-                                   placeholder="ex: cadastro_usuario">
-                            <div class="form-text">Preenchido automaticamente a partir do Label. Use letras, números e _</div>
+                                   placeholder="{{t $.Locale "e.g. customer_registration"}}">
+                            <div class="form-text">{{t $.Locale "Filled automatically from the label. Use letters, numbers and _"}}</div>
                         </div>
                         
                         <div class="mb-3">
-                            <label for="description" class="form-label">Descrição</label>
+                            <label for="description" class="form-label">{{t $.Locale "Description"}}</label>
                             <textarea class="form-control" id="description" name="description" rows="2"
-                                      placeholder="Descrição opcional do formulário"></textarea>
+                                      placeholder="{{t $.Locale "Optional form description"}}"></textarea>
                         </div>
                         
                         <div class="mb-3">
                             <label for="entity_type_id" class="form-label">Tabela EAV (opcional)</label>
                             <select class="form-select" id="entity_type_id" name="entity_type_id">
-                                <option value="">-- Selecione uma tabela EAV --</option>
+                                <option value="">-- {{t $.Locale "Pick an EAV table"}} --</option>
                                 {{range .EntityTypes}}
                                 <option value="{{.ReferenceID}}">{{.Name}} ({{.MachineName}})</option>
                                 {{end}}
                             </select>
-                            <div class="form-text">Vincular a uma tabela EAV para persistir dados</div>
+                            <div class="form-text">{{t $.Locale "Bind to an EAV table to persist data"}}</div>
                         </div>
                         
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">Criar Formulário</button>
-                            <a href="/tools/forms" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">{{t $.Locale "Create form"}}</button>
+                            <a href="/tools/forms" class="btn btn-secondary">{{t $.Locale "Cancel"}}</a>
                         </div>
                     </form>
                 </div>

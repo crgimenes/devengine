@@ -68,6 +68,7 @@ func (h *Handlers) ToolsForms(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed      bool
 		User        db.User
+		Locale      string
 		Error       string
 		Message     string
 		Config      config.Config
@@ -75,6 +76,7 @@ func (h *Handlers) ToolsForms(w http.ResponseWriter, r *http.Request) {
 		Forms       []FormWithEntityType
 	}{
 		Authed:      true,
+		Locale:      auth.RequestLocale(r),
 		User:        *user,
 		Message:     message,
 		Config:      *h.cfg,
@@ -111,6 +113,7 @@ func (h *Handlers) ToolsFormsNew(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed      bool
 		User        db.User
+		Locale      string
 		Error       string
 		Message     string
 		Config      config.Config
@@ -118,6 +121,7 @@ func (h *Handlers) ToolsFormsNew(w http.ResponseWriter, r *http.Request) {
 		EntityTypes []db.EAVEntityType
 	}{
 		Authed:      true,
+		Locale:      auth.RequestLocale(r),
 		User:        *user,
 		Message:     message,
 		Config:      *h.cfg,
@@ -271,6 +275,7 @@ func (h *Handlers) ToolsFormsEdit(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed         bool
 		User           db.User
+		Locale         string
 		Error          string
 		Message        string
 		Config         config.Config
@@ -284,6 +289,7 @@ func (h *Handlers) ToolsFormsEdit(w http.ResponseWriter, r *http.Request) {
 		SelectedMenuID int64
 	}{
 		Authed:         true,
+		Locale:         auth.RequestLocale(r),
 		User:           *user,
 		Message:        message,
 		Config:         *h.cfg,
@@ -484,7 +490,7 @@ func (h *Handlers) ToolsFormsElementDelete(w http.ResponseWriter, r *http.Reques
 
 	// Check if HTMX request
 	if r.Header.Get("HX-Request") == "true" {
-		h.renderElementsTableRows(w, formRefID)
+		h.renderElementsTableRows(w, r, formRefID)
 		return
 	}
 
@@ -518,7 +524,7 @@ func (h *Handlers) ToolsFormsElementMoveUp(w http.ResponseWriter, r *http.Reques
 
 	// Check if HTMX request
 	if r.Header.Get("HX-Request") == "true" {
-		h.renderElementsTableRows(w, formRefID)
+		h.renderElementsTableRows(w, r, formRefID)
 		return
 	}
 
@@ -552,7 +558,7 @@ func (h *Handlers) ToolsFormsElementMoveDown(w http.ResponseWriter, r *http.Requ
 
 	// Check if HTMX request
 	if r.Header.Get("HX-Request") == "true" {
-		h.renderElementsTableRows(w, formRefID)
+		h.renderElementsTableRows(w, r, formRefID)
 		return
 	}
 
@@ -560,7 +566,7 @@ func (h *Handlers) ToolsFormsElementMoveDown(w http.ResponseWriter, r *http.Requ
 }
 
 // renderElementsTableRows renders just the table rows for HTMX partial updates.
-func (h *Handlers) renderElementsTableRows(w http.ResponseWriter, formRefID string) {
+func (h *Handlers) renderElementsTableRows(w http.ResponseWriter, r *http.Request, formRefID string) {
 	form, err := db.Storage.GetFormByRefID(formRefID)
 	if err != nil {
 		http.Error(w, "Form not found", http.StatusNotFound)
@@ -621,9 +627,11 @@ func (h *Handlers) renderElementsTableRows(w http.ResponseWriter, formRefID stri
 	}
 
 	data := struct {
+		Locale   string
 		Form     *db.Form
 		Elements []ElementView
 	}{
+		Locale:   auth.RequestLocale(r),
 		Form:     form,
 		Elements: elementViews,
 	}
@@ -716,6 +724,7 @@ func (h *Handlers) ToolsFormsElementEdit(w http.ResponseWriter, r *http.Request)
 	data := struct {
 		Authed            bool
 		User              db.User
+		Locale            string
 		Error             string
 		Message           string
 		Config            config.Config
@@ -731,6 +740,7 @@ func (h *Handlers) ToolsFormsElementEdit(w http.ResponseWriter, r *http.Request)
 		UIKinds           []string
 	}{
 		Authed:            true,
+		Locale:            auth.RequestLocale(r),
 		User:              *user,
 		Message:           message,
 		Config:            *h.cfg,
@@ -908,6 +918,7 @@ func (h *Handlers) ToolsFormsRecords(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed          bool
 		User            db.User
+		Locale          string
 		Config          config.Config
 		CurrentPage     string
 		Form            *db.Form
@@ -922,6 +933,7 @@ func (h *Handlers) ToolsFormsRecords(w http.ResponseWriter, r *http.Request) {
 		EntityTypeRefID string
 	}{
 		Authed:          true,
+		Locale:          auth.RequestLocale(r),
 		User:            *user,
 		Config:          *h.cfg,
 		CurrentPage:     "forms",

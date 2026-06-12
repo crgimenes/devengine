@@ -267,3 +267,28 @@ func TestToolsFormsUpdatePersistsMenuBinding(t *testing.T) {
 		t.Fatalf("menu_id should be cleared, got %d", *got.MenuID)
 	}
 }
+
+// Render smoke over the forms-authoring detail pages (create, edit, element
+// edit, records) — the i18n template sweep must not kill any of them.
+func TestFormsAuthoringPagesRenderWithRealTemplates(t *testing.T) {
+	mux, s := newHTTPTestEnv(t)
+	admin := plantUser(t, "admin", true)
+	form := seedTaskForm(t, s, "seed")
+
+	els, err := s.ListFormElements(form.ID)
+	if err != nil || len(els) == 0 {
+		t.Fatalf("ListFormElements: %v", err)
+	}
+
+	paths := []string{
+		"/tools/forms/new",
+		"/tools/forms/" + form.ReferenceID + "/edit",
+		"/tools/forms/" + form.ReferenceID + "/elements/" + els[0].ReferenceID + "/edit",
+		"/tools/forms/" + form.ReferenceID + "/records",
+	}
+	for _, p := range paths {
+		t.Run(p, func(t *testing.T) {
+			assertRendered(t, doGet(t, mux, p, admin), p)
+		})
+	}
+}
