@@ -157,6 +157,13 @@ func init() {
 		"Field":                    "Campo",
 		"Translate the labels of your forms, fields, attributes and menus. Empty restores the original.": "Traduza os rótulos dos seus formulários, campos, atributos e menus. Vazio restaura o original.",
 
+		// dashboard
+		"Forms": "Formulários",
+		"Pick a form to register or browse records.": "Escolha um formulário para registrar ou consultar.",
+		"Open":          "Abrir",
+		"Records":       "Registros",
+		"No forms yet.": "Nenhum formulário ainda.",
+
 		// record search
 		"Global search": "Busca global",
 		"One query across the text fields of every table.": "Uma consulta sobre os campos de texto de todas as tabelas.",

@@ -239,6 +239,7 @@ func contentRows(target, query string) ([]ContentRow, error) {
 	}
 	for _, f := range forms {
 		add("form", f.MachineName, "label", f.ReferenceID, f.Label)
+		add("form", f.MachineName, "description", f.ReferenceID, f.Description)
 		elements, err := db.Storage.ListFormElements(f.ID)
 		if err != nil {
 			return nil, err

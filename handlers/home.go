@@ -132,17 +132,40 @@ func (h *Handlers) Home(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	// The default dashboard lists the available forms so a fresh
+	// application is usable without a custom home (override the template
+	// via SetAppTemplatesFS for anything fancier). Labels are translated
+	// as user content.
+	var forms []db.Form
+	if authed {
+		all, err := db.Storage.ListForms()
+		if err != nil {
+			h.serverError(w, r, "ListForms", err)
+			return
+		}
+		loc := auth.RequestLocale(r)
+		for i := range all {
+			all[i].Label = i18n.ContentOr(loc, all[i].ReferenceID, "label", all[i].Label)
+			all[i].Description = i18n.ContentOr(loc, all[i].ReferenceID, "description", all[i].Description)
+		}
+		forms = all
+	}
+
 	data := struct {
 		Authed  bool
 		User    db.User
 		Error   string
 		Message string
 		Config  config.Config
+		Locale  string
+		Forms   []db.Form
 	}{
 		Authed:  authed,
 		User:    u,
 		Message: message,
 		Config:  *h.cfg,
+		Locale:  auth.RequestLocale(r),
+		Forms:   forms,
 	}
 
 	templateName := "index.go.tmpl"

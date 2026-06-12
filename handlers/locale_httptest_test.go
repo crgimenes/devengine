@@ -9,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/devengine/session"
 )
 
@@ -127,5 +128,31 @@ func TestProfileShowsLocaleSelect(t *testing.T) {
 		if !strings.Contains(body, `value="`+want+`"`) {
 			t.Fatalf("locale option %s missing", want)
 		}
+	}
+}
+
+// The default dashboard must list the available forms (translated), so a
+// fresh application is usable without a custom home template.
+func TestDashboardListsForms(t *testing.T) {
+	mux, s := newHTTPTestEnv(t)
+	user := plantUser(t, "ana", false)
+	form := seedTaskForm(t, s, "seed")
+	t.Cleanup(func() { i18n.DeleteContent("en-US", form.ReferenceID, "label") })
+
+	rr := doGet(t, mux, "/", user)
+	assertRendered(t, rr, "/ (dashboard)")
+	body := rr.Body.String()
+	if !strings.Contains(body, form.Label) {
+		t.Fatalf("dashboard missing form card: %.300s", body)
+	}
+	if !strings.Contains(body, "/form/"+form.MachineName) {
+		t.Fatal("dashboard missing form link")
+	}
+
+	// Content translation applies to the card label.
+	i18n.SetContent("en-US", form.ReferenceID, "label", "Task entry (en)")
+	rr = getWithHeader(t, mux, "/", user, map[string]string{"Accept-Language": "en-US"})
+	if !strings.Contains(rr.Body.String(), "Task entry (en)") {
+		t.Fatal("dashboard card label not translated")
 	}
 }

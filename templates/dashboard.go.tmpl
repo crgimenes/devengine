@@ -15,13 +15,39 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             </div>
-          {{end}}
-          
-          <div class="row">
-              <div class="card p-4 mb-4">
-                <p>Teste Dashboard</p>
-              </div>
-          </div>
+        {{end}}
+
+        <h2 class="mb-1">{{t $.Locale "Forms"}}</h2>
+        <p class="text-muted mb-4">{{t $.Locale "Pick a form to register or browse records."}}</p>
+
+        {{if .Forms}}
+        <div class="row row-cols-1 row-cols-md-3 g-3">
+            {{range .Forms}}
+            <div class="col">
+                <div class="card h-100">
+                    <div class="card-body d-flex flex-column">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi {{if .IsSearch}}bi-search{{else}}bi-input-cursor-text{{end}} fs-4 me-2"></i>
+                            <h5 class="card-title mb-0">{{.Label}}</h5>
+                        </div>
+                        {{with .Description}}<p class="card-text text-muted small">{{.}}</p>{{end}}
+                        <div class="mt-auto d-flex gap-2 pt-2">
+                            <a href="/form/{{.MachineName}}" class="btn btn-sm btn-primary">{{t $.Locale "Open"}}</a>
+                            {{if and .EAVEntityTypeID (not .IsSearch)}}
+                            <a href="/form/{{.MachineName}}/list" class="btn btn-sm btn-outline-secondary">{{t $.Locale "Records"}}</a>
+                            {{end}}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {{end}}
+        </div>
+        {{else}}
+        <div class="text-center text-muted py-5">
+            <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+            {{t $.Locale "No forms yet."}}
+        </div>
+        {{end}}
     </main>
     <footer>
       {{template "footer" .}}
@@ -29,4 +55,3 @@
     {{template "scripts" .}}
   </body>
 </html>
-
