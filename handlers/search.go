@@ -89,6 +89,7 @@ func (h *Handlers) ToolsSearchForms(w http.ResponseWriter, r *http.Request) {
 		Message     string
 		Config      config.Config
 		CurrentPage string
+		Locale      string
 		Query       string
 		Searched    bool
 		Groups      []SearchGroup
@@ -97,6 +98,7 @@ func (h *Handlers) ToolsSearchForms(w http.ResponseWriter, r *http.Request) {
 		User:        *user,
 		Config:      *h.cfg,
 		CurrentPage: "search-forms",
+		Locale:      auth.RequestLocale(r),
 		Query:       query,
 		Searched:    searched,
 		Groups:      groups,

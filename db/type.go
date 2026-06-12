@@ -26,6 +26,7 @@ type User struct {
 	Enabled      bool      `json:"enabled"`
 	Sysop        bool      `json:"sysop"`
 	AvatarURL    string    `json:"avatar_url,omitempty"`
+	Locale       string    `json:"locale,omitempty"`
 	CreatedAt    time.Time `json:"created_at,omitzero"`
 	UpdatedAt    time.Time `json:"updated_at,omitzero"`
 }

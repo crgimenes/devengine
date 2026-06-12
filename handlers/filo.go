@@ -12,7 +12,6 @@ import (
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
-	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/filo"
 )
 
@@ -81,7 +80,7 @@ func (h *Handlers) ToolsFiloRun(w http.ResponseWriter, r *http.Request) {
 	script := r.FormValue("script")
 	globalsJSON := strings.TrimSpace(r.FormValue("globals"))
 
-	result := h.runFiloScript(user, script, globalsJSON)
+	result := h.runFiloScript(r, user, script, globalsJSON)
 
 	h.render(w, "tools_filo_result.go.tmpl", result)
 }
@@ -97,9 +96,9 @@ type filoResult struct {
 	ElapsedMS  float64
 }
 
-func (h *Handlers) runFiloScript(user *db.User, script, globalsJSON string) filoResult {
+func (h *Handlers) runFiloScript(r *http.Request, user *db.User, script, globalsJSON string) filoResult {
 	if strings.TrimSpace(script) == "" {
-		return filoResult{Script: script, UserError: "Script vazio."}
+		return filoResult{Script: script, UserError: tr(r, "Empty script.")}
 	}
 
 	globals := make(map[string]filo.Value)
@@ -107,7 +106,7 @@ func (h *Handlers) runFiloScript(user *db.User, script, globalsJSON string) filo
 		raw := map[string]any{}
 		err := json.Unmarshal([]byte(globalsJSON), &raw)
 		if err != nil {
-			return filoResult{Script: script, UserError: i18n.T("Invalid globals JSON: %s", err.Error())}
+			return filoResult{Script: script, UserError: tr(r, "Invalid globals JSON: %s", err.Error())}
 		}
 		for k, v := range raw {
 			globals[k] = goToFilo(v)

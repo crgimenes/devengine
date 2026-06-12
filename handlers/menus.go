@@ -9,7 +9,6 @@ import (
 	"github.com/crgimenes/devengine/db"
 	"github.com/crgimenes/devengine/filodb"
 	"github.com/crgimenes/devengine/filolog"
-	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/devengine/session"
 	"github.com/crgimenes/filo"
 	"github.com/crgimenes/filo/filostrings"
@@ -150,7 +149,7 @@ func (h *Handlers) ToolsMenusCreate(w http.ResponseWriter, r *http.Request) {
 		}{
 			Authed:      true,
 			User:        *user,
-			Error:       i18n.T("Name and machine name are required"),
+			Error:       tr(r, "Name and machine name are required"),
 			Config:      *h.cfg,
 			CurrentPage: "menu-editor",
 			Csrf:        csrf,
@@ -174,7 +173,7 @@ func (h *Handlers) ToolsMenusCreate(w http.ResponseWriter, r *http.Request) {
 		}{
 			Authed:      true,
 			User:        *user,
-			Error:       i18n.T("Could not create the menu (ref %s)", logRef("CreateMenu", err)),
+			Error:       tr(r, "Could not create the menu (ref %s)", logRef("CreateMenu", err)),
 			Config:      *h.cfg,
 			CurrentPage: "menu-editor",
 			Csrf:        csrf,
@@ -339,11 +338,11 @@ func (h *Handlers) ToolsMenusUpdate(w http.ResponseWriter, r *http.Request) {
 
 	err = db.Storage.UpdateMenu(menu.ID, machineName, label, description)
 	if err != nil {
-		http.Redirect(w, r, "/tools/menu-editor/"+id+"/edit?message="+i18n.T("Could not update"), http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/menu-editor/"+id+"/edit?message="+tr(r, "Could not update"), http.StatusSeeOther)
 		return
 	}
 
-	http.Redirect(w, r, "/tools/menu-editor/"+id+"/edit?message="+i18n.T("Menu updated successfully"), http.StatusSeeOther)
+	http.Redirect(w, r, "/tools/menu-editor/"+id+"/edit?message="+tr(r, "Menu updated successfully"), http.StatusSeeOther)
 }
 
 // ToolsMenusDelete handles menu deletion.
@@ -373,11 +372,11 @@ func (h *Handlers) ToolsMenusDelete(w http.ResponseWriter, r *http.Request) {
 
 	err = db.Storage.SoftDeleteMenu(menu.ID)
 	if err != nil {
-		http.Redirect(w, r, "/tools/menu-editor?message="+i18n.T("Could not delete the menu"), http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/menu-editor?message="+tr(r, "Could not delete the menu"), http.StatusSeeOther)
 		return
 	}
 
-	http.Redirect(w, r, "/tools/menu-editor?message="+i18n.T("Menu deleted successfully"), http.StatusSeeOther)
+	http.Redirect(w, r, "/tools/menu-editor?message="+tr(r, "Menu deleted successfully"), http.StatusSeeOther)
 }
 
 // ToolsMenusItemCreate handles creating a new menu item.
@@ -415,7 +414,7 @@ func (h *Handlers) ToolsMenusItemCreate(w http.ResponseWriter, r *http.Request) 
 	icon := r.FormValue("icon")
 
 	if machineName == "" {
-		http.Redirect(w, r, "/tools/menu-editor/"+id+"/edit?message="+i18n.T("Machine name is required"), http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/menu-editor/"+id+"/edit?message="+tr(r, "Machine name is required"), http.StatusSeeOther)
 		return
 	}
 
@@ -443,14 +442,14 @@ func (h *Handlers) ToolsMenusItemCreate(w http.ResponseWriter, r *http.Request) 
 	item, err := db.Storage.CreateMenuItem(menu.ID, parentID, machineName, label, icon, "link", "", "", "", maxZOrder)
 	if err != nil {
 		ref := logRef("ToolsMenusItemCreate", err)
-		http.Redirect(w, r, "/tools/menu-editor/"+id+"/edit?message="+i18n.T("Could not create the item (ref %s)", ref), http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/menu-editor/"+id+"/edit?message="+tr(r, "Could not create the item (ref %s)", ref), http.StatusSeeOther)
 		return
 	}
 
 	// Drop straight into the item editor: a fresh item is a bare link and
 	// almost always needs URL/type/code filled in next.
 	http.Redirect(w, r,
-		"/tools/menu-editor/"+id+"/items/"+item.ReferenceID+"/edit?message="+i18n.T("Item created successfully"),
+		"/tools/menu-editor/"+id+"/items/"+item.ReferenceID+"/edit?message="+tr(r, "Item created successfully"),
 		http.StatusSeeOther)
 }
 
@@ -572,11 +571,11 @@ func (h *Handlers) ToolsMenusItemUpdate(w http.ResponseWriter, r *http.Request) 
 
 	err = db.Storage.UpdateMenuItem(item.ID, parentID, machineName, label, icon, itemType, url, jsCode, filoCode, item.ZOrder)
 	if err != nil {
-		http.Redirect(w, r, "/tools/menu-editor/"+menuID+"/items/"+itemID+"/edit?message="+i18n.T("Could not update"), http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/menu-editor/"+menuID+"/items/"+itemID+"/edit?message="+tr(r, "Could not update"), http.StatusSeeOther)
 		return
 	}
 
-	http.Redirect(w, r, "/tools/menu-editor/"+menuID+"/edit?message="+i18n.T("Item updated successfully"), http.StatusSeeOther)
+	http.Redirect(w, r, "/tools/menu-editor/"+menuID+"/edit?message="+tr(r, "Item updated successfully"), http.StatusSeeOther)
 }
 
 // ToolsMenusItemDelete handles item deletion.
@@ -608,11 +607,11 @@ func (h *Handlers) ToolsMenusItemDelete(w http.ResponseWriter, r *http.Request) 
 
 	err = db.Storage.DeleteMenuItem(item.ID)
 	if err != nil {
-		http.Redirect(w, r, "/tools/menu-editor/"+menuID+"/edit?message="+i18n.T("Could not delete the item"), http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/menu-editor/"+menuID+"/edit?message="+tr(r, "Could not delete the item"), http.StatusSeeOther)
 		return
 	}
 
-	http.Redirect(w, r, "/tools/menu-editor/"+menuID+"/edit?message="+i18n.T("Item deleted successfully"), http.StatusSeeOther)
+	http.Redirect(w, r, "/tools/menu-editor/"+menuID+"/edit?message="+tr(r, "Item deleted successfully"), http.StatusSeeOther)
 }
 
 // ToolsMenusItemMoveUp moves an item up.

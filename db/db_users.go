@@ -16,7 +16,8 @@ const userSelectColumns = `id,                         -- 1
             COALESCE(password_hash, ''),-- 5
             COALESCE(avatar_url, ''),   -- 6
             enabled,                    -- 7
-            sysop                       -- 8`
+            sysop,                      -- 8
+            COALESCE(locale, '')        -- 9`
 
 func scanUser(scanner interface {
 	Scan(dest ...any) error
@@ -31,6 +32,7 @@ func scanUser(scanner interface {
 		&u.AvatarURL,    // 6
 		&u.Enabled,      // 7
 		&u.Sysop,        // 8
+		&u.Locale,       // 9
 	)
 	if err != nil {
 		return nil, err
@@ -424,4 +426,17 @@ func (s *SQLite) UpdateUserProfile(
 	}
 
 	return s.GetUserByID(userID)
+}
+
+// UpdateUserLocale stores the user's UI language preference. Empty clears
+// the preference (request falls back to Accept-Language, then app default).
+func (s *SQLite) UpdateUserLocale(userID int64, locale string) error {
+	const sqlUpdate = `UPDATE users
+        SET locale = ?  -- 1
+        WHERE id = ?    -- 2`
+	return s.Exec(
+		sqlUpdate,
+		locale, // 1
+		userID, // 2
+	)
 }

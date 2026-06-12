@@ -121,6 +121,42 @@ func init() {
 		"Select a file to upload":                 "Por favor, selecione um arquivo",
 		"Invalid file: %s":                        "Arquivo inválido: %s",
 
+		// profile
+		"Language":                              "Idioma",
+		"Automatic (browser language)":          "Automático (idioma do navegador)",
+		"Used for system messages and screens.": "Usado nas mensagens e telas do sistema.",
+
+		// translations tool
+		"Translations":                            "Traduções",
+		"Translation saved":                       "Tradução salva",
+		"Built-in translation restored":           "Tradução padrão restaurada",
+		"Could not save the translation (ref %s)": "Erro ao salvar tradução (ref %s)",
+		"Adjust the system texts per language. Empty restores the built-in translation.": "Ajuste os textos do sistema por idioma. Vazio restaura a tradução padrão.",
+		"Language being edited": "Idioma em edição",
+		"Filter keys":           "Filtrar chaves",
+		"English (key)":         "Inglês (chave)",
+		"Translation":           "Tradução",
+		"Save":                  "Salvar",
+		"adjusted":              "ajustada",
+		"Export CSV":            "Exportar CSV",
+		"New key":               "Nova chave",
+		"Add a new key (application strings) or a translation for a new locale.": "Adicione uma chave nova (strings da aplicação) ou uma tradução para um novo idioma.",
+		"Locale": "Idioma",
+		"Add":    "Adicionar",
+
+		"Original text restored":   "Texto original restaurado",
+		"Select a CSV file":        "Selecione um arquivo CSV",
+		"%d translations imported": "%d traduções importadas",
+		"System texts":             "Textos do sistema",
+		"Your content":             "Seu conteúdo",
+		"Export Go":                "Exportar Go",
+		"Import CSV":               "Importar CSV",
+		"Original":                 "Original",
+		"Context":                  "Contexto",
+		"Type":                     "Tipo",
+		"Field":                    "Campo",
+		"Translate the labels of your forms, fields, attributes and menus. Empty restores the original.": "Traduza os rótulos dos seus formulários, campos, atributos e menus. Vazio restaura o original.",
+
 		// record search
 		"Global search": "Busca global",
 		"One query across the text fields of every table.": "Uma consulta sobre os campos de texto de todas as tabelas.",
@@ -132,5 +168,6 @@ func init() {
 
 		// Filo REPL
 		"Invalid globals JSON: %s": "Globals JSON inválido: %s",
+		"Empty script.":            "Script vazio.",
 	})
 }

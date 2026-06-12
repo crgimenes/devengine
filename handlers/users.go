@@ -12,7 +12,6 @@ import (
 	"github.com/crgimenes/devengine/auth/basic"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
-	"github.com/crgimenes/devengine/i18n"
 )
 
 const usersPageSize = 50
@@ -167,25 +166,25 @@ func (h *Handlers) ToolsUsersUpdate(w http.ResponseWriter, r *http.Request) {
 	_, err = db.Storage.UpdateUserProfile(target.ID, username, target.AvatarURL, email)
 	if err != nil {
 		ref := logRef("UpdateUserProfile", err)
-		usersEditRedirect(w, r, target.ReferenceID, "error", i18n.T("Could not update the profile (ref %s)", ref))
+		usersEditRedirect(w, r, target.ReferenceID, "error", tr(r, "Could not update the profile (ref %s)", ref))
 		return
 	}
 
 	err = db.Storage.UpdateUserSysop(target.ID, sysop, current.ID)
 	if err != nil {
 		ref := logRef("UpdateUserSysop", err)
-		usersEditRedirect(w, r, target.ReferenceID, "error", i18n.T("Could not update the sysop flag (ref %s)", ref))
+		usersEditRedirect(w, r, target.ReferenceID, "error", tr(r, "Could not update the sysop flag (ref %s)", ref))
 		return
 	}
 
 	err = db.Storage.UpdateUserEnabled(target.ID, enabled, current.ID)
 	if err != nil {
 		ref := logRef("UpdateUserEnabled", err)
-		usersEditRedirect(w, r, target.ReferenceID, "error", i18n.T("Could not update the enabled flag (ref %s)", ref))
+		usersEditRedirect(w, r, target.ReferenceID, "error", tr(r, "Could not update the enabled flag (ref %s)", ref))
 		return
 	}
 
-	usersEditRedirect(w, r, target.ReferenceID, "message", i18n.T("User updated."))
+	usersEditRedirect(w, r, target.ReferenceID, "message", tr(r, "User updated."))
 }
 
 // ToolsUsersResetPassword generates a fresh random password for the target

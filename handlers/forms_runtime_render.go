@@ -1,12 +1,12 @@
 package handlers
 
 import (
+	"github.com/crgimenes/devengine/auth"
 	"net/http"
 	"strings"
 
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
-	"github.com/crgimenes/devengine/i18n"
 )
 
 // formRuntimePage is the data rendered by forms_runtime.go.tmpl.
@@ -77,6 +77,8 @@ func (h *Handlers) loadRuntimeForm(w http.ResponseWriter, r *http.Request, requi
 		return ctx, false
 	}
 
+	translateFormContent(auth.RequestLocale(r), ctx.form, ctx.elements, ctx.attributes)
+
 	ctx.attrMap = make(map[int64]*db.EAVAttribute, len(ctx.attributes))
 	for i := range ctx.attributes {
 		ctx.attrMap[ctx.attributes[i].ID] = &ctx.attributes[i]
@@ -89,6 +91,7 @@ func (h *Handlers) loadRuntimeForm(w http.ResponseWriter, r *http.Request, requi
 // its field.
 func (h *Handlers) renderRuntimeForm(
 	w http.ResponseWriter,
+	r *http.Request,
 	user *db.User,
 	ctx runtimeFormContext,
 	record *db.EAVRecord,
@@ -108,7 +111,7 @@ func (h *Handlers) renderRuntimeForm(
 	tree := BuildElementTree(ctx.elements, ctx.attrMap)
 	attachFieldErrors(tree, fieldErrors)
 
-	menuItems, menuMachineName := loadFormMenu(ctx.form)
+	menuItems, menuMachineName := loadFormMenu(auth.RequestLocale(r), ctx.form)
 
 	h.render(w, "forms_runtime.go.tmpl", formRuntimePage{
 		Authed:          true,
@@ -164,7 +167,7 @@ func parseFormAttributesLenient(r *http.Request, elements []db.FormElement, attr
 		raw := r.FormValue(el.MachineName)
 		if raw == "" {
 			if attr.IsRequired {
-				fieldErrors[el.MachineName] = i18n.T("required field")
+				fieldErrors[el.MachineName] = tr(r, "required field")
 			}
 			values[attr.MachineName] = ""
 			continue
@@ -172,7 +175,7 @@ func parseFormAttributesLenient(r *http.Request, elements []db.FormElement, attr
 
 		v, err := parseElementValue(el, attr, raw)
 		if err != nil {
-			fieldErrors[el.MachineName] = i18n.T("invalid value")
+			fieldErrors[el.MachineName] = tr(r, "invalid value")
 			values[attr.MachineName] = raw
 			continue
 		}

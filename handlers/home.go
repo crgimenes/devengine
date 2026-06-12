@@ -11,6 +11,7 @@ import (
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
 	"github.com/crgimenes/devengine/i18n"
+	"github.com/crgimenes/devengine/log"
 	"github.com/crgimenes/devengine/session"
 )
 
@@ -42,10 +43,37 @@ func New(deps Dependencies) *Handlers {
 		deps.Config = config.Cfg
 	}
 
+	loadTranslationOverrides()
+
 	return &Handlers{
 		cfg:       deps.Config,
 		templates: deps.Templates,
 		files:     deps.FileUtilities,
+	}
+}
+
+// loadTranslationOverrides layers the persisted translation adjustments over
+// the built-in dictionaries. New is called once at boot, after the storage
+// is ready; a missing table (fresh CLI contexts) just logs and moves on.
+func loadTranslationOverrides() {
+	if db.Storage == nil {
+		return
+	}
+	overrides, err := db.Storage.ListI18nOverrides()
+	if err != nil {
+		log.Printf("i18n overrides not loaded: %v", err)
+		return
+	}
+	for _, o := range overrides {
+		i18n.SetOverride(o.Locale, o.MsgKey, o.Translation)
+	}
+	contents, err := db.Storage.ListContentTranslations()
+	if err != nil {
+		log.Printf("content translations not loaded: %v", err)
+		return
+	}
+	for _, c := range contents {
+		i18n.SetContent(c.Locale, c.RefID, c.Field, c.Text)
 	}
 }
 
@@ -301,15 +329,15 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 		// Validation
 		var errorMsg string
 		if name == "" {
-			errorMsg = i18n.T("Name is required")
+			errorMsg = tr(r, "Name is required")
 		} else if machineName == "" {
-			errorMsg = i18n.T("Machine name is required")
+			errorMsg = tr(r, "Machine name is required")
 		} else if len(name) > 100 {
-			errorMsg = i18n.T("Name must be at most 100 characters")
+			errorMsg = tr(r, "Name must be at most 100 characters")
 		} else if len(machineName) > 100 {
-			errorMsg = i18n.T("Machine name must be at most 100 characters")
+			errorMsg = tr(r, "Machine name must be at most 100 characters")
 		} else if len(description) > 500 {
-			errorMsg = i18n.T("Description must be at most 500 characters")
+			errorMsg = tr(r, "Description must be at most 500 characters")
 		}
 
 		// Validate machine_name format
@@ -331,7 +359,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 				}
 			}
 			if !validMachineName {
-				errorMsg = i18n.T("Machine name must contain only lowercase letters, numbers and underscores, and start with a letter")
+				errorMsg = tr(r, "Machine name must contain only lowercase letters, numbers and underscores, and start with a letter")
 			}
 		}
 
@@ -377,7 +405,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 				User:        *user,
 				Config:      *h.cfg,
 				CurrentPage: "database-schema",
-				Error:       i18n.T("Could not create the EAV table (ref %s)", logRef("CreateEAVEntityType", err)),
+				Error:       tr(r, "Could not create the EAV table (ref %s)", logRef("CreateEAVEntityType", err)),
 				FormData: FormData{
 					Name:        name,
 					MachineName: machineName,
@@ -471,11 +499,11 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 		// Validation
 		var errorMsg string
 		if name == "" {
-			errorMsg = i18n.T("Name is required")
+			errorMsg = tr(r, "Name is required")
 		} else if len(name) > 100 {
-			errorMsg = i18n.T("Name must be at most 100 characters")
+			errorMsg = tr(r, "Name must be at most 100 characters")
 		} else if len(description) > 500 {
-			errorMsg = i18n.T("Description must be at most 500 characters")
+			errorMsg = tr(r, "Description must be at most 500 characters")
 		}
 
 		if errorMsg != "" {
@@ -519,7 +547,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 			}{
 				Authed:      true,
 				User:        *user,
-				Error:       i18n.T("Could not update the table (ref %s)", logRef("UpdateEAVEntityType", err)),
+				Error:       tr(r, "Could not update the table (ref %s)", logRef("UpdateEAVEntityType", err)),
 				Config:      *h.cfg,
 				CurrentPage: "database-schema",
 				EntityID:    id,
@@ -531,7 +559,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 		}
 
 		// Redirect with success message
-		http.Redirect(w, r, "/tools/database-schema/eav/"+updatedET.ReferenceID+"/edit?message="+i18n.T("Table updated successfully"), http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/database-schema/eav/"+updatedET.ReferenceID+"/edit?message="+tr(r, "Table updated successfully"), http.StatusSeeOther)
 		return
 	}
 

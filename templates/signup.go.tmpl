@@ -22,7 +22,7 @@
 
                         <form method="post" action="/signup/{{.Token}}" autocomplete="off">
                             <div class="mb-3">
-                                <label for="username" class="form-label">{{t "Username"}}</label>
+                                <label for="username" class="form-label">{{t $.Locale "Username"}}</label>
                                 <input type="text"
                                        class="form-control"
                                        id="username"
@@ -33,7 +33,7 @@
                                        required>
                             </div>
                             <div class="mb-3">
-                                <label for="password" class="form-label">{{t "Password"}}</label>
+                                <label for="password" class="form-label">{{t $.Locale "Password"}}</label>
                                 <input type="password"
                                        class="form-control"
                                        id="password"
@@ -43,7 +43,7 @@
                                        required>
                             </div>
                             <div class="mb-3">
-                                <label for="password_confirm" class="form-label">{{t "Confirm password"}}</label>
+                                <label for="password_confirm" class="form-label">{{t $.Locale "Confirm password"}}</label>
                                 <input type="password"
                                        class="form-control"
                                        id="password_confirm"
@@ -53,7 +53,7 @@
                                        required>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">
-                                {{t "Create account"}}
+                                {{t $.Locale "Create account"}}
                             </button>
                         </form>
                     </div>

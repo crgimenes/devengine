@@ -30,6 +30,7 @@ func TestExecuteTemplateWritesOnSuccess(t *testing.T) {
 		Error   string
 		Message string
 		Config  config.Config
+		Locale  string
 	}{}
 	err := ExecuteTemplate(&sb, "login.go.tmpl", data)
 	if err != nil {

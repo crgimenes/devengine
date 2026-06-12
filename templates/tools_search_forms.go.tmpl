@@ -15,18 +15,18 @@
             <div class="col-md-9">
                 <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-2">
                     <div>
-                        <h2 class="mb-1">{{t "Global search"}}</h2>
-                        <p class="text-muted mb-0">{{t "One query across the text fields of every table."}}</p>
+                        <h2 class="mb-1">{{t $.Locale "Global search"}}</h2>
+                        <p class="text-muted mb-0">{{t $.Locale "One query across the text fields of every table."}}</p>
                     </div>
                 </div>
 
                 <form method="get" action="/tools/search-forms" class="mb-4">
                     <div class="input-group">
                         <input type="text" name="q" class="form-control" maxlength="100"
-                               value="{{.Query}}" placeholder="{{t "Type and press Enter"}}"
+                               value="{{.Query}}" placeholder="{{t $.Locale "Type and press Enter"}}"
                                autofocus>
                         <button type="submit" class="btn btn-primary">
-                            <i class="bi bi-search me-1"></i>{{t "Search"}}
+                            <i class="bi bi-search me-1"></i>{{t $.Locale "Search"}}
                         </button>
                     </div>
                 </form>
@@ -39,9 +39,9 @@
                                 <span><i class="bi bi-database me-2"></i>{{.EntityType.Name}}</span>
                                 {{if .HasMore}}
                                     {{if .FormRefID}}
-                                    <a href="/tools/forms/{{.FormRefID}}/records?q={{$.Query}}" class="small">{{t "See all results"}}</a>
+                                    <a href="/tools/forms/{{.FormRefID}}/records?q={{$.Query}}" class="small">{{t $.Locale "See all results"}}</a>
                                     {{else}}
-                                    <a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/records" class="small">{{t "See all records"}}</a>
+                                    <a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/records" class="small">{{t $.Locale "See all records"}}</a>
                                     {{end}}
                                 {{end}}
                             </div>
@@ -59,7 +59,7 @@
                     {{else}}
                         <div class="text-center text-muted py-5">
                             <i class="bi bi-search fs-1 d-block mb-2"></i>
-                            {{t "No records match %q" .Query}}
+                            {{t $.Locale "No records match %q" .Query}}
                         </div>
                     {{end}}
                 {{end}}

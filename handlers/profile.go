@@ -42,10 +42,14 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 			Error   string
 			Message string
 			Config  config.Config
+			Locale  string
+			Locales []string
 		}{
-			Authed: true,
-			User:   *u,
-			Config: *h.cfg,
+			Authed:  true,
+			User:    *u,
+			Config:  *h.cfg,
+			Locale:  auth.RequestLocale(r),
+			Locales: i18n.Locales(),
 		}
 		h.render(w, "me.go.tmpl", data)
 		return
@@ -165,6 +169,11 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 		avatarURL = "/file/" + u.ReferenceID + "/" + fileMeta.Filename
 	}
 
+	locale := r.FormValue("locale")
+	if locale != "" && !i18n.Known(locale) {
+		locale = ""
+	}
+
 	updatedUser, err := db.Storage.UpdateUserProfile(u.ID, username, avatarURL, email)
 	if err != nil {
 		data := struct {
@@ -173,15 +182,26 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 			Error   string
 			Message string
 			Config  config.Config
+			Locale  string
+			Locales []string
 		}{
-			Authed: true,
-			User:   *u,
-			Error:  i18n.T("Could not update the profile (ref %s)", logRef("UpdateUserProfile", err)),
-			Config: *h.cfg,
+			Authed:  true,
+			User:    *u,
+			Error:   tr(r, "Could not update the profile (ref %s)", logRef("UpdateUserProfile", err)),
+			Config:  *h.cfg,
+			Locale:  auth.RequestLocale(r),
+			Locales: i18n.Locales(),
 		}
 		h.render(w, "me.go.tmpl", data)
 		return
 	}
+
+	err = db.Storage.UpdateUserLocale(u.ID, locale)
+	if err != nil {
+		h.serverError(w, r, "UpdateUserLocale", err)
+		return
+	}
+	updatedUser.Locale = locale
 
 	session.Put(sid, *updatedUser)
 	session.SyncSessions(sid)

@@ -7,6 +7,7 @@ import (
 
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/devengine/session"
 )
 
@@ -115,4 +116,24 @@ func Prelude(
 
 	u := su.ToDBUser()
 	return &u, sid, true, nil
+}
+
+// RequestLocale resolves the UI language for one request: the session
+// user's saved preference, then the browser's Accept-Language, then the
+// application default locale (init.filo).
+func RequestLocale(r *http.Request) string {
+	sid, ok := sessions.GetCookie(r)
+	if ok {
+		su, ok := sessions.Get(sid)
+		if ok {
+			u := su.ToDBUser()
+			if u.Locale != "" && i18n.Known(u.Locale) {
+				return u.Locale
+			}
+		}
+	}
+	if loc := i18n.MatchHeader(r.Header.Get("Accept-Language")); loc != "" {
+		return loc
+	}
+	return i18n.Locale()
 }

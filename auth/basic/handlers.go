@@ -37,6 +37,11 @@ func New(cfg *config.Config, tmpl TemplateExecutor) *Handlers {
 	return &Handlers{cfg: cfg, templates: tmpl}
 }
 
+// tr translates msg into the locale resolved for this request.
+func tr(r *http.Request, msg string, args ...any) string {
+	return i18n.TL(auth.RequestLocale(r), msg, args...)
+}
+
 // rateLimited reports whether this client exhausted the auth-endpoint budget
 // and stamps Retry-After when it did. Limits come from the instance config
 // (init.filo via the application), RateLimitPerMin <= 0 disables the check.
@@ -76,9 +81,11 @@ func (h *Handlers) LoginPage(w http.ResponseWriter, r *http.Request) {
 		Error   string
 		Message string
 		Config  config.Config
+		Locale  string
 	}{
 		Authed: false,
 		Config: *h.cfg,
+		Locale: auth.RequestLocale(r),
 	}
 
 	err = h.templates(w, "login.go.tmpl", data)
@@ -102,7 +109,7 @@ func (h *Handlers) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 
 	if h.rateLimited(w, r) {
 		w.WriteHeader(http.StatusTooManyRequests)
-		h.renderLoginError(w, i18n.T("Too many attempts. Wait a moment and try again."))
+		h.renderLoginError(w, r, tr(r, "Too many attempts. Wait a moment and try again."))
 		return
 	}
 
@@ -110,7 +117,7 @@ func (h *Handlers) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 	password := r.FormValue("password")
 
 	if username == "" || password == "" {
-		h.renderLoginError(w, i18n.T("Enter username and password."))
+		h.renderLoginError(w, r, tr(r, "Enter username and password."))
 		return
 	}
 
@@ -121,12 +128,12 @@ func (h *Handlers) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if u == nil || u.PasswordHash == "" || !u.Enabled {
-		h.renderLoginError(w, i18n.T("Invalid credentials."))
+		h.renderLoginError(w, r, tr(r, "Invalid credentials."))
 		return
 	}
 
 	if !VerifyPassword(u.PasswordHash, password) {
-		h.renderLoginError(w, i18n.T("Invalid credentials."))
+		h.renderLoginError(w, r, tr(r, "Invalid credentials."))
 		return
 	}
 
@@ -137,16 +144,18 @@ func (h *Handlers) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, h.cfg.BaseURL+"/", http.StatusFound)
 }
 
-func (h *Handlers) renderLoginError(w http.ResponseWriter, message string) {
+func (h *Handlers) renderLoginError(w http.ResponseWriter, r *http.Request, message string) {
 	data := struct {
 		Authed  bool
 		User    db.User
 		Error   string
 		Message string
 		Config  config.Config
+		Locale  string
 	}{
 		Error:  message,
 		Config: *h.cfg,
+		Locale: auth.RequestLocale(r),
 	}
 	err := h.templates(w, "login.go.tmpl", data)
 	if err != nil {
@@ -168,7 +177,7 @@ func (h *Handlers) SignupPage(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if h.rateLimited(w, r) {
-		http.Error(w, i18n.T("Too many attempts. Wait a moment and try again."), http.StatusTooManyRequests)
+		http.Error(w, tr(r, "Too many attempts. Wait a moment and try again."), http.StatusTooManyRequests)
 		return
 	}
 
@@ -188,9 +197,11 @@ func (h *Handlers) SignupPage(w http.ResponseWriter, r *http.Request) {
 		Token  string
 		Error  string
 		Config config.Config
+		Locale string
 	}{
 		Token:  token,
 		Config: *h.cfg,
+		Locale: auth.RequestLocale(r),
 	}
 	err = h.templates(w, "signup.go.tmpl", data)
 	if err != nil {
@@ -214,7 +225,7 @@ func (h *Handlers) SignupSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if h.rateLimited(w, r) {
-		http.Error(w, i18n.T("Too many attempts. Wait a moment and try again."), http.StatusTooManyRequests)
+		http.Error(w, tr(r, "Too many attempts. Wait a moment and try again."), http.StatusTooManyRequests)
 		return
 	}
 
@@ -235,10 +246,12 @@ func (h *Handlers) SignupSubmit(w http.ResponseWriter, r *http.Request) {
 			Token  string
 			Error  string
 			Config config.Config
+			Locale string
 		}{
 			Token:  token,
 			Error:  message,
 			Config: *h.cfg,
+			Locale: auth.RequestLocale(r),
 		}
 		terr := h.templates(w, "signup.go.tmpl", data)
 		if terr != nil {
@@ -248,18 +261,18 @@ func (h *Handlers) SignupSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if username == "" || password == "" {
-		renderError(i18n.T("Enter a username and password."))
+		renderError(tr(r, "Enter a username and password."))
 		return
 	}
 
 	if password != confirm {
-		renderError(i18n.T("Passwords do not match."))
+		renderError(tr(r, "Passwords do not match."))
 		return
 	}
 
 	err = db.IsValidUsername(username)
 	if err != nil {
-		renderError(i18n.T(err.Error()))
+		renderError(tr(r, err.Error()))
 		return
 	}
 
@@ -270,7 +283,7 @@ func (h *Handlers) SignupSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if email == "" {
-		renderError(i18n.T("Invite link is invalid or expired."))
+		renderError(tr(r, "Invite link is invalid or expired."))
 		return
 	}
 
@@ -284,7 +297,7 @@ func (h *Handlers) SignupSubmit(w http.ResponseWriter, r *http.Request) {
 	u, err := db.Storage.CreateUser(username, email, hash, false)
 	if err != nil {
 		log.Printf("signup: CreateUser: %v", err)
-		renderError(i18n.T("Could not create the user. The username may already be taken."))
+		renderError(tr(r, "Could not create the user. The username may already be taken."))
 		return
 	}
 
@@ -362,7 +375,7 @@ func (h *Handlers) InviteCreate(w http.ResponseWriter, r *http.Request) {
 	email := strings.TrimSpace(r.FormValue("email"))
 	if email == "" {
 		http.Redirect(w, r,
-			h.cfg.BaseURL+"/tools/invites?error="+url.QueryEscape(i18n.T("Enter an email.")),
+			h.cfg.BaseURL+"/tools/invites?error="+url.QueryEscape(tr(r, "Enter an email.")),
 			http.StatusFound)
 		return
 	}

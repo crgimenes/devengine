@@ -52,6 +52,12 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /tools/users/{ref}/update", h.ToolsUsersUpdate)
 	mux.HandleFunc("POST /tools/users/{ref}/reset-password", h.ToolsUsersResetPassword)
 	mux.HandleFunc("GET /tools/search-forms", h.ToolsSearchForms)
+	mux.HandleFunc("GET /tools/translations", h.ToolsTranslations)
+	mux.HandleFunc("POST /tools/translations", h.ToolsTranslationsSave)
+	mux.HandleFunc("GET /tools/translations/export.csv", h.ToolsTranslationsExport)
+	mux.HandleFunc("GET /tools/translations/export.go", h.ToolsTranslationsExportGo)
+	mux.HandleFunc("POST /tools/translations/import", h.ToolsTranslationsImport)
+	mux.HandleFunc("POST /tools/translations/content", h.ToolsTranslationsContentSave)
 	mux.HandleFunc("GET /tools/filo", h.ToolsFilo)
 	mux.HandleFunc("POST /tools/filo/run", h.ToolsFiloRun)
 

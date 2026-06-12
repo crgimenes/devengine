@@ -9,13 +9,14 @@ import (
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/devengine/log"
 	"github.com/crgimenes/devengine/templates"
 )
 
 // loadFormMenu resolves the navbar menu bound to a form, if any. Returns the
 // item tree and the menu machine_name (empty when the form has no menu).
-func loadFormMenu(form *db.Form) ([]db.MenuItemNode, string) {
+func loadFormMenu(loc string, form *db.Form) ([]db.MenuItemNode, string) {
 	if form.MenuID == nil {
 		return nil, ""
 	}
@@ -27,7 +28,9 @@ func loadFormMenu(form *db.Form) ([]db.MenuItemNode, string) {
 	if err != nil {
 		return nil, menu.MachineName
 	}
-	return db.BuildMenuItemTreeWithName(items, menu.MachineName), menu.MachineName
+	nodes := db.BuildMenuItemTreeWithName(items, menu.MachineName)
+	translateMenuNodes(loc, nodes)
+	return nodes, menu.MachineName
 }
 
 // formListContext loads the form (by machine_name), its bound entity type and
@@ -58,7 +61,9 @@ func (h *Handlers) formListContext(w http.ResponseWriter, r *http.Request) (*db.
 		h.serverError(w, r, "formListContext", err)
 		return nil, nil, nil, false
 	}
-	attributes = listColumns(form, attributes)
+	loc := auth.RequestLocale(r)
+	attributes = listColumns(loc, form, attributes)
+	translateFormContent(loc, form, nil, attributes)
 	return form, et, attributes, true
 }
 
@@ -103,8 +108,9 @@ func referenceLabelMaps(form *db.Form, attributes []db.EAVAttribute) map[string]
 
 // listColumns restricts the listing to the attributes bound to the form's
 // elements, in element order, so each form over an entity is its own view.
-// A form without bound fields keeps every attribute (legacy behavior).
-func listColumns(form *db.Form, attributes []db.EAVAttribute) []db.EAVAttribute {
+// Column headers take the ELEMENT label (translated): the form names its own
+// columns. A form without bound fields keeps every attribute.
+func listColumns(loc string, form *db.Form, attributes []db.EAVAttribute) []db.EAVAttribute {
 	elements, err := db.Storage.ListFormElements(form.ID)
 	if err != nil {
 		return attributes
@@ -124,7 +130,11 @@ func listColumns(form *db.Form, attributes []db.EAVAttribute) []db.EAVAttribute 
 			continue
 		}
 		seen[*el.EAVAttributeID] = true
-		out = append(out, *attr)
+		col := *attr
+		if el.Label != "" {
+			col.Label = i18n.ContentOr(loc, el.ReferenceID, "label", el.Label)
+		}
+		out = append(out, col)
 	}
 	if len(out) == 0 {
 		return attributes
@@ -183,7 +193,7 @@ func (h *Handlers) FormsRuntimeList(w http.ResponseWriter, r *http.Request) {
 
 	resolveReferenceDisplays(form, attributes, rows)
 
-	menuItems, menuMachineName := loadFormMenu(form)
+	menuItems, menuMachineName := loadFormMenu(auth.RequestLocale(r), form)
 
 	message := r.URL.Query().Get("message")
 	if len(message) > 200 {

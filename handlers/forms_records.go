@@ -9,7 +9,6 @@ import (
 
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/db"
-	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/devengine/log"
 )
 
@@ -228,7 +227,7 @@ func loadFormAndEntity(r *http.Request, w http.ResponseWriter) (*db.Form, *db.EA
 	}
 	if form.EAVEntityTypeID == nil {
 		http.Redirect(w, r,
-			"/tools/forms/"+formRefID+"/edit?message="+i18n.T("Form has no linked EAV table"),
+			"/tools/forms/"+formRefID+"/edit?message="+tr(r, "Form has no linked EAV table"),
 			http.StatusSeeOther)
 		return nil, nil, fmt.Errorf("no entity type")
 	}

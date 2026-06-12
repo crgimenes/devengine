@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"net/http/httptest"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -38,7 +39,7 @@ func setupFiloTest(t *testing.T) (*Handlers, *db.User) {
 func TestRunFiloScriptReturnsValue(t *testing.T) {
 	h, user := setupFiloTest(t)
 
-	got := h.runFiloScript(user, `(str-concat "hello, " field:name)`, `{"field:name": "Alice"}`)
+	got := h.runFiloScript(httptest.NewRequest("POST", "/tools/filo/run", nil), user, `(str-concat "hello, " field:name)`, `{"field:name": "Alice"}`)
 	if got.SysError != "" {
 		t.Fatalf("SysError: %s", got.SysError)
 	}
@@ -56,7 +57,7 @@ func TestRunFiloScriptReturnsValue(t *testing.T) {
 func TestRunFiloScriptEmptyScript(t *testing.T) {
 	h, user := setupFiloTest(t)
 
-	got := h.runFiloScript(user, "   ", "")
+	got := h.runFiloScript(httptest.NewRequest("POST", "/tools/filo/run", nil), user, "   ", "")
 	if got.UserError == "" {
 		t.Fatal("expected UserError for empty script")
 	}
@@ -65,7 +66,7 @@ func TestRunFiloScriptEmptyScript(t *testing.T) {
 func TestRunFiloScriptInvalidGlobalsJSON(t *testing.T) {
 	h, user := setupFiloTest(t)
 
-	got := h.runFiloScript(user, `"x"`, `{not json}`)
+	got := h.runFiloScript(httptest.NewRequest("POST", "/tools/filo/run", nil), user, `"x"`, `{not json}`)
 	if got.UserError == "" || !strings.Contains(got.UserError, "JSON") {
 		t.Fatalf("UserError = %q, want JSON message", got.UserError)
 	}
@@ -74,7 +75,7 @@ func TestRunFiloScriptInvalidGlobalsJSON(t *testing.T) {
 func TestRunFiloScriptErrorGlobalSurfaces(t *testing.T) {
 	h, user := setupFiloTest(t)
 
-	got := h.runFiloScript(user, `(set error "manual rejection")`, "")
+	got := h.runFiloScript(httptest.NewRequest("POST", "/tools/filo/run", nil), user, `(set error "manual rejection")`, "")
 	if got.UserError != "manual rejection" {
 		t.Fatalf("UserError = %q", got.UserError)
 	}
@@ -83,7 +84,7 @@ func TestRunFiloScriptErrorGlobalSurfaces(t *testing.T) {
 func TestRunFiloScriptSysErrorOnSyntax(t *testing.T) {
 	h, user := setupFiloTest(t)
 
-	got := h.runFiloScript(user, `(this is not valid`, "")
+	got := h.runFiloScript(httptest.NewRequest("POST", "/tools/filo/run", nil), user, `(this is not valid`, "")
 	if got.SysError == "" {
 		t.Fatal("expected SysError for syntactically broken script")
 	}
@@ -92,7 +93,7 @@ func TestRunFiloScriptSysErrorOnSyntax(t *testing.T) {
 func TestRunFiloScriptListsGlobalsBack(t *testing.T) {
 	h, user := setupFiloTest(t)
 
-	got := h.runFiloScript(user, `(set greeting "hi")`, `{"field:name": "Alice"}`)
+	got := h.runFiloScript(httptest.NewRequest("POST", "/tools/filo/run", nil), user, `(set greeting "hi")`, `{"field:name": "Alice"}`)
 	if got.SysError != "" {
 		t.Fatalf("SysError: %s", got.SysError)
 	}

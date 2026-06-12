@@ -8,7 +8,6 @@ import (
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
-	"github.com/crgimenes/devengine/i18n"
 )
 
 // ToolsDatabaseSchemaEAVAttributeNew shows the form to create a new attribute
@@ -153,7 +152,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeCreate(w http.ResponseWriter, 
 	// Validation
 	if machineName == "" || label == "" || primitiveKind == "" {
 		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/edit?message="+
-			i18n.T("Machine name, label and type are required"), http.StatusSeeOther)
+			tr(r, "Machine name, label and type are required"), http.StatusSeeOther)
 		return
 	}
 
@@ -232,12 +231,12 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeCreate(w http.ResponseWriter, 
 	if err != nil {
 		ref := logRef("create attribute", err)
 		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/edit?message="+
-			i18n.T("Could not create the attribute (ref %s)", ref), http.StatusSeeOther)
+			tr(r, "Could not create the attribute (ref %s)", ref), http.StatusSeeOther)
 		return
 	}
 
 	// Success - redirect back to edit page
-	http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/edit?message="+i18n.T("Attribute created successfully"), http.StatusSeeOther)
+	http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/edit?message="+tr(r, "Attribute created successfully"), http.StatusSeeOther)
 }
 
 // ToolsDatabaseSchemaEAVAttributeDelete handles POST requests to soft-delete an attribute
@@ -286,12 +285,12 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeDelete(w http.ResponseWriter, 
 	if err != nil {
 		ref := logRef("delete attribute", err)
 		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/edit?message="+
-			i18n.T("Could not delete the attribute (ref %s)", ref), http.StatusSeeOther)
+			tr(r, "Could not delete the attribute (ref %s)", ref), http.StatusSeeOther)
 		return
 	}
 
 	// Success
-	http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/edit?message="+i18n.T("Attribute deleted successfully"), http.StatusSeeOther)
+	http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/edit?message="+tr(r, "Attribute deleted successfully"), http.StatusSeeOther)
 }
 
 // ToolsDatabaseSchemaEAVAttributeUpdate handles POST requests to update an existing attribute
@@ -351,7 +350,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeUpdate(w http.ResponseWriter, 
 	// Validation
 	if machineName == "" || label == "" || primitiveKind == "" {
 		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/edit?message="+
-			i18n.T("Machine name, label and type are required"), http.StatusSeeOther)
+			tr(r, "Machine name, label and type are required"), http.StatusSeeOther)
 		return
 	}
 
@@ -430,10 +429,10 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeUpdate(w http.ResponseWriter, 
 	if err != nil {
 		ref := logRef("update attribute", err)
 		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/edit?message="+
-			i18n.T("Could not update the attribute (ref %s)", ref), http.StatusSeeOther)
+			tr(r, "Could not update the attribute (ref %s)", ref), http.StatusSeeOther)
 		return
 	}
 
 	// Success
-	http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/edit?message="+i18n.T("Attribute updated successfully"), http.StatusSeeOther)
+	http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/edit?message="+tr(r, "Attribute updated successfully"), http.StatusSeeOther)
 }

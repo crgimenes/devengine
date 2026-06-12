@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="pt-BR" data-bs-theme="dark">
+  <head>
+    {{template "head" .}}
+  </head>
+
+  <body>
+    {{template "navbar" .}}
+
+    <main class="container-fluid py-4 py-md-5">
+        {{if .Message}}
+        <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
+            {{.Message}}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {{end}}
+
+        <div class="row">
+            <div class="col-md-3">
+                {{template "tools_sidebar" .}}
+            </div>
+            <div class="col-md-9">
+                <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-2">
+                    <div>
+                        <h2 class="mb-1">{{t $.Locale "Translations"}}</h2>
+                        <p class="text-muted mb-0">{{t $.Locale "Adjust the system texts per language. Empty restores the built-in translation."}}</p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="/tools/translations/export.csv?locale={{.Target}}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-download me-1"></i>{{t $.Locale "Export CSV"}}
+                        </a>
+                        <a href="/tools/translations/export.go?locale={{.Target}}" class="btn btn-outline-secondary btn-sm">
+                            <i class="bi bi-filetype-go me-1"></i>{{t $.Locale "Export Go"}}
+                        </a>
+                    </div>
+                </div>
+
+                <ul class="nav nav-tabs mb-4">
+                    <li class="nav-item">
+                        <a class="nav-link {{if eq .Tab "system"}}active{{end}}" href="/tools/translations?locale={{.Target}}">{{t $.Locale "System texts"}}</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {{if eq .Tab "content"}}active{{end}}" href="/tools/translations?tab=content&locale={{.Target}}">{{t $.Locale "Your content"}}</a>
+                    </li>
+                </ul>
+
+                <form method="get" action="/tools/translations" class="row g-2 mb-4">
+                    <input type="hidden" name="tab" value="{{.Tab}}">
+                    <div class="col-auto">
+                        <label class="form-label small text-muted" for="locale">{{t $.Locale "Language being edited"}}</label>
+                        <select class="form-select" id="locale" name="locale" onchange="this.form.submit()">
+                            {{$target := .Target}}
+                            {{range .Locales}}
+                            <option value="{{.}}" {{if eq . $target}}selected{{end}}>{{.}}</option>
+                            {{end}}
+                        </select>
+                    </div>
+                    <div class="col">
+                        <label class="form-label small text-muted" for="q">{{t $.Locale "Filter keys"}}</label>
+                        <div class="input-group">
+                            <input type="text" class="form-control" id="q" name="q" value="{{.Query}}">
+                            <button type="submit" class="btn btn-primary">{{t $.Locale "Search"}}</button>
+                        </div>
+                    </div>
+                </form>
+
+                {{if eq .Tab "system"}}
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h6 class="card-title">{{t $.Locale "New key"}}</h6>
+                        <p class="text-muted small">{{t $.Locale "Add a new key (application strings) or a translation for a new locale."}}</p>
+                        <form method="post" action="/tools/translations" class="row g-2">
+                            <div class="col-md-2">
+                                <input type="text" class="form-control" name="locale" placeholder="{{t $.Locale "Locale"}}" value="{{.Target}}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" name="msg_key" placeholder="{{t $.Locale "English (key)"}}" required>
+                            </div>
+                            <div class="col-md-4">
+                                <input type="text" class="form-control" name="translation" placeholder="{{t $.Locale "Translation"}}" required>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="submit" class="btn btn-primary w-100">{{t $.Locale "Add"}}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-body">
+                        <h6 class="card-title">{{t $.Locale "Import CSV"}}</h6>
+                        <form method="post" action="/tools/translations/import" enctype="multipart/form-data" class="row g-2">
+                            <input type="hidden" name="locale" value="{{.Target}}">
+                            <div class="col-md-8">
+                                <input type="file" class="form-control" name="file" accept=".csv" required>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-outline-primary w-100">{{t $.Locale "Import CSV"}}</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th class="w-50">{{t $.Locale "English (key)"}}</th>
+                                <th>{{t $.Locale "Translation"}} ({{.Target}})</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{$page := .}}
+                            {{range .Rows}}
+                            <tr>
+                                <td>
+                                    {{.Key}}
+                                    {{if .Overridden}}<span class="badge bg-info ms-2">{{t $page.Locale "adjusted"}}</span>{{end}}
+                                </td>
+                                <td>
+                                    <form method="post" action="/tools/translations" class="d-flex gap-2">
+                                        <input type="hidden" name="locale" value="{{$page.Target}}">
+                                        <input type="hidden" name="q" value="{{$page.Query}}">
+                                        <input type="hidden" name="msg_key" value="{{.Key}}">
+                                        <input type="text" class="form-control form-control-sm" name="translation" value="{{.Effective}}">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">{{t $page.Locale "Save"}}</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+                {{end}}
+
+                {{if eq .Tab "content"}}
+                <p class="text-muted">{{t $.Locale "Translate the labels of your forms, fields, attributes and menus. Empty restores the original."}}</p>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead>
+                            <tr>
+                                <th>{{t $.Locale "Type"}}</th>
+                                <th>{{t $.Locale "Context"}}</th>
+                                <th>{{t $.Locale "Field"}}</th>
+                                <th>{{t $.Locale "Original"}}</th>
+                                <th>{{t $.Locale "Translation"}} ({{.Target}})</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{$page := .}}
+                            {{range .ContentRows}}
+                            <tr>
+                                <td class="text-muted small">{{.Kind}}</td>
+                                <td class="text-muted small">{{.Context}}</td>
+                                <td class="text-muted small">{{.Field}}</td>
+                                <td>
+                                    {{.Original}}
+                                    {{if .Overridden}}<span class="badge bg-info ms-2">{{t $page.Locale "adjusted"}}</span>{{end}}
+                                </td>
+                                <td>
+                                    <form method="post" action="/tools/translations/content" class="d-flex gap-2">
+                                        <input type="hidden" name="locale" value="{{$page.Target}}">
+                                        <input type="hidden" name="q" value="{{$page.Query}}">
+                                        <input type="hidden" name="ref_id" value="{{.RefID}}">
+                                        <input type="hidden" name="field" value="{{.Field}}">
+                                        <input type="text" class="form-control form-control-sm" name="text" value="{{if .Overridden}}{{.Effective}}{{end}}">
+                                        <button type="submit" class="btn btn-sm btn-outline-primary">{{t $page.Locale "Save"}}</button>
+                                    </form>
+                                </td>
+                            </tr>
+                            {{end}}
+                        </tbody>
+                    </table>
+                </div>
+                {{end}}
+            </div>
+        </div>
+    </main>
+    <footer>
+      {{template "footer" .}}
+    </footer>
+    {{template "scripts" .}}
+  </body>
+</html>

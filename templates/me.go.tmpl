@@ -50,6 +50,18 @@
                                 <small class="form-text text-muted">Opcional. Usado para receber convites e notificacoes.</small>
                             </div>
 
+                            <div class="mb-3">
+                                <label for="locale" class="form-label">{{t $.Locale "Language"}}</label>
+                                <select class="form-select" id="locale" name="locale">
+                                    <option value="" {{if not .User.Locale}}selected{{end}}>{{t $.Locale "Automatic (browser language)"}}</option>
+                                    {{$user := .User}}
+                                    {{range .Locales}}
+                                    <option value="{{.}}" {{if eq $user.Locale .}}selected{{end}}>{{.}}</option>
+                                    {{end}}
+                                </select>
+                                <small class="form-text text-muted">{{t $.Locale "Used for system messages and screens."}}</small>
+                            </div>
+
                             <!-- Username -->
                             <div class="mb-3">
                                 <label for="username" 

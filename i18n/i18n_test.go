@@ -81,3 +81,41 @@ func TestEmptyLocaleResetsToDefault(t *testing.T) {
 		t.Fatalf("Locale = %q", Locale())
 	}
 }
+
+func TestMatchHeader(t *testing.T) {
+	resetLocale(t)
+
+	cases := []struct{ header, want string }{
+		{"pt-BR", "pt-BR"},
+		{"pt-br", "pt-BR"},
+		{"pt", "pt-BR"},
+		{"pt-PT", "pt-BR"}, // language prefix match
+		{"en-US,en;q=0.9", "en-US"},
+		{"en-GB,en;q=0.9", "en-US"},
+		{"fr-FR,pt-BR;q=0.8", "pt-BR"}, // first known wins, in header order
+		{"ja-JP", ""},
+		{"*", ""},
+		{"", ""},
+	}
+	for _, c := range cases {
+		got := MatchHeader(c.header)
+		if got != c.want {
+			t.Fatalf("MatchHeader(%q) = %q, want %q", c.header, got, c.want)
+		}
+	}
+}
+
+func TestLocalesAndKnown(t *testing.T) {
+	resetLocale(t)
+
+	locs := Locales()
+	if len(locs) < 2 {
+		t.Fatalf("Locales = %v, want at least en-US and pt-BR", locs)
+	}
+	if !Known("en-US") || !Known("pt-BR") {
+		t.Fatal("built-in locales not known")
+	}
+	if Known("ja-JP") {
+		t.Fatal("unknown locale reported as known")
+	}
+}

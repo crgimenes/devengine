@@ -64,12 +64,12 @@ func quotaHandler(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	if config.Cfg.FileQuotaMB <= 0 {
 		_, _ = fmt.Fprintf(w, `<div id="quota" class="text-body-secondary small">%s</div>`,
-			html.EscapeString(i18n.T("%s used", fmtBytes(used))))
+			html.EscapeString(tr(r, "%s used", fmtBytes(used))))
 		return
 	}
 	quota := int64(config.Cfg.FileQuotaMB) << 20
 	_, _ = fmt.Fprintf(w, `<div id="quota" class="text-body-secondary small">%s</div>`,
-		html.EscapeString(i18n.T("%s of %s used", fmtBytes(used), fmtBytes(quota))))
+		html.EscapeString(tr(r, "%s of %s used", fmtBytes(used), fmtBytes(quota))))
 }
 
 // overQuota reports whether adding size bytes would push the user past the
@@ -302,6 +302,11 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 
 }
 
+// tr translates msg into the locale resolved for this request.
+func tr(r *http.Request, msg string, args ...any) string {
+	return i18n.TL(auth.RequestLocale(r), msg, args...)
+}
+
 // renderUploadError re-renders the upload form with a message. It must carry
 // a fresh CSRF token: the template requires .Csrf, and the old inline error
 // structs without it killed the render (blank 500 on any invalid upload).
@@ -385,7 +390,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		file, fh, err := r.FormFile("file")
 		if err != nil {
 			log.Printf("no file in form: %v", err)
-			renderUploadError(w, r, u, i18n.T("Select a file to upload"))
+			renderUploadError(w, r, u, tr(r, "Select a file to upload"))
 			return
 		}
 		defer file.Close()
@@ -416,7 +421,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		)
 		if err != nil {
 			log.Printf("file validation error: %v", err)
-			renderUploadError(w, r, u, i18n.T("Invalid file: %s", err.Error()))
+			renderUploadError(w, r, u, tr(r, "Invalid file: %s", err.Error()))
 			return
 		}
 
@@ -429,7 +434,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if over {
-			renderUploadError(w, r, u, i18n.T("Upload exceeds your storage quota of %s", fmtBytes(int64(config.Cfg.FileQuotaMB)<<20)))
+			renderUploadError(w, r, u, tr(r, "Upload exceeds your storage quota of %s", fmtBytes(int64(config.Cfg.FileQuotaMB)<<20)))
 			return
 		}
 

@@ -363,7 +363,7 @@ func tmplGetMenuMachineName(data any) string {
 // templateFuncMap registers the helper functions available to templates.
 func templateFuncMap() template.FuncMap {
 	return template.FuncMap{
-		"t":     i18n.T,
+		"t":     i18n.TL,
 		"split": strings.Split,
 		"join":  strings.Join,
 		"trim":  strings.TrimSpace,
