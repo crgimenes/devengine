@@ -83,10 +83,18 @@ go test ./...
   here (Go is verbose); cyclomatic complexity is, enforced by golangci-lint.
 - **SQL with numbered columns.** Any statement with more than one column
   aligns column ↔ placeholder ↔ struct field with `-- N` / `// N` comments.
-  Look at any function in `db/db_forms.go` for the shape.
-- **Migrations are append-only.** New schema = new `db/NNNN_name.up.sql`
-  file. Editing an applied migration in place trips the drift warning at
-  boot for every existing database.
+  Look at any function in `db/sqlite/forms.go` for the shape.
+- **Solve it in SQL, not in Go.** Sorting, filtering and pagination belong
+  in the query (`ORDER BY`, `WHERE`, `LIMIT`), not in Go code after the
+  scan. If the database can answer the question, let it. Exceptions:
+  recursive tree shaping of small, already-loaded sets (menu items, form
+  elements) and Filo `pos_load` decoration.
+- **Migrations: one unified schema per backend until 1.0.0.** The engine
+  ships a single `0001_schema.up.sql` in `db/sqlite` and `db/postgres`;
+  schema changes edit it in place and development databases are recreated
+  from scratch (the boot drift warning reminds you). Append-only history
+  starts at 1.0.0. Application migrations use ids `1000`-`9999` and apply
+  on top.
 - **Logging** goes through `github.com/crgimenes/devengine/log` (never the
   stdlib logger directly). Structured fields: `log.Errorw("msg", "k", v)`.
   Never log passwords, tokens or secrets.
