@@ -468,12 +468,14 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 	r.Body = http.MaxBytesReader(w, r.Body, 12<<20)
 	contentType := r.Header.Get("Content-Type")
 	if strings.HasPrefix(contentType, "multipart/form-data") {
-		if err := r.ParseMultipartForm(10 << 20); err != nil { // #nosec G120 -- bounded by MaxBytesReader above
+		err := r.ParseMultipartForm(10 << 20) // #nosec G120 -- bounded by MaxBytesReader above
+		if err != nil {
 			jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Failed to parse multipart form: " + err.Error()})
 			return
 		}
 	} else {
-		if err := r.ParseForm(); err != nil {
+		err := r.ParseForm()
+		if err != nil {
 			jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Failed to parse form"})
 			return
 		}
@@ -607,7 +609,8 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 				jsonResponse(w, http.StatusConflict, map[string]string{"error": "Record modified by another user"})
 				return
 			}
-			if err := updateRecordTx(tx, entityType, currentRecord, attributes, parsedValues); err != nil {
+			err := updateRecordTx(tx, entityType, currentRecord, attributes, parsedValues)
+			if err != nil {
 				jsonResponse(w, http.StatusBadRequest, map[string]string{"error": saveErrorMessage(r, "button updateRecordTx", err)})
 				return
 			}
@@ -623,7 +626,8 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 	}
 
 	// 4. Commit Transaction
-	if err := tx.Commit(); err != nil {
+	err = tx.Commit()
+	if err != nil {
 		ref := logRef("button commit", err)
 		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": tr(r, "Could not finish saving (ref %s)", ref)})
 		return

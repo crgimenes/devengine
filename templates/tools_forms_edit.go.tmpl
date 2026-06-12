@@ -125,7 +125,7 @@
                                 <input class="form-check-input" type="checkbox" id="show_system_info" name="show_system_info"
                                        {{if .Form.ShowSystemInfo}}checked{{end}}>
                                 <label class="form-check-label" for="show_system_info">
-                                    Mostrar dados do registro (Debug)
+                                    {{t $.Locale "Show record system info (debug)"}}
                                 </label>
                                 <div class="form-text">{{t $.Locale "Shows ID, RefID and status at the top of the form."}}</div>
                             </div>
@@ -162,13 +162,13 @@
                     </div>
                     {{else}}
                     <div class="alert alert-secondary mb-4">
-                        <i class="bi bi-info-circle"></i> Nenhum elemento adicionado ainda.
+                        <i class="bi bi-info-circle"></i> {{t $.Locale "No elements added yet."}}
                     </div>
                     {{end}}
                     
                     <!-- Add Element Form -->
                     <div class="border rounded p-3 bg-dark">
-                        <h6 class="mb-3">Adicionar Elemento</h6>
+                        <h6 class="mb-3">{{t $.Locale "Add element"}}</h6>
                         <form method="post" action="/tools/forms/{{.Form.ReferenceID}}/elements/new" id="add-element-form">
                             <div class="row g-2">
                                 <div class="col-md-2">

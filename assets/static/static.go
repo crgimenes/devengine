@@ -1,3 +1,5 @@
+// Package static serves embedded static files with strong ETags and
+// conditional-request (304) handling.
 package static
 
 import (

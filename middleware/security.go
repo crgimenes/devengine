@@ -1,3 +1,5 @@
+// Package middleware provides HTTP middleware shared by devengine
+// applications, such as the security headers wrapper.
 package middleware
 
 import (

@@ -53,7 +53,7 @@
                                         {{if .IsEAV}}
                                             <a href="/tools/database-schema/eav/{{.ReferenceID}}/edit" 
                                                class="btn btn-sm btn-outline-primary eav-edit-btn">
-                                                Editar Estrutura
+                                                {{t $.Locale "Edit structure"}}
                                             </a>
                                         {{else}}
                                             <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="{{t $.Locale "Relational table"}}">
@@ -66,7 +66,7 @@
                         </div>
                     {{else}}
                         <div class="alert alert-secondary" role="alert">
-                            <p class="mb-0">Nenhuma tabela encontrada no banco de dados.</p>
+                            <p class="mb-0">{{t $.Locale "No tables found in the database."}}</p>
                         </div>
                     {{end}}
                 </div>

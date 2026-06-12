@@ -3,6 +3,7 @@ package basic
 // Invite-token persistence on top of the engine's generic magic_token table.
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/crgimenes/devengine/db"
@@ -29,7 +30,7 @@ func CreateInvite(inviteeEmail string) (string, error) {
 
 	err = db.Storage.StoreToken(token, email, inviteAction, expires)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("store invite token: %w", err)
 	}
 
 	return token, nil

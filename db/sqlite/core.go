@@ -223,7 +223,8 @@ func (s *SQLite) Close() {
 	if s == nil {
 		return
 	}
-	if err := s.CheckpointWAL(); err != nil {
+	err := s.CheckpointWAL()
+	if err != nil {
 		log.Println("wal checkpoint:", err)
 	}
 	utils.Closer(s.ro)

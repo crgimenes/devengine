@@ -1,3 +1,5 @@
+// Package auth provides the request authentication entry point (Prelude),
+// logout, per-request locale resolution and a pluggable session provider.
 package auth
 
 import (

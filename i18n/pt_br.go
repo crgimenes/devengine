@@ -122,6 +122,8 @@ func init() {
 		"Invalid file: %s":                        "Arquivo inválido: %s",
 
 		// profile
+		"Invalid tags: %s":          "Categorias inválidas: %s",
+		"Could not create the invite.": "Não foi possível criar o convite.",
 		"API tokens": "Tokens de API",
 		"Bearer tokens for the REST API (/api/v1). The token value is shown only once, right after it is created.": "Tokens de acesso à API REST (/api/v1). O valor do token aparece uma única vez, logo após a criação.",
 		"Token created. Copy it now; it will not be shown again:":                                                  "Token criado. Copie agora; ele não será mostrado de novo:",
@@ -472,7 +474,21 @@ func init() {
 		"e.g. description":                                        "ex: descricao",
 
 		// record search
-		"Global search": "Busca global",
+		"No record matches":                "Nenhum registro corresponde a",
+		"Account information":              "Informações da Conta",
+		"Alternative text":                 "Texto alternativo",
+		"Edit structure":                   "Editar estrutura",
+		"No tables found in the database.": "Nenhuma tabela encontrada no banco de dados.",
+		"Loading...":                       "Carregando...",
+		"Show record system info (debug)":  "Mostrar dados do registro (debug)",
+		"No elements added yet.":           "Nenhum elemento adicionado ainda.",
+		"Add element":                      "Adicionar elemento",
+		"Edit element":                     "Editar elemento",
+		"Text shown in the menu":           "Texto exibido no menu",
+		"- None (root) -":                  "- Nenhum (raiz) -",
+		"No items yet":                     "Nenhum item cadastrado",
+		"Create the first menu":            "Criar o primeiro menu",
+		"Global search":                    "Busca global",
 		"One query across the text fields of every table.": "Uma consulta sobre os campos de texto de todas as tabelas.",
 		"Type and press Enter":                             "Digite e pressione Enter",
 		"Search":                                           "Buscar",

@@ -531,7 +531,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 				Authed: true,
 				Locale: auth.RequestLocale(r),
 				User:   *u,
-				Error:  "Categorias invalidas: " + nerr.Error(),
+				Error:  tr(r, "Invalid tags: %s", nerr.Error()),
 				Config: *config.Cfg,
 			}
 			renderOr500(w, "filemanager_upload.go.tmpl", data)
@@ -666,7 +666,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 				User:      *u,
 				File:      *file,
 				MediaKind: ClassifyMediaKind(file.Filetype, file.Filename),
-				Error:     "Categorias invalidas: " + nerr.Error(),
+				Error:     tr(r, "Invalid tags: %s", nerr.Error()),
 				Config:    *config.Cfg,
 				Csrf:      session.GenerateCSRFToken(w, r),
 			}
@@ -676,7 +676,6 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 
 		// Update file metadata via DB layer
 		err := db.Storage.UpdateFileMetadataByUserAndFilename(u.ID, filename, description, tagsCSV)
-
 		if err != nil {
 			log.Printf("error updating file: %v", err)
 			http.Error(w, "error updating file", http.StatusInternalServerError)
@@ -713,7 +712,8 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 	if filename == "" {
 		filename = r.URL.Query().Get("id")
 	}
-	if err := ValidateFilename(filename); err != nil {
+	err = ValidateFilename(filename)
+	if err != nil {
 		http.Error(w, "invalid file id", http.StatusBadRequest)
 		return
 	}

@@ -194,7 +194,7 @@ func (s *Postgres) ListMenus() ([]db.Menu, error) {
 	var menus []db.Menu
 	for rows.Next() {
 		var m db.Menu
-		if err := rows.Scan(
+		err := rows.Scan(
 			&m.ID,          // 1
 			&m.ReferenceID, // 2
 			&m.MachineName, // 3
@@ -202,7 +202,8 @@ func (s *Postgres) ListMenus() ([]db.Menu, error) {
 			&m.Description, // 5
 			&m.CreatedAt,   // 6
 			&m.UpdatedAt,   // 7
-		); err != nil {
+		)
+		if err != nil {
 			return nil, fmt.Errorf("scan menu: %w", err)
 		}
 		menus = append(menus, m)
@@ -392,7 +393,7 @@ func (s *Postgres) ListMenuItems(menuID int64) ([]db.MenuItem, error) {
 		var jsCode sql.NullString
 		var filoCode sql.NullString
 
-		if err := rows.Scan(
+		err := rows.Scan(
 			&item.ID,          // 1
 			&item.ReferenceID, // 2
 			&item.MenuID,      // 3
@@ -407,7 +408,9 @@ func (s *Postgres) ListMenuItems(menuID int64) ([]db.MenuItem, error) {
 			&item.ZOrder,      // 12
 			&item.CreatedAt,   // 13
 			&item.UpdatedAt,   // 14
-		); err != nil {
+		)
+
+		if err != nil {
 			return nil, fmt.Errorf("scan menu item: %w", err)
 		}
 
@@ -597,7 +600,7 @@ func (s *Postgres) ListSubmenuItems(menuID int64) ([]db.MenuItem, error) {
 		var jsCode sql.NullString
 		var filoCode sql.NullString
 
-		if err := rows.Scan(
+		err := rows.Scan(
 			&item.ID,          // 1
 			&item.ReferenceID, // 2
 			&item.MenuID,      // 3
@@ -612,7 +615,9 @@ func (s *Postgres) ListSubmenuItems(menuID int64) ([]db.MenuItem, error) {
 			&item.ZOrder,      // 12
 			&item.CreatedAt,   // 13
 			&item.UpdatedAt,   // 14
-		); err != nil {
+		)
+
+		if err != nil {
 			return nil, fmt.Errorf("scan submenu item: %w", err)
 		}
 
@@ -656,11 +661,12 @@ func (s *Postgres) MoveMenuItemUp(itemID int64) error {
 	FROM menu_items
 	WHERE id = $1   -- 1
 	AND deleted_at IS NULL`
-	if err := tx.QueryRow(qCurrent, itemID).Scan(
+	err = tx.QueryRow(qCurrent, itemID).Scan(
 		&menuID,        // 1
 		&currentZOrder, // 2
 		&parentID,      // 3
-	); err != nil {
+	)
+	if err != nil {
 		return fmt.Errorf("get current item: %w", err)
 	}
 
@@ -692,10 +698,11 @@ func (s *Postgres) MoveMenuItemUp(itemID int64) error {
 		ORDER BY z_order DESC LIMIT 1`
 		args = []any{menuID, currentZOrder}
 	}
-	if err := tx.QueryRow(qPrev, args...).Scan(
+	err = tx.QueryRow(qPrev, args...).Scan(
 		&prevID,     // 1
 		&prevZOrder, // 2
-	); err != nil {
+	)
+	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil // Already at top
 		}
@@ -709,10 +716,12 @@ func (s *Postgres) MoveMenuItemUp(itemID int64) error {
 		updated_at = CURRENT_TIMESTAMP
 	WHERE id = $2      -- 2
 	`
-	if err := tx.Exec(qUpdate, prevZOrder, itemID); err != nil {
+	err = tx.Exec(qUpdate, prevZOrder, itemID)
+	if err != nil {
 		return fmt.Errorf("update current z_order: %w", err)
 	}
-	if err := tx.Exec(qUpdate, currentZOrder, prevID); err != nil {
+	err = tx.Exec(qUpdate, currentZOrder, prevID)
+	if err != nil {
 		return fmt.Errorf("update previous z_order: %w", err)
 	}
 
@@ -738,11 +747,12 @@ func (s *Postgres) MoveMenuItemDown(itemID int64) error {
 	FROM menu_items
 	WHERE id = $1   -- 1
 	AND deleted_at IS NULL`
-	if err := tx.QueryRow(qCurrent, itemID).Scan(
+	err = tx.QueryRow(qCurrent, itemID).Scan(
 		&menuID,        // 1
 		&currentZOrder, // 2
 		&parentID,      // 3
-	); err != nil {
+	)
+	if err != nil {
 		return fmt.Errorf("get current item: %w", err)
 	}
 
@@ -774,10 +784,11 @@ func (s *Postgres) MoveMenuItemDown(itemID int64) error {
 		ORDER BY z_order ASC LIMIT 1`
 		args = []any{menuID, currentZOrder}
 	}
-	if err := tx.QueryRow(qNext, args...).Scan(
+	err = tx.QueryRow(qNext, args...).Scan(
 		&nextID,     // 1
 		&nextZOrder, // 2
-	); err != nil {
+	)
+	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil // Already at bottom
 		}
@@ -791,10 +802,12 @@ func (s *Postgres) MoveMenuItemDown(itemID int64) error {
 		updated_at = CURRENT_TIMESTAMP
 	WHERE id = $2      -- 2
 	`
-	if err := tx.Exec(qUpdate, nextZOrder, itemID); err != nil {
+	err = tx.Exec(qUpdate, nextZOrder, itemID)
+	if err != nil {
 		return fmt.Errorf("update current z_order: %w", err)
 	}
-	if err := tx.Exec(qUpdate, currentZOrder, nextID); err != nil {
+	err = tx.Exec(qUpdate, currentZOrder, nextID)
+	if err != nil {
 		return fmt.Errorf("update next z_order: %w", err)
 	}
 

@@ -1,3 +1,5 @@
+// Package config holds the process-wide application configuration,
+// populated by the application (typically from init.filo) at boot.
 package config
 
 import "time"

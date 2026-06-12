@@ -75,7 +75,8 @@ func NormalizeTagsCSV(in string) (string, []string, error) {
 	}
 
 	for _, p := range raw {
-		if err := add(p); err != nil {
+		err := add(p)
+		if err != nil {
 			return "", nil, err
 		}
 	}

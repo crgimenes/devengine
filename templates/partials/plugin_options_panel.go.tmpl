@@ -136,7 +136,7 @@
         <!-- Image options -->
         <div id="field-options-image" class="field-ui-options d-none">
             <div class="mb-2">
-                <label for="opt_image_alt_text" class="form-label small">Texto Alternativo</label>
+                <label for="opt_image_alt_text" class="form-label small">{{t .Locale "Alternative text"}}</label>
                 <input type="text" class="form-control form-control-sm plugin-option" id="opt_image_alt_text" 
                        data-key="alt_text" value="{{index $meta "alt_text"}}" placeholder="{{t .Locale "Image description"}}">
                 <div class="form-text">{{t .Locale "Text shown when the image fails to load"}}</div>

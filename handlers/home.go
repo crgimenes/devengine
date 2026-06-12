@@ -1,3 +1,6 @@
+// Package handlers implements the engine's HTTP surface: the dashboard,
+// the /tools authoring screens (schema, forms, menus, users, translations,
+// Filo REPL), the form runtime and the REST API.
 package handlers
 
 import (

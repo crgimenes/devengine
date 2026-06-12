@@ -141,7 +141,8 @@ func (s *Postgres) UpsertEAVValueWithRev(
 		return 0, err
 	}
 
-	if err := tx.Commit(); err != nil {
+	err = tx.Commit()
+	if err != nil {
 		return 0, err
 	}
 

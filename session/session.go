@@ -1,8 +1,7 @@
+// Package session is the in-memory session store (opaque SID -> db.User)
+// with gob persistence across restarts, SSE notification channels per
+// session, and the cookie/CSRF helpers.
 package session
-
-/*
-In-memory session store (opaque SID -> db.User).
-*/
 
 import (
 	"bytes"

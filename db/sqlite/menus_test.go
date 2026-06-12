@@ -14,7 +14,7 @@ func TestMenuCRUD(t *testing.T) {
 	defer s.Close()
 
 	// Create menu
-	menu, err := s.CreateMenu("main_menu", "db.Menu Principal", "db.Menu principal do sistema")
+	menu, err := s.CreateMenu("main_menu", "Main Menu", "Main system menu")
 	if err != nil {
 		t.Fatalf("CreateMenu: %v", err)
 	}
@@ -65,7 +65,7 @@ func TestMenuCRUD(t *testing.T) {
 	}
 
 	// Update menu
-	err = s.UpdateMenu(menu.ID, "main_menu_updated", "db.Menu Atualizado", "Descrição atualizada")
+	err = s.UpdateMenu(menu.ID, "main_menu_updated", "Updated Menu", "Updated description")
 	if err != nil {
 		t.Fatalf("UpdateMenu: %v", err)
 	}
@@ -92,7 +92,7 @@ func TestMenuItemCRUD(t *testing.T) {
 	defer s.Close()
 
 	// Create menu first
-	menu, err := s.CreateMenu("test_menu", "Test db.Menu", "")
+	menu, err := s.CreateMenu("test_menu", "Test Menu", "")
 	if err != nil {
 		t.Fatalf("CreateMenu: %v", err)
 	}
@@ -119,7 +119,7 @@ func TestMenuItemCRUD(t *testing.T) {
 	}
 
 	// Create submenu
-	submenu, err := s.CreateMenuItem(menu.ID, nil, "settings", "Configurações", "bi-gear", "submenu", "", "", "", 2)
+	submenu, err := s.CreateMenuItem(menu.ID, nil, "settings", "Settings", "bi-gear", "submenu", "", "", "", 2)
 	if err != nil {
 		t.Fatalf("CreateMenuItem (submenu): %v", err)
 	}
@@ -297,8 +297,8 @@ func TestMenuItemMachineNameUniquenessPerMenu(t *testing.T) {
 	s := initTestDB(t)
 	defer s.Close()
 
-	menu1, _ := s.CreateMenu("menu1", "db.Menu 1", "")
-	menu2, _ := s.CreateMenu("menu2", "db.Menu 2", "")
+	menu1, _ := s.CreateMenu("menu1", "Menu 1", "")
+	menu2, _ := s.CreateMenu("menu2", "Menu 2", "")
 
 	// Create item in menu1
 	_, err := s.CreateMenuItem(menu1.ID, nil, "home", "Home", "", "link", "/", "", "", 0)

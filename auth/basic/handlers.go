@@ -1,3 +1,5 @@
+// Package basic implements username/password authentication with
+// invite-based signup: login, signup and the sysop invites panel.
 package basic
 
 import (
@@ -385,8 +387,13 @@ func (h *Handlers) InviteCreate(w http.ResponseWriter, r *http.Request) {
 	token, err := CreateInvite(email)
 	if err != nil {
 		log.Printf("invite: CreateInvite(%q): %v", email, err)
+		msg := tr(r, "Could not create the invite.")
+		if strings.Contains(err.Error(), "email") {
+			// Validation problem with the address itself: show it verbatim.
+			msg = err.Error()
+		}
 		http.Redirect(w, r,
-			h.cfg.BaseURL+"/tools/invites?error="+url.QueryEscape(err.Error()),
+			h.cfg.BaseURL+"/tools/invites?error="+url.QueryEscape(msg),
 			http.StatusFound)
 		return
 	}

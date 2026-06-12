@@ -1,3 +1,6 @@
+// Package filemanager implements per-user file storage: uploads with type
+// and quota validation, sharded on-disk layout, metadata editing, full-text
+// search and authenticated serving with ETags.
 package filemanager
 
 import (

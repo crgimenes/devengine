@@ -124,12 +124,14 @@ func getAppliedMigrations(tx db.Tx) (map[string]bool, error) {
 	applied := make(map[string]bool)
 	for rows.Next() {
 		var id string
-		if err := rows.Scan(&id); err != nil {
+		err := rows.Scan(&id)
+		if err != nil {
 			return nil, fmt.Errorf("failed to scan migration id: %w", err)
 		}
 		applied[id] = true
 	}
-	if err := rows.Err(); err != nil {
+	err = rows.Err()
+	if err != nil {
 		return nil, fmt.Errorf("error iterating applied migrations: %w", err)
 	}
 	return applied, nil
@@ -138,7 +140,8 @@ func getAppliedMigrations(tx db.Tx) (map[string]bool, error) {
 // recordMigration inserts a migration ID into the schema_migrations table.
 func recordMigration(tx db.Tx, id string) error {
 	const query = "INSERT INTO schema_migrations (id) VALUES ($1)"
-	if err := tx.Exec(query, id); err != nil {
+	err := tx.Exec(query, id)
+	if err != nil {
 		return fmt.Errorf("failed to record migration %q: %w", id, err)
 	}
 	return nil
@@ -222,16 +225,19 @@ func RunMigrationOn(s db.Store) error {
 			return fmt.Errorf("failed to read migration file %q: %w", m.filename, err)
 		}
 		log.Printf("applying migration: %s", m.id)
-		if err := tx.Exec(string(content)); err != nil {
+		err = tx.Exec(string(content))
+		if err != nil {
 			return fmt.Errorf("failed to apply migration %q: %w", m.id, err)
 		}
-		if err := recordMigration(tx, m.id); err != nil {
+		err = recordMigration(tx, m.id)
+		if err != nil {
 			return err
 		}
 		appliedCount++
 	}
 
-	if err := tx.Commit(); err != nil {
+	err = tx.Commit()
+	if err != nil {
 		return fmt.Errorf("failed to commit transaction: %w", err)
 	}
 	tx = nil

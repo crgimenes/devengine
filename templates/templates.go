@@ -1,3 +1,6 @@
+// Package templates loads and renders the engine's HTML templates,
+// layering engine partials, plugin-contributed templates (RegisterFS) and
+// application overrides, and exposes the template helper functions.
 package templates
 
 import (

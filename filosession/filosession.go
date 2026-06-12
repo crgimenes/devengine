@@ -37,7 +37,8 @@ func RegisterSessionBuiltins(eng *filo.Engine, ctx *Context) {
 }
 
 func (c *Context) userID(_ context.Context, args []filo.Value) (filo.Value, error) {
-	if err := expectArity("session-user-id", args, 0); err != nil {
+	err := expectArity("session-user-id", args, 0)
+	if err != nil {
 		return filo.Value{}, err
 	}
 	if c.user == nil {
@@ -47,7 +48,8 @@ func (c *Context) userID(_ context.Context, args []filo.Value) (filo.Value, erro
 }
 
 func (c *Context) userUsername(_ context.Context, args []filo.Value) (filo.Value, error) {
-	if err := expectArity("session-user-username", args, 0); err != nil {
+	err := expectArity("session-user-username", args, 0)
+	if err != nil {
 		return filo.Value{}, err
 	}
 	if c.user == nil {
@@ -57,7 +59,8 @@ func (c *Context) userUsername(_ context.Context, args []filo.Value) (filo.Value
 }
 
 func (c *Context) userEmail(_ context.Context, args []filo.Value) (filo.Value, error) {
-	if err := expectArity("session-user-email", args, 0); err != nil {
+	err := expectArity("session-user-email", args, 0)
+	if err != nil {
 		return filo.Value{}, err
 	}
 	if c.user == nil {
@@ -67,7 +70,8 @@ func (c *Context) userEmail(_ context.Context, args []filo.Value) (filo.Value, e
 }
 
 func (c *Context) sysop(_ context.Context, args []filo.Value) (filo.Value, error) {
-	if err := expectArity("session-sysop?", args, 0); err != nil {
+	err := expectArity("session-sysop?", args, 0)
+	if err != nil {
 		return filo.Value{}, err
 	}
 	if c.user == nil {

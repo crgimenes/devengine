@@ -1,3 +1,6 @@
+// Package log is the engine's logging front end: a colored text mode for
+// development and an opt-in JSON mode (slog) for production, with caller
+// attribution in both.
 package log
 
 import (

@@ -216,7 +216,7 @@ func (s *Postgres) ListForms() ([]db.Form, error) {
 	var forms []db.Form
 	for rows.Next() {
 		var f db.Form
-		if err := rows.Scan(
+		err := rows.Scan(
 			&f.ID,               // 1
 			&f.ReferenceID,      // 2
 			&f.MachineName,      // 3
@@ -232,7 +232,8 @@ func (s *Postgres) ListForms() ([]db.Form, error) {
 			&f.ExposeAPI,        // 13
 			&f.CreatedAt,        // 14
 			&f.UpdatedAt,        // 15
-		); err != nil {
+		)
+		if err != nil {
 			return nil, fmt.Errorf("scan form: %w", err)
 		}
 		forms = append(forms, f)
@@ -490,7 +491,7 @@ func (s *Postgres) ListFormElements(formID int64) ([]db.FormElement, error) {
 		var parentID sql.NullInt64
 		var eavAttrID sql.NullInt64
 
-		if err := rows.Scan(
+		err := rows.Scan(
 			&e.ID,               // 1
 			&e.ReferenceID,      // 2
 			&e.FormID,           // 3
@@ -517,7 +518,9 @@ func (s *Postgres) ListFormElements(formID int64) ([]db.FormElement, error) {
 			&e.ValidateExpr,     // 24
 			&e.CreatedAt,        // 25
 			&e.UpdatedAt,        // 26
-		); err != nil {
+		)
+
+		if err != nil {
 			return nil, fmt.Errorf("scan form element: %w", err)
 		}
 
@@ -752,7 +755,7 @@ func (s *Postgres) ListGroupElements(formID int64) ([]db.FormElement, error) {
 		var parentID sql.NullInt64
 		var eavAttrID sql.NullInt64
 
-		if err := rows.Scan(
+		err := rows.Scan(
 			&e.ID,           // 1
 			&e.ReferenceID,  // 2
 			&e.FormID,       // 3
@@ -773,7 +776,9 @@ func (s *Postgres) ListGroupElements(formID int64) ([]db.FormElement, error) {
 			&e.HideHelpText, // 18
 			&e.CreatedAt,    // 19
 			&e.UpdatedAt,    // 20
-		); err != nil {
+		)
+
+		if err != nil {
 			return nil, fmt.Errorf("scan group element: %w", err)
 		}
 
@@ -808,11 +813,12 @@ func (s *Postgres) MoveElementUp(elementID int64) error {
 	FROM form_elements
 	WHERE id = $1   -- 1
 	AND deleted_at IS NULL`
-	if err := tx.QueryRow(qCurrent, elementID).Scan(
+	err = tx.QueryRow(qCurrent, elementID).Scan(
 		&formID,        // 1
 		&currentZOrder, // 2
 		&parentID,      // 3
-	); err != nil {
+	)
+	if err != nil {
 		return fmt.Errorf("get current element: %w", err)
 	}
 
@@ -844,10 +850,11 @@ func (s *Postgres) MoveElementUp(elementID int64) error {
 		ORDER BY z_order DESC LIMIT 1`
 		args = []any{formID, currentZOrder}
 	}
-	if err := tx.QueryRow(qPrev, args...).Scan(
+	err = tx.QueryRow(qPrev, args...).Scan(
 		&prevID,     // 1
 		&prevZOrder, // 2
-	); err != nil {
+	)
+	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil // Already at top
 		}
@@ -861,10 +868,12 @@ func (s *Postgres) MoveElementUp(elementID int64) error {
 		updated_at = CURRENT_TIMESTAMP
 	WHERE id = $2      -- 2
 	`
-	if err := tx.Exec(qUpdate, prevZOrder, elementID); err != nil {
+	err = tx.Exec(qUpdate, prevZOrder, elementID)
+	if err != nil {
 		return fmt.Errorf("update current z_order: %w", err)
 	}
-	if err := tx.Exec(qUpdate, currentZOrder, prevID); err != nil {
+	err = tx.Exec(qUpdate, currentZOrder, prevID)
+	if err != nil {
 		return fmt.Errorf("update previous z_order: %w", err)
 	}
 
@@ -890,11 +899,12 @@ func (s *Postgres) MoveElementDown(elementID int64) error {
 	FROM form_elements
 	WHERE id = $1   -- 1
 	AND deleted_at IS NULL`
-	if err := tx.QueryRow(qCurrent, elementID).Scan(
+	err = tx.QueryRow(qCurrent, elementID).Scan(
 		&formID,        // 1
 		&currentZOrder, // 2
 		&parentID,      // 3
-	); err != nil {
+	)
+	if err != nil {
 		return fmt.Errorf("get current element: %w", err)
 	}
 
@@ -926,10 +936,11 @@ func (s *Postgres) MoveElementDown(elementID int64) error {
 		ORDER BY z_order ASC LIMIT 1`
 		args = []any{formID, currentZOrder}
 	}
-	if err := tx.QueryRow(qNext, args...).Scan(
+	err = tx.QueryRow(qNext, args...).Scan(
 		&nextID,     // 1
 		&nextZOrder, // 2
-	); err != nil {
+	)
+	if err != nil {
 		if err == sql.ErrNoRows {
 			return nil // Already at bottom
 		}
@@ -943,10 +954,12 @@ func (s *Postgres) MoveElementDown(elementID int64) error {
 		updated_at = CURRENT_TIMESTAMP
 	WHERE id = $2      -- 2
 	`
-	if err := tx.Exec(qUpdate, nextZOrder, elementID); err != nil {
+	err = tx.Exec(qUpdate, nextZOrder, elementID)
+	if err != nil {
 		return fmt.Errorf("update current z_order: %w", err)
 	}
-	if err := tx.Exec(qUpdate, currentZOrder, nextID); err != nil {
+	err = tx.Exec(qUpdate, currentZOrder, nextID)
+	if err != nil {
 		return fmt.Errorf("update next z_order: %w", err)
 	}
 

@@ -191,7 +191,8 @@ func (c *FiloDBContext) builtinDBQueryVal(ctx context.Context, args []filo.Value
 		dest[i] = &discard
 	}
 
-	if err := rows.Scan(dest...); err != nil {
+	err = rows.Scan(dest...)
+	if err != nil {
 		return filo.Value{}, fmt.Errorf("db-query-val: %w", err)
 	}
 
@@ -355,7 +356,8 @@ func rowsToList(rows *sql.Rows) (filo.Value, error) {
 		result = append(result, rowVal)
 	}
 
-	if err := rows.Err(); err != nil {
+	err = rows.Err()
+	if err != nil {
 		return filo.Value{}, err
 	}
 
@@ -379,7 +381,8 @@ func scanRowToListInternal(rows *sql.Rows, colCount int) (filo.Value, error) {
 		valuePtrs[i] = &values[i]
 	}
 
-	if err := rows.Scan(valuePtrs...); err != nil {
+	err := rows.Scan(valuePtrs...)
+	if err != nil {
 		return filo.Value{}, err
 	}
 

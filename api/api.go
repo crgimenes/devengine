@@ -1,3 +1,5 @@
+// Package api provides small JSON/utility HTTP endpoints used by the
+// engine UI: markdown rendering (sanitized) and the user files listing.
 package api
 
 import (

@@ -71,7 +71,7 @@
                     </div>
                     {{else}}
                     <p class="text-muted">
-                        {{if .Filter}}Nenhum registro corresponde a "{{.Filter}}".
+                        {{if .Filter}}{{t $.Locale "No record matches"}} "{{.Filter}}".
                         {{else}}{{t $.Locale "No records yet."}} <a href="/form/{{.Form.MachineName}}">{{t $.Locale "New"}}</a>
                         {{end}}
                     </p>

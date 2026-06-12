@@ -1,3 +1,5 @@
+// Package utils gathers small dependency-free helpers: opaque IDs, PKCE,
+// email canonicalization, tag/description sanitizing and io closing.
 package utils
 
 import (

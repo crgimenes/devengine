@@ -1,3 +1,6 @@
+// Command admin-bootstrap creates (or resets) the initial sysop user of a
+// devengine application database, prompting for the password on the
+// terminal. Run it once after creating a fresh database.
 package main
 
 import (

@@ -519,7 +519,8 @@ func (h *Handlers) ToolsFormsElementMoveUp(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	if err := db.Storage.MoveElementUp(element.ID); err != nil {
+	err = db.Storage.MoveElementUp(element.ID)
+	if err != nil {
 		h.serverError(w, r, "move element", err)
 		return
 	}
@@ -553,7 +554,8 @@ func (h *Handlers) ToolsFormsElementMoveDown(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
-	if err := db.Storage.MoveElementDown(element.ID); err != nil {
+	err = db.Storage.MoveElementDown(element.ID)
+	if err != nil {
 		h.serverError(w, r, "move element", err)
 		return
 	}

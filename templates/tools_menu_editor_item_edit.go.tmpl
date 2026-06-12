@@ -38,7 +38,7 @@
                                 <label for="label" class="form-label">Label</label>
                                 <input type="text" class="form-control" id="label" name="label" 
                                        value="{{.Item.Label}}" required>
-                                <div class="form-text">Texto exibido no menu</div>
+                                <div class="form-text">{{t $.Locale "Text shown in the menu"}}</div>
                             </div>
 
                             <div class="col-md-6 mb-3">
@@ -60,7 +60,7 @@
                             <div class="col-md-6 mb-3">
                                 <label for="parent_id" class="form-label">{{t $.Locale "Parent item"}}</label>
                                 <select class="form-select" id="parent_id" name="parent_id">
-                                    <option value="">- Nenhum (raiz) -</option>
+                                    <option value="">{{t $.Locale "- None (root) -"}}</option>
                                     {{range .AllItems}}
                                     {{if ne .ID $.Item.ID}}
                                     <option value="{{.ReferenceID}}" {{if and $.Item.ParentID (eq .ID (deref $.Item.ParentID))}}selected{{end}}>

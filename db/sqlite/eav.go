@@ -206,7 +206,7 @@ func (s *SQLite) ListEAVEntityTypes() ([]db.EAVEntityType, error) {
 	var list []db.EAVEntityType
 	for rows.Next() {
 		var et db.EAVEntityType
-		if err := rows.Scan(
+		err := rows.Scan(
 			&et.ID,          // 1
 			&et.ReferenceID, // 2
 			&et.MachineName, // 3
@@ -216,7 +216,8 @@ func (s *SQLite) ListEAVEntityTypes() ([]db.EAVEntityType, error) {
 			&et.PosLoad,     // 7
 			&et.CreatedAt,   // 8
 			&et.UpdatedAt,   // 9
-		); err != nil {
+		)
+		if err != nil {
 			return nil, err
 		}
 		list = append(list, et)
@@ -278,7 +279,8 @@ func (s *SQLite) SoftDeleteEAVEntityType(id int64) error {
 	SET deleted_at = CURRENT_TIMESTAMP
 	WHERE id = ? AND deleted_at IS NULL;` // 1
 
-	if err := s.Exec(sqlUpdate, id); err != nil {
+	err := s.Exec(sqlUpdate, id)
+	if err != nil {
 		return err
 	}
 	return nil
@@ -786,7 +788,7 @@ func (s *SQLite) ListEAVAttributesByEntityTypeID(entityTypeID int64) ([]db.EAVAt
 	var list []db.EAVAttribute
 	for rows.Next() {
 		var attr db.EAVAttribute
-		if err := rows.Scan(
+		err := rows.Scan(
 			&attr.ID,               // 1
 			&attr.ReferenceID,      // 2
 			&attr.EntityTypeID,     // 3
@@ -807,7 +809,8 @@ func (s *SQLite) ListEAVAttributesByEntityTypeID(entityTypeID int64) ([]db.EAVAt
 			&attr.DefaultVDatetime, // 18
 			&attr.CreatedAt,        // 19
 			&attr.UpdatedAt,        // 20
-		); err != nil {
+		)
+		if err != nil {
 			return nil, err
 		}
 		list = append(list, attr)
@@ -821,7 +824,8 @@ func (s *SQLite) SoftDeleteEAVAttribute(id int64) error {
 	SET deleted_at = CURRENT_TIMESTAMP
 	WHERE id = ? AND deleted_at IS NULL;` // 1
 
-	if err := s.Exec(sqlUpdate, id); err != nil {
+	err := s.Exec(sqlUpdate, id)
+	if err != nil {
 		return err
 	}
 	return nil
@@ -983,7 +987,8 @@ func (s *SQLite) ListEAVRecordsByEntityTypeID(entityTypeID int64, limit, offset 
 	WHERE entity_type_id = ? AND deleted_at IS NULL;` // 1
 
 	var total int
-	if err := s.QueryRow(sqlCount, entityTypeID).Scan(&total); err != nil {
+	err := s.QueryRow(sqlCount, entityTypeID).Scan(&total)
+	if err != nil {
 		return nil, 0, err
 	}
 
@@ -1014,7 +1019,7 @@ func (s *SQLite) ListEAVRecordsByEntityTypeID(entityTypeID int64, limit, offset 
 	var list []db.EAVRecord
 	for rows.Next() {
 		var rec db.EAVRecord
-		if err := rows.Scan(
+		err := rows.Scan(
 			&rec.ID,           // 1
 			&rec.ReferenceID,  // 2
 			&rec.EntityTypeID, // 3
@@ -1022,7 +1027,8 @@ func (s *SQLite) ListEAVRecordsByEntityTypeID(entityTypeID int64, limit, offset 
 			&rec.Rev,          // 5
 			&rec.CreatedAt,    // 6
 			&rec.UpdatedAt,    // 7
-		); err != nil {
+		)
+		if err != nil {
 			return nil, 0, err
 		}
 		list = append(list, rec)
@@ -1063,7 +1069,8 @@ func (s *SQLite) SoftDeleteEAVRecord(id int64) error {
 	SET deleted_at = CURRENT_TIMESTAMP
 	WHERE id = ? AND deleted_at IS NULL;` // 1
 
-	if err := s.Exec(sqlUpdate, id); err != nil {
+	err := s.Exec(sqlUpdate, id)
+	if err != nil {
 		return err
 	}
 	return nil
@@ -1208,7 +1215,7 @@ func (s *SQLite) GetEAVValuesByRecordID(recordID int64) ([]db.EAVValue, error) {
 	var list []db.EAVValue
 	for rows.Next() {
 		var val db.EAVValue
-		if err := rows.Scan(
+		err := rows.Scan(
 			&val.RecordID,    // 1
 			&val.AttributeID, // 2
 			&val.VBool,       // 3
@@ -1217,7 +1224,8 @@ func (s *SQLite) GetEAVValuesByRecordID(recordID int64) ([]db.EAVValue, error) {
 			&val.VText,       // 6
 			&val.VDatetime,   // 7
 			&val.UpdatedAt,   // 8
-		); err != nil {
+		)
+		if err != nil {
 			return nil, err
 		}
 		list = append(list, val)

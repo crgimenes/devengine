@@ -11,7 +11,7 @@
     {{end}}
     <td class="text-end">
         <a class="btn btn-sm btn-outline-primary"
-           href="/tools/database-schema/eav/{{$.EntityTypeRefID}}/records/{{.Record.ReferenceID}}/edit">Editar</a>
+           href="/tools/database-schema/eav/{{$.EntityTypeRefID}}/records/{{.Record.ReferenceID}}/edit">{{t $.Locale "Edit"}}</a>
     </td>
 </tr>
 {{end}}
@@ -23,7 +23,7 @@
     hx-target="this">
     <td colspan="{{.ColCount}}" class="text-center text-muted py-3">
         <span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>
-        Carregando mais…
+        {{t $.Locale "Loading more…"}}
     </td>
 </tr>
 {{end}}
