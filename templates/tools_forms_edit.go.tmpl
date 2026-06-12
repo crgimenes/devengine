@@ -113,6 +113,14 @@
                                 </label>
                                 <div class="form-text">{{t $.Locale "Opening /form/{name} shows the searchable listing; the form fields define the columns."}}</div>
                             </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="expose_api" name="expose_api"
+                                       {{if .Form.ExposeAPI}}checked{{end}}>
+                                <label class="form-check-label" for="expose_api">
+                                    {{t $.Locale "Expose as REST API"}}
+                                </label>
+                                <div class="form-text">{{t $.Locale "The form answers under /api/v1/{name} with bearer-token authentication; tokens are created on the profile page."}}</div>
+                            </div>
                             <div class="form-check mt-3">
                                 <input class="form-check-input" type="checkbox" id="show_system_info" name="show_system_info"
                                        {{if .Form.ShowSystemInfo}}checked{{end}}>

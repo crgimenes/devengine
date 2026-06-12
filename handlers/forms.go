@@ -335,6 +335,7 @@ func (h *Handlers) ToolsFormsUpdate(w http.ResponseWriter, r *http.Request) {
 	hideTitle := r.FormValue("hide_title") == "on"
 	showSystemInfo := r.FormValue("show_system_info") == "on"
 	isSearch := r.FormValue("is_search") == "on"
+	exposeAPI := r.FormValue("expose_api") == "on"
 
 	// Validate required fields
 	if machineName == "" || label == "" {
@@ -365,7 +366,7 @@ func (h *Handlers) ToolsFormsUpdate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Update form
-	err = db.Storage.UpdateForm(form.ID, machineName, label, description, eavEntityTypeID, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo, menuID, isSearch)
+	err = db.Storage.UpdateForm(form.ID, machineName, label, description, eavEntityTypeID, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo, menuID, isSearch, exposeAPI)
 	if err != nil {
 		ref := logRef("ToolsFormsUpdate", err)
 		http.Redirect(w, r, "/tools/forms/"+formRefID+"/edit?message="+tr(r, "Could not update (ref %s)", ref), http.StatusSeeOther)

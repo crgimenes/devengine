@@ -30,6 +30,7 @@ func Run(t *testing.T, open Factory) {
 	t.Run("Menus", func(t *testing.T) { testMenus(t, open(t)) })
 	t.Run("I18n", func(t *testing.T) { testI18n(t, open(t)) })
 	t.Run("Schema", func(t *testing.T) { testSchema(t, open(t)) })
+	t.Run("APITokens", func(t *testing.T) { testAPITokens(t, open(t)) })
 	t.Run("Tx", func(t *testing.T) { testTx(t, open(t)) })
 }
 
@@ -623,12 +624,12 @@ func testForms(t *testing.T, s db.Store) {
 	}
 
 	err = s.UpdateForm(form.ID, "cadastro", "Cadastro v2", "atualizado", &et.ID,
-		true, true, false, true, nil, true)
+		true, true, false, true, nil, true, true)
 	if err != nil {
 		t.Fatalf("UpdateForm: %v", err)
 	}
 	byMachine, _ = s.GetFormByMachineName("cadastro")
-	if byMachine.Label != "Cadastro v2" || !byMachine.IsSearch || !byMachine.HideSubmitButton {
+	if byMachine.Label != "Cadastro v2" || !byMachine.IsSearch || !byMachine.HideSubmitButton || !byMachine.ExposeAPI {
 		t.Fatalf("UpdateForm not persisted: %+v", byMachine)
 	}
 
@@ -877,6 +878,74 @@ func testI18n(t *testing.T, s db.Store) {
 	content, _ = s.ListContentTranslations()
 	if len(content) != 0 {
 		t.Fatalf("content translation not deleted: %+v", content)
+	}
+}
+
+func testAPITokens(t *testing.T, s db.Store) {
+	ana, err := s.CreateUser("ana", "ana@example.com", "x", false)
+	if err != nil {
+		t.Fatalf("CreateUser: %v", err)
+	}
+
+	tok, err := s.CreateAPIToken(ana.ID, "hash-aaa", "ci script")
+	if err != nil || tok.ID == 0 || tok.UserID != ana.ID || tok.Label != "ci script" {
+		t.Fatalf("CreateAPIToken: %+v, %v", tok, err)
+	}
+	_, err = s.CreateAPIToken(ana.ID, "hash-aaa", "duplicate")
+	if err == nil {
+		t.Fatal("duplicate token hash must fail")
+	}
+	tok2, err := s.CreateAPIToken(ana.ID, "hash-bbb", "")
+	if err != nil {
+		t.Fatalf("CreateAPIToken 2: %v", err)
+	}
+
+	list, err := s.ListAPITokensByUserID(ana.ID)
+	if err != nil || len(list) != 2 || list[0].ID != tok2.ID {
+		t.Fatalf("ListAPITokensByUserID = %d (newest first?), %v", len(list), err)
+	}
+
+	owner, err := s.GetUserByAPITokenHash("hash-aaa")
+	if err != nil || owner == nil || owner.ID != ana.ID {
+		t.Fatalf("GetUserByAPITokenHash: %+v, %v", owner, err)
+	}
+	owner, err = s.GetUserByAPITokenHash("hash-unknown")
+	if err != nil || owner != nil {
+		t.Fatalf("unknown hash must return nil, nil: %+v, %v", owner, err)
+	}
+
+	// Disabled owner: the token stops resolving.
+	boss, err := s.CreateUser("boss", "boss@example.com", "x", true)
+	if err != nil {
+		t.Fatalf("CreateUser boss: %v", err)
+	}
+	err = s.UpdateUserEnabled(ana.ID, false, boss.ID)
+	if err != nil {
+		t.Fatalf("UpdateUserEnabled: %v", err)
+	}
+	owner, err = s.GetUserByAPITokenHash("hash-aaa")
+	if err != nil || owner != nil {
+		t.Fatalf("disabled owner token must not resolve: %+v, %v", owner, err)
+	}
+	err = s.UpdateUserEnabled(ana.ID, true, boss.ID)
+	if err != nil {
+		t.Fatalf("re-enable: %v", err)
+	}
+
+	// Delete guard: another user's id must not revoke the token.
+	err = s.DeleteAPIToken(tok.ID, boss.ID)
+	if err != nil {
+		t.Fatalf("DeleteAPIToken wrong owner: %v", err)
+	}
+	if owner, _ := s.GetUserByAPITokenHash("hash-aaa"); owner == nil {
+		t.Fatal("token deleted by non-owner")
+	}
+	err = s.DeleteAPIToken(tok.ID, ana.ID)
+	if err != nil {
+		t.Fatalf("DeleteAPIToken: %v", err)
+	}
+	if owner, _ := s.GetUserByAPITokenHash("hash-aaa"); owner != nil {
+		t.Fatal("deleted token still resolves")
 	}
 }
 

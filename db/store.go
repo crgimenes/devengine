@@ -23,6 +23,7 @@ type Store interface {
 	MenuStore
 	I18nStore
 	SchemaStore
+	APITokenStore
 }
 
 // Tx is a write transaction. Query results stay valid until Commit or
@@ -62,6 +63,17 @@ type TokenStore interface {
 	StoreToken(token string, email string, action string, expiresAt time.Time) error
 	ConsumeToken(token, action string) (string, error)
 	PurgeExpiredTokens() error
+}
+
+// APITokenStore manages long-lived bearer credentials for the REST API.
+// Implementations store only the SHA-256 hash; lookups receive the hash of
+// the presented token. GetUserByAPITokenHash returns nil, nil when the hash
+// is unknown or the owner is disabled.
+type APITokenStore interface {
+	CreateAPIToken(userID int64, tokenHash, label string) (*APIToken, error)
+	ListAPITokensByUserID(userID int64) ([]APIToken, error)
+	DeleteAPIToken(id, userID int64) error
+	GetUserByAPITokenHash(tokenHash string) (*User, error)
 }
 
 // UserStore manages accounts, credentials and per-user preferences.
@@ -162,7 +174,7 @@ type FormStore interface {
 	GetFormByRefID(refID string) (*Form, error)
 	GetFormByMachineName(machineName string) (*Form, error)
 	ListForms() ([]Form, error)
-	UpdateForm(id int64, machineName, label, description string, eavEntityTypeID *int64, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo bool, menuID *int64, isSearch bool) error
+	UpdateForm(id int64, machineName, label, description string, eavEntityTypeID *int64, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo bool, menuID *int64, isSearch, exposeAPI bool) error
 	SoftDeleteForm(id int64) error
 
 	CreateFormElement(

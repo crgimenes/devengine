@@ -218,7 +218,7 @@ func TestSearchFormOpensOnListingWithOwnColumns(t *testing.T) {
 		t.Fatalf("CreateFormElement: %v", err)
 	}
 	err = s.UpdateForm(form.ID, form.MachineName, form.Label, "", &et.ID,
-		false, false, false, false, nil, true)
+		false, false, false, false, nil, true, false)
 	if err != nil {
 		t.Fatalf("UpdateForm: %v", err)
 	}
@@ -250,7 +250,7 @@ func TestSearchFormOpensOnListingWithOwnColumns(t *testing.T) {
 		t.Fatalf("CreateFormElement 2: %v", err)
 	}
 	err = s.UpdateForm(form2.ID, form2.MachineName, form2.Label, "", &et.ID,
-		false, false, false, false, nil, true)
+		false, false, false, false, nil, true, false)
 	if err != nil {
 		t.Fatalf("UpdateForm 2: %v", err)
 	}

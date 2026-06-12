@@ -11,7 +11,6 @@ import (
 	"time"
 
 	"github.com/crgimenes/devengine/auth"
-	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
 	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/devengine/session"
@@ -36,22 +35,10 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.Method == http.MethodGet {
-		data := struct {
-			Authed  bool
-			User    db.User
-			Error   string
-			Message string
-			Config  config.Config
-			Locale  string
-			Locales []string
-		}{
-			Authed:  true,
-			User:    *u,
-			Config:  *h.cfg,
-			Locale:  auth.RequestLocale(r),
-			Locales: i18n.Locales(),
-		}
-		h.render(w, "me.go.tmpl", data)
+		h.renderMe(w, r, u, meData{
+			Message: r.URL.Query().Get("message"),
+			Error:   r.URL.Query().Get("error"),
+		})
 		return
 	}
 
@@ -176,23 +163,9 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 
 	updatedUser, err := db.Storage.UpdateUserProfile(u.ID, username, avatarURL, email)
 	if err != nil {
-		data := struct {
-			Authed  bool
-			User    db.User
-			Error   string
-			Message string
-			Config  config.Config
-			Locale  string
-			Locales []string
-		}{
-			Authed:  true,
-			User:    *u,
-			Error:   tr(r, "Could not update the profile (ref %s)", logRef("UpdateUserProfile", err)),
-			Config:  *h.cfg,
-			Locale:  auth.RequestLocale(r),
-			Locales: i18n.Locales(),
-		}
-		h.render(w, "me.go.tmpl", data)
+		h.renderMe(w, r, u, meData{
+			Error: tr(r, "Could not update the profile (ref %s)", logRef("UpdateUserProfile", err)),
+		})
 		return
 	}
 

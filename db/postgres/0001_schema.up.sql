@@ -82,6 +82,16 @@ CREATE TABLE magic_token (
     expires_at TIMESTAMPTZ NOT NULL DEFAULT (now() + interval '3 hours')
 );
 
+CREATE TABLE api_tokens (
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash TEXT NOT NULL UNIQUE, -- SHA-256 hex of the bearer token
+    label TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX idx_api_tokens_user_id ON api_tokens(user_id);
+
 CREATE TABLE filemanager_files (
     id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     user_id BIGINT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
@@ -358,6 +368,10 @@ CREATE TABLE forms (
     -- instead of the create view. Several search forms may point at the
     -- same entity type, each exposing different columns.
     is_search BOOLEAN NOT NULL DEFAULT FALSE,
+
+    -- API form: the form is also reachable as a REST API under /api/v1,
+    -- inheriting the entity rules and the element subset (8.1).
+    expose_api BOOLEAN NOT NULL DEFAULT FALSE,
 
     created_at    TIMESTAMPTZ NOT NULL DEFAULT now(),
     updated_at    TIMESTAMPTZ NOT NULL DEFAULT now(),

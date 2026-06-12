@@ -18,6 +18,7 @@ type Form struct {
 	ShowSystemInfo   bool   // When true, displays record ID and status in runtime
 	MenuID           *int64 // Associated menu for navbar display when form is active
 	IsSearch         bool   // When true, /form/{name} opens the record listing (search view)
+	ExposeAPI        bool   // When true, the form is reachable as a REST API under /api/v1
 	CreatedAt        time.Time
 	UpdatedAt        time.Time
 	DeletedAt        *time.Time

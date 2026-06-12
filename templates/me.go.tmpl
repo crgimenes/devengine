@@ -119,6 +119,39 @@
                             {{end}}
                         </small></p>
                     </div>
+
+                <div class="card mt-4">
+                    <div class="card-body">
+                        <h6 class="card-title">{{t $.Locale "API tokens"}}</h6>
+                        <p class="small text-muted">{{t $.Locale "Bearer tokens for the REST API (/api/v1). The token value is shown only once, right after it is created."}}</p>
+                        {{if .NewToken}}
+                        <div class="alert alert-success" role="alert">
+                            {{t $.Locale "Token created. Copy it now; it will not be shown again:"}}
+                            <code id="new-api-token" class="user-select-all d-block mt-2">{{.NewToken}}</code>
+                        </div>
+                        {{end}}
+                        {{if .Tokens}}
+                        <ul class="list-group list-group-flush mb-3">
+                            {{range .Tokens}}
+                            <li class="list-group-item d-flex justify-content-between align-items-center px-0">
+                                <span>
+                                    {{if .Label}}{{.Label}}{{else}}<span class="text-muted">{{t $.Locale "(no label)"}}</span>{{end}}
+                                    <small class="text-muted d-block">{{t $.Locale "created"}} {{.CreatedAt.Format "2006-01-02 15:04"}}</small>
+                                </span>
+                                <form method="post" action="/me/api-tokens/{{.ID}}/delete" class="mb-0">
+                                    <button type="submit" class="btn btn-sm btn-outline-danger">{{t $.Locale "Revoke"}}</button>
+                                </form>
+                            </li>
+                            {{end}}
+                        </ul>
+                        {{end}}
+                        <form method="post" action="/me/api-tokens" class="d-flex gap-2">
+                            <input type="text" class="form-control form-control-sm" name="label"
+                                   placeholder="{{t $.Locale "Label (e.g. ci script)"}}" maxlength="80">
+                            <button type="submit" class="btn btn-sm btn-primary text-nowrap">{{t $.Locale "Create token"}}</button>
+                        </form>
+                    </div>
+                </div>
                 </div>
             </div>
         </div>

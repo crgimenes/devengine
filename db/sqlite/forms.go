@@ -91,9 +91,10 @@ func (s *SQLite) GetFormByRefID(refID string) (*db.Form, error) {
 		show_system_info,   -- 10
 		menu_id,            -- 11
 		is_search,          -- 12
-		created_at,         -- 13
-		updated_at,         -- 14
-		deleted_at          -- 15
+		expose_api,         -- 13
+		created_at,         -- 14
+		updated_at,         -- 15
+		deleted_at          -- 16
 	FROM forms
 	WHERE reference_id = ? -- 1
 	AND deleted_at IS NULL`
@@ -115,9 +116,10 @@ func (s *SQLite) GetFormByRefID(refID string) (*db.Form, error) {
 		&f.ShowSystemInfo,   // 10
 		&f.MenuID,           // 11
 		&f.IsSearch,         // 12
-		&f.CreatedAt,        // 13
-		&f.UpdatedAt,        // 14
-		&f.DeletedAt,        // 15
+		&f.ExposeAPI,        // 13
+		&f.CreatedAt,        // 14
+		&f.UpdatedAt,        // 15
+		&f.DeletedAt,        // 16
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -144,9 +146,10 @@ func (s *SQLite) GetFormByMachineName(machineName string) (*db.Form, error) {
 		show_system_info,   -- 10
 		menu_id,            -- 11
 		is_search,          -- 12
-		created_at,         -- 13
-		updated_at,         -- 14
-		deleted_at          -- 15
+		expose_api,         -- 13
+		created_at,         -- 14
+		updated_at,         -- 15
+		deleted_at          -- 16
 	FROM forms
 	WHERE machine_name = ? -- 1
 	AND deleted_at IS NULL`
@@ -168,9 +171,10 @@ func (s *SQLite) GetFormByMachineName(machineName string) (*db.Form, error) {
 		&f.ShowSystemInfo,   // 10
 		&f.MenuID,           // 11
 		&f.IsSearch,         // 12
-		&f.CreatedAt,        // 13
-		&f.UpdatedAt,        // 14
-		&f.DeletedAt,        // 15
+		&f.ExposeAPI,        // 13
+		&f.CreatedAt,        // 14
+		&f.UpdatedAt,        // 15
+		&f.DeletedAt,        // 16
 	)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -196,8 +200,9 @@ func (s *SQLite) ListForms() ([]db.Form, error) {
 		show_system_info,   -- 10
 		menu_id,            -- 11
 		is_search,          -- 12
-		created_at,         -- 13
-		updated_at          -- 14
+		expose_api,         -- 13
+		created_at,         -- 14
+		updated_at          -- 15
 	FROM forms
 	WHERE deleted_at IS NULL
 	ORDER BY label`
@@ -224,8 +229,9 @@ func (s *SQLite) ListForms() ([]db.Form, error) {
 			&f.ShowSystemInfo,   // 10
 			&f.MenuID,           // 11
 			&f.IsSearch,         // 12
-			&f.CreatedAt,        // 13
-			&f.UpdatedAt,        // 14
+			&f.ExposeAPI,        // 13
+			&f.CreatedAt,        // 14
+			&f.UpdatedAt,        // 15
 		); err != nil {
 			return nil, fmt.Errorf("scan form: %w", err)
 		}
@@ -235,7 +241,7 @@ func (s *SQLite) ListForms() ([]db.Form, error) {
 }
 
 // UpdateForm updates a form's basic info.
-func (s *SQLite) UpdateForm(id int64, machineName, label, description string, eavEntityTypeID *int64, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo bool, menuID *int64, isSearch bool) error {
+func (s *SQLite) UpdateForm(id int64, machineName, label, description string, eavEntityTypeID *int64, hideSubmitButton, hideCancelButton, hideTitle, showSystemInfo bool, menuID *int64, isSearch, exposeAPI bool) error {
 	const q = `UPDATE forms
 	SET
 		machine_name = ?,       -- 1
@@ -248,8 +254,9 @@ func (s *SQLite) UpdateForm(id int64, machineName, label, description string, ea
 		show_system_info = ?,   -- 8
 		menu_id = ?,            -- 9
 		is_search = ?,          -- 10
+		expose_api = ?,         -- 11
 		updated_at = CURRENT_TIMESTAMP
-	WHERE id = ?                -- 11
+	WHERE id = ?                -- 12
 	AND deleted_at IS NULL`
 	return s.Exec(
 		q,
@@ -263,7 +270,8 @@ func (s *SQLite) UpdateForm(id int64, machineName, label, description string, ea
 		showSystemInfo,   // 8
 		menuID,           // 9
 		isSearch,         // 10
-		id,               // 11
+		exposeAPI,        // 11
+		id,               // 12
 	)
 }
 

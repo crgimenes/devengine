@@ -10,6 +10,8 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("/", h.Home)
 	mux.HandleFunc("GET /me", h.Profile)
 	mux.HandleFunc("POST /me", h.Profile)
+	mux.HandleFunc("POST /me/api-tokens", h.APITokenCreate)
+	mux.HandleFunc("POST /me/api-tokens/{id}/delete", h.APITokenDelete)
 	mux.HandleFunc("GET /tools", h.Tools)
 	mux.HandleFunc("GET /tools/database-schema", h.ToolsDatabaseSchema)
 	mux.HandleFunc("GET /tools/database-schema/eav/new", h.ToolsDatabaseSchemaEAVNew)
@@ -86,6 +88,13 @@ func (h *Handlers) Routes(mux *http.ServeMux) {
 	mux.HandleFunc("POST /form/{machineName}/r/{recordRef}", h.FormsRuntimeUpdate)
 	mux.HandleFunc("POST /form/{machineName}/action/{buttonName}", h.FormsRuntimeButtonAction)
 	mux.HandleFunc("GET /form/{machineName}/actions.js", h.FormsRuntimeActionsJS)
+
+	// REST API (8.1): forms flagged expose_api, bearer-token auth.
+	mux.HandleFunc("GET /api/v1/{machineName}", h.APIRecordsList)
+	mux.HandleFunc("POST /api/v1/{machineName}", h.APIRecordsCreate)
+	mux.HandleFunc("GET /api/v1/{machineName}/{recordRef}", h.APIRecordsGet)
+	mux.HandleFunc("PUT /api/v1/{machineName}/{recordRef}", h.APIRecordsUpdate)
+	mux.HandleFunc("DELETE /api/v1/{machineName}/{recordRef}", h.APIRecordsDelete)
 
 	// Menu Actions (public access via /menu/{menuMachineName})
 	mux.HandleFunc("GET /menu/{menuMachineName}/actions.js", h.MenuActionsJS)
