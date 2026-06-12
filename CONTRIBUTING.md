@@ -1,10 +1,10 @@
 # Contributing to devengine
 
-devengine is a reusable Go engine for data-driven web systems — think of a
-modern, web-native Microsoft Access: tables (EAV entity types), forms over
-them, search forms, menus, and the Filo language for validation rules and
-behaviors. Applications (edev, rpgstudios, tarefas, pedidos) consume the
-engine; the engine never imports them.
+devengine is a reusable Go engine for data-driven web systems: you define
+tables (EAV entity types), build forms and search forms over them, wire
+menus, and attach behavior with the Filo language — validation rules,
+computed fields, buttons. Applications (edev, rpgstudios, tarefas, pedidos)
+consume the engine; the engine never imports them.
 
 The philosophy in three lines:
 
