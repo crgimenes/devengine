@@ -200,6 +200,16 @@ func tmplDeref(p *int64) int64 {
 	return *p
 }
 
+// tmplDerefInt dereferences a pointer to int, returning 0 for nil. Needed
+// when passing a *int to a printf-style helper (e.g. the i18n %d verb),
+// which would otherwise format the pointer address instead of the value.
+func tmplDerefInt(p *int) int {
+	if p == nil {
+		return 0
+	}
+	return *p
+}
+
 // tmplToJSON marshals a value to a JSON string for embedding in attributes.
 func tmplToJSON(v any) string {
 	b, err := json.Marshal(v)
@@ -343,10 +353,11 @@ func templateFuncMap() template.FuncMap {
 		"safeHTML": func(s string) template.HTML {
 			return template.HTML(s) // #nosec G203 -- explicit trusted-content escape hatch
 		},
-		"seq":   tmplSeq,
-		"deref": tmplDeref,
-		"add":   func(a, b int) int { return a + b },
-		"mul":   func(a, b int) int { return a * b },
+		"seq":      tmplSeq,
+		"deref":    tmplDeref,
+		"derefInt": tmplDerefInt,
+		"add":      func(a, b int) int { return a + b },
+		"mul":      func(a, b int) int { return a * b },
 		// htmlDatetime normalizes a stored datetime into the format HTML5
 		// datetime-local / date inputs accept (no timezone suffix).
 		"htmlDatetime": htmlDatetime,

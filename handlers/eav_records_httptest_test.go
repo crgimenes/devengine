@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -356,5 +357,32 @@ func TestFormsRuntimeEditRendersValues(t *testing.T) {
 	assertRendered(t, rr, path)
 	if !strings.Contains(rr.Body.String(), "Comprar leite") {
 		t.Fatalf("runtime edit does not show the stored value")
+	}
+}
+
+// Regression: the "Maximum: N characters" hint on a TEXT field with a
+// max_length must render the value, not the pointer address. The bug
+// (dogfood, QA Fase 4) passed *int to the i18n %d verb, printing the
+// address — a number that changed between renders.
+func TestAdminRecordMaxLengthHint(t *testing.T) {
+	mux, s := newHTTPTestEnv(t)
+	ent := seedAdminEntity(t, s, "")
+	admin := plantUser(t, "admin", true)
+
+	rr := doGet(t, mux, adminRecordsBase(ent)+"/new", admin)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("record new = %d", rr.Code)
+	}
+	body := rr.Body.String()
+	// titulo has max_length 10.
+	if !strings.Contains(body, "Maximum: 10 characters") &&
+		!strings.Contains(body, "Máximo: 10 caracteres") {
+		t.Fatalf("max length hint not rendered as the value 10: %s",
+			body[max(0, strings.Index(body, "aximum")-10):min(len(body), strings.Index(body, "aximum")+40)])
+	}
+	// A pointer address renders as a huge number (>= 6 digits); guard
+	// against the regression returning.
+	if regexp.MustCompile(`(?:Maximum|Máximo): \d{6,}`).MatchString(body) {
+		t.Fatal("max length hint looks like a pointer address")
 	}
 }

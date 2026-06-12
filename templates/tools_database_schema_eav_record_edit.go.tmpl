@@ -104,7 +104,7 @@
                                               rows="3"{{if .MaxLength}} maxlength="{{.MaxLength}}"{{end}}
                                               {{if .IsRequired}}required{{end}}>{{$value}}</textarea>
                                     {{if .MaxLength}}
-                                    <div class="form-text">{{t $.Locale "Maximum: %d characters" .MaxLength}}</div>
+                                    <div class="form-text">{{t $.Locale "Maximum: %d characters" (derefInt .MaxLength)}}</div>
                                     {{end}}
                                 {{else if eq .PrimitiveKind "DATETIME"}}
                                     <input type="datetime-local" 
