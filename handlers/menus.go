@@ -50,6 +50,7 @@ func (h *Handlers) ToolsMenus(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed      bool
 		User        db.User
+		Locale      string
 		Error       string
 		Message     string
 		Config      config.Config
@@ -57,6 +58,7 @@ func (h *Handlers) ToolsMenus(w http.ResponseWriter, r *http.Request) {
 		Menus       []db.Menu
 	}{
 		Authed:      true,
+		Locale:      auth.RequestLocale(r),
 		User:        *user,
 		Message:     message,
 		Config:      *h.cfg,
@@ -90,6 +92,7 @@ func (h *Handlers) ToolsMenusNew(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed      bool
 		User        db.User
+		Locale      string
 		Error       string
 		Message     string
 		Config      config.Config
@@ -98,6 +101,7 @@ func (h *Handlers) ToolsMenusNew(w http.ResponseWriter, r *http.Request) {
 		FormData    struct{ MachineName, Label, Description string }
 	}{
 		Authed:      true,
+		Locale:      auth.RequestLocale(r),
 		User:        *user,
 		Config:      *h.cfg,
 		CurrentPage: "menu-editor",
@@ -279,6 +283,7 @@ func (h *Handlers) ToolsMenusEdit(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed      bool
 		User        db.User
+		Locale      string
 		Error       string
 		Message     string
 		Config      config.Config
@@ -289,6 +294,7 @@ func (h *Handlers) ToolsMenusEdit(w http.ResponseWriter, r *http.Request) {
 		Csrf        string
 	}{
 		Authed:      true,
+		Locale:      auth.RequestLocale(r),
 		User:        *user,
 		Message:     message,
 		Config:      *h.cfg,
@@ -495,6 +501,7 @@ func (h *Handlers) ToolsMenusItemEdit(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed      bool
 		User        db.User
+		Locale      string
 		Error       string
 		Message     string
 		Config      config.Config
@@ -505,6 +512,7 @@ func (h *Handlers) ToolsMenusItemEdit(w http.ResponseWriter, r *http.Request) {
 		Csrf        string
 	}{
 		Authed:      true,
+		Locale:      auth.RequestLocale(r),
 		User:        *user,
 		Message:     message,
 		Config:      *h.cfg,
@@ -715,6 +723,7 @@ func (h *Handlers) ToolsMenusPreview(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed      bool
 		User        db.User
+		Locale      string
 		Config      config.Config
 		CurrentPage string
 		Menu        *db.Menu
@@ -722,6 +731,7 @@ func (h *Handlers) ToolsMenusPreview(w http.ResponseWriter, r *http.Request) {
 		AllItems    []db.MenuItem
 	}{
 		Authed:      true,
+		Locale:      auth.RequestLocale(r),
 		User:        *user,
 		Config:      *h.cfg,
 		CurrentPage: "menu-editor",

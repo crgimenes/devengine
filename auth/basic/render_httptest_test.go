@@ -103,7 +103,7 @@ func TestInvitesPageRendersRealTemplates(t *testing.T) {
 
 	rr := getPath(mux, "/tools/invites", sessionCookie(sid))
 	assertRendered(t, rr, "/tools/invites")
-	if !strings.Contains(rr.Body.String(), "Gerar novo convite") {
+	if !strings.Contains(rr.Body.String(), "Mint a new invite") {
 		t.Fatalf("invites page missing its main form")
 	}
 }

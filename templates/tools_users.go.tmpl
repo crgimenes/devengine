@@ -28,21 +28,21 @@
             <div class="col-md-9">
                 <div class="card p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2 class="mb-0">Usuários</h2>
+                        <h2 class="mb-0">{{t $.Locale "Users"}}</h2>
                         <span class="text-muted small">Total: {{.Total}}</span>
                     </div>
-                    <p class="text-muted">Convites novos são gerados em <a href="/tools/invites">Convites</a>.</p>
+                    <p class="text-muted">{{t $.Locale "New invites are minted at"}} <a href="/tools/invites">{{t $.Locale "Invites"}}</a>.</p>
 
                     {{if .Users}}
                     <div class="table-responsive">
                         <table class="table table-hover align-middle">
                             <thead>
                                 <tr>
-                                    <th>Usuário</th>
+                                    <th>{{t $.Locale "User"}}</th>
                                     <th>Email</th>
                                     <th class="text-center">Sysop</th>
-                                    <th class="text-center">Ativo</th>
-                                    <th class="text-end">Ações</th>
+                                    <th class="text-center">{{t $.Locale "Active"}}</th>
+                                    <th class="text-end">{{t $.Locale "Actions"}}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -51,7 +51,7 @@
                                     <td>
                                         <a href="/tools/users/{{.ReferenceID}}/edit">{{.Username}}</a>
                                         {{if eq .ReferenceID $.CurrentRefID}}
-                                        <span class="badge bg-info ms-2">você</span>
+                                        <span class="badge bg-info ms-2">{{t $.Locale "you"}}</span>
                                         {{end}}
                                     </td>
                                     <td>{{if .Email}}{{.Email}}{{else}}<span class="text-muted">—</span>{{end}}</td>
@@ -62,7 +62,7 @@
                                         {{if .Enabled}}<span class="badge bg-success">ativo</span>{{else}}<span class="badge bg-secondary">inativo</span>{{end}}
                                     </td>
                                     <td class="text-end">
-                                        <a href="/tools/users/{{.ReferenceID}}/edit" class="btn btn-sm btn-outline-primary">Editar</a>
+                                        <a href="/tools/users/{{.ReferenceID}}/edit" class="btn btn-sm btn-outline-primary">{{t $.Locale "Edit"}}</a>
                                     </td>
                                 </tr>
                                 {{end}}
@@ -80,14 +80,14 @@
                                 <span class="page-link">{{.Page}} / {{.Pages}}</span>
                             </li>
                             <li class="page-item {{if not .HasNext}}disabled{{end}}">
-                                {{if .HasNext}}<a class="page-link" href="?page={{.NextPage}}">Próxima</a>{{else}}<span class="page-link">Próxima</span>{{end}}
+                                {{if .HasNext}}<a class="page-link" href="?page={{.NextPage}}">{{t $.Locale "Next"}}</a>{{else}}<span class="page-link">{{t $.Locale "Next"}}</span>{{end}}
                             </li>
                         </ul>
                     </nav>
                     {{end}}
 
                     {{else}}
-                    <p class="text-muted">Nenhum usuário cadastrado.</p>
+                    <p class="text-muted">{{t $.Locale "No users yet."}}</p>
                     {{end}}
                 </div>
             </div>

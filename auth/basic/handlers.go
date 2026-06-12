@@ -334,6 +334,7 @@ func (h *Handlers) InvitesPage(w http.ResponseWriter, r *http.Request) {
 		User        db.User
 		Config      config.Config
 		CurrentPage string
+		Locale      string
 		CreatedURL  string
 		Error       string
 	}{
@@ -341,6 +342,7 @@ func (h *Handlers) InvitesPage(w http.ResponseWriter, r *http.Request) {
 		User:        *u,
 		Config:      *h.cfg,
 		CurrentPage: "invites",
+		Locale:      auth.RequestLocale(r),
 		CreatedURL:  r.URL.Query().Get("created"),
 		Error:       r.URL.Query().Get("error"),
 	}

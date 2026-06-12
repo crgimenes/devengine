@@ -13,7 +13,7 @@
                 {{template "tools_sidebar" .}}
             </div>
             <div class="col-md-9">
-                <h1 class="mb-4">Convites</h1>
+                <h1 class="mb-4">{{t $.Locale "Invites"}}</h1>
 
                 {{if .Error}}
                 <div class="alert alert-danger" role="alert">{{.Error}}</div>
@@ -32,20 +32,20 @@
 
                 <div class="card mb-4">
                     <div class="card-body">
-                        <h5 class="card-title">Gerar novo convite</h5>
+                        <h5 class="card-title">{{t $.Locale "Mint a new invite"}}</h5>
                         <form method="post" action="/tools/invites">
                             <div class="mb-3">
-                                <label for="email" class="form-label">Email do convidado</label>
+                                <label for="email" class="form-label">{{t $.Locale "Invitee email"}}</label>
                                 <input type="email"
                                        class="form-control"
                                        id="email"
                                        name="email"
                                        required>
                                 <small class="form-text text-muted">
-                                    O email fica associado ao token. O convidado escolhe usuário e senha ao aceitar.
+                                    {{t $.Locale "The email is tied to the token. The invitee picks a username and password on acceptance."}}
                                 </small>
                             </div>
-                            <button type="submit" class="btn btn-primary">Gerar link</button>
+                            <button type="submit" class="btn btn-primary">{{t $.Locale "Mint link"}}</button>
                         </form>
                     </div>
                 </div>

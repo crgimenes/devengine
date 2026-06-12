@@ -326,3 +326,41 @@ func TestSchemaAuthoringPagesRenderWithRealTemplates(t *testing.T) {
 		})
 	}
 }
+
+// Render smoke over menu-editor and users detail pages (i18n slice 3).
+func TestMenuAndUserPagesRenderWithRealTemplates(t *testing.T) {
+	mux, s := newHTTPTestEnv(t)
+	admin := plantUser(t, "admin", true)
+
+	menu, err := s.CreateMenu("m1", "Menu Um", "")
+	if err != nil {
+		t.Fatalf("CreateMenu: %v", err)
+	}
+	item, err := s.CreateMenuItem(menu.ID, nil, "home", "Home", "", "link", "/", "", "", 0)
+	if err != nil {
+		t.Fatalf("CreateMenuItem: %v", err)
+	}
+	target := plantUserRecord(t, "bob")
+
+	paths := []string{
+		"/tools/menu-editor/new",
+		"/tools/menu-editor/" + menu.ReferenceID + "/edit",
+		"/tools/menu-editor/" + menu.ReferenceID + "/items/" + item.ReferenceID + "/edit",
+		"/tools/users/" + target + "/edit",
+	}
+	for _, p := range paths {
+		t.Run(p, func(t *testing.T) {
+			assertRendered(t, doGet(t, mux, p, admin), p)
+		})
+	}
+}
+
+// plantUserRecord creates a plain user and returns its reference id.
+func plantUserRecord(t *testing.T, username string) string {
+	t.Helper()
+	u, err := db.Storage.CreateUser(username, username+"@example.com", "x", false)
+	if err != nil {
+		t.Fatalf("CreateUser(%s): %v", username, err)
+	}
+	return u.ReferenceID
+}

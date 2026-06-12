@@ -51,6 +51,7 @@ func (h *Handlers) ToolsUsers(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed       bool
 		User         db.User
+		Locale       string
 		Config       config.Config
 		CurrentPage  string
 		Message      string
@@ -66,6 +67,7 @@ func (h *Handlers) ToolsUsers(w http.ResponseWriter, r *http.Request) {
 		CurrentRefID string
 	}{
 		Authed:       true,
+		Locale:       auth.RequestLocale(r),
 		User:         *user,
 		Config:       *h.cfg,
 		CurrentPage:  "users",
@@ -111,6 +113,7 @@ func (h *Handlers) ToolsUsersEdit(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed       bool
 		User         db.User
+		Locale       string
 		Config       config.Config
 		CurrentPage  string
 		Message      string
@@ -121,6 +124,7 @@ func (h *Handlers) ToolsUsersEdit(w http.ResponseWriter, r *http.Request) {
 		CurrentRefID string
 	}{
 		Authed:       true,
+		Locale:       auth.RequestLocale(r),
 		User:         *current,
 		Config:       *h.cfg,
 		CurrentPage:  "users",

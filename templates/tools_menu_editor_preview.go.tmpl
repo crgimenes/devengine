@@ -69,16 +69,16 @@
                     <div class="d-flex justify-content-between align-items-center mb-3">
                         <h2 class="mb-0">Preview: {{.Menu.Label}}</h2>
                         <a href="/tools/menu-editor/{{.Menu.ReferenceID}}/edit" class="btn btn-outline-secondary">
-                            <i class="bi bi-arrow-left"></i> Voltar para Edição
+                            <i class="bi bi-arrow-left"></i> {{t $.Locale "Back to editing"}}
                         </a>
                     </div>
                     
                     <div class="alert alert-info">
                         <i class="bi bi-info-circle"></i> Este é um preview do menu <strong>{{.Menu.MachineName}}</strong>.
-                        O menu está sendo exibido na barra de navegação acima.
+                        {{t $.Locale "The menu is being shown on the navbar above."}}
                     </div>
 
-                    <h5>Estrutura do Menu</h5>
+                    <h5>{{t $.Locale "Menu structure"}}</h5>
                     <ul class="list-group">
                         {{range .Items}}
                         <li class="list-group-item">

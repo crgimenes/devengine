@@ -22,8 +22,8 @@
             <div class="col-md-9">
                 <div class="card p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2 class="mb-0">Editar Item</h2>
-                        <a href="/tools/menu-editor/{{.Menu.ReferenceID}}/edit" class="btn btn-outline-secondary">Voltar</a>
+                        <h2 class="mb-0">{{t $.Locale "Edit item"}}</h2>
+                        <a href="/tools/menu-editor/{{.Menu.ReferenceID}}/edit" class="btn btn-outline-secondary">{{t $.Locale "Back"}}</a>
                     </div>
                     
                     {{if .Error}}
@@ -42,23 +42,23 @@
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label for="machine_name" class="form-label">Nome da Máquina</label>
+                                <label for="machine_name" class="form-label">{{t $.Locale "Machine name"}}</label>
                                 <input type="text" class="form-control" id="machine_name" name="machine_name" 
                                        value="{{.Item.MachineName}}" required pattern="[a-z][a-z0-9_]*">
-                                <div class="form-text">Identificador único do item</div>
+                                <div class="form-text">{{t $.Locale "Unique identifier of the item"}}</div>
                             </div>
                         </div>
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="icon" class="form-label">Ícone</label>
+                                <label for="icon" class="form-label">{{t $.Locale "Icon"}}</label>
                                 <input type="text" class="form-control" id="icon" name="icon" 
                                        value="{{.Item.Icon}}" placeholder="bi-house">
                                 <div class="form-text">Classe Bootstrap Icons (<a href="https://icons.getbootstrap.com/" target="_blank">ver ícones</a>)</div>
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label for="parent_id" class="form-label">Item Pai</label>
+                                <label for="parent_id" class="form-label">{{t $.Locale "Parent item"}}</label>
                                 <select class="form-select" id="parent_id" name="parent_id">
                                     <option value="">- Nenhum (raiz) -</option>
                                     {{range .AllItems}}
@@ -75,7 +75,7 @@
 
                         <div class="row">
                             <div class="col-md-6 mb-3">
-                                <label for="item_type" class="form-label">Tipo</label>
+                                <label for="item_type" class="form-label">{{t $.Locale "Type"}}</label>
                                 <select class="form-select" id="item_type" name="item_type">
                                     <option value="link" {{if eq .Item.ItemType "link"}}selected{{end}}>Link</option>
                                     <option value="submenu" {{if eq .Item.ItemType "submenu"}}selected{{end}}>Submenu</option>
@@ -85,35 +85,35 @@
                             </div>
 
                             <div class="col-md-6 mb-3">
-                                <label for="url" class="form-label">Link (URL)</label>
+                                <label for="url" class="form-label">{{t $.Locale "Link (URL)"}}</label>
                                 <input type="text" class="form-control" id="url" name="url" 
                                        value="{{.Item.URL}}" placeholder="/exemplo ou https://...">
-                                <div class="form-text">URL para navegação direta</div>
+                                <div class="form-text">{{t $.Locale "URL for direct navigation"}}</div>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="js_code" class="form-label">Código JavaScript</label>
+                            <label for="js_code" class="form-label">{{t $.Locale "JavaScript code"}}</label>
                             <textarea class="form-control font-monospace" id="js_code" name="js_code" rows="4" 
                                       placeholder="alert('Olá!');&#10;console.log('teste');">{{.Item.JSCode}}</textarea>
-                            <div class="form-text">JavaScript executado no cliente quando o item é clicado</div>
+                            <div class="form-text">{{t $.Locale "JavaScript run on the client when the item is clicked"}}</div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="filo_code" class="form-label">Código Filo</label>
+                            <label for="filo_code" class="form-label">{{t $.Locale "Filo code"}}</label>
                             <textarea class="form-control font-monospace" id="filo_code" name="filo_code" rows="4"
                                       placeholder="(let () (print &quot;Executado no servidor&quot;))">{{.Item.FiloCode}}</textarea>
-                            <div class="form-text">Código Filo executado no servidor quando o item é clicado</div>
+                            <div class="form-text">{{t $.Locale "Filo code run on the server when the item is clicked"}}</div>
                         </div>
 
                         <div class="alert alert-info mb-3">
-                            <strong>Ordem de Execução:</strong> Quando acionado, executa na ordem: <strong>Filo</strong> → <strong>JavaScript</strong> → <strong>Link</strong>.
-                            Se o código Filo retornar erro ou redirecionamento, as etapas seguintes são ignoradas.
+                            <strong>{{t $.Locale "Execution order:"}}</strong> Filo → JavaScript → Link.
+                            {{t $.Locale "If the Filo code returns an error or a redirect, the following steps are skipped."}}
                         </div>
 
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">Salvar</button>
-                            <a href="/tools/menu-editor/{{.Menu.ReferenceID}}/edit" class="btn btn-outline-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">{{t $.Locale "Save"}}</button>
+                            <a href="/tools/menu-editor/{{.Menu.ReferenceID}}/edit" class="btn btn-outline-secondary">{{t $.Locale "Cancel"}}</a>
                         </div>
                     </form>
                 </div>

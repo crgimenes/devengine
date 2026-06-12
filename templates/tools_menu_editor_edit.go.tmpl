@@ -34,7 +34,7 @@
                             <a href="/tools/menu-editor/{{.Menu.ReferenceID}}/preview" class="btn btn-success me-2">
                                 <i class="bi bi-play-fill"></i> Testar Menu
                             </a>
-                            <a href="/tools/menu-editor" class="btn btn-outline-secondary">Voltar</a>
+                            <a href="/tools/menu-editor" class="btn btn-outline-secondary">{{t $.Locale "Back"}}</a>
                         </div>
                     </div>
                     
@@ -43,30 +43,30 @@
                         
                         <div class="row">
                             <div class="col-md-4 mb-3">
-                                <label for="label" class="form-label">Nome</label>
+                                <label for="label" class="form-label">{{t $.Locale "Name"}}</label>
                                 <input type="text" class="form-control" id="label" name="label" 
                                        value="{{.Menu.Label}}" required>
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label for="machine_name" class="form-label">Nome da Máquina</label>
+                                <label for="machine_name" class="form-label">{{t $.Locale "Machine name"}}</label>
                                 <input type="text" class="form-control" id="machine_name" name="machine_name" 
                                        value="{{.Menu.MachineName}}" required pattern="[a-z][a-z0-9_]*">
                             </div>
                             <div class="col-md-4 mb-3">
-                                <label for="description" class="form-label">Descrição</label>
+                                <label for="description" class="form-label">{{t $.Locale "Description"}}</label>
                                 <input type="text" class="form-control" id="description" name="description" 
                                        value="{{.Menu.Description}}">
                             </div>
                         </div>
                         
-                        <button type="submit" class="btn btn-primary btn-sm">Salvar Alterações</button>
+                        <button type="submit" class="btn btn-primary btn-sm">{{t $.Locale "Save changes"}}</button>
                     </form>
                 </div>
 
                 <!-- Menu Items Card -->
                 <div class="card p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h4 class="mb-0">Itens do Menu</h4>
+                        <h4 class="mb-0">{{t $.Locale "Menu items"}}</h4>
                     </div>
 
                     {{if .Items}}
@@ -77,9 +77,9 @@
                                     <th class="col-order">Ordem</th>
                                     <th>Label</th>
                                     <th>Machine Name</th>
-                                    <th>Item Pai</th>
-                                    <th>Ícone</th>
-                                    <th class="text-end">Ações</th>
+                                    <th>{{t $.Locale "Parent item"}}</th>
+                                    <th>{{t $.Locale "Icon"}}</th>
+                                    <th class="text-end">{{t $.Locale "Actions"}}</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -110,11 +110,11 @@
                                     </td>
                                     <td>{{if .Icon}}<i class="bi {{.Icon}}"></i> <code>{{.Icon}}</code>{{else}}<span class="text-muted">-</span>{{end}}</td>
                                     <td class="text-end">
-                                        <a href="/tools/menu-editor/{{$.Menu.ReferenceID}}/items/{{.ReferenceID}}/edit" class="btn btn-sm btn-outline-primary">Editar</a>
+                                        <a href="/tools/menu-editor/{{$.Menu.ReferenceID}}/items/{{.ReferenceID}}/edit" class="btn btn-sm btn-outline-primary">{{t $.Locale "Edit"}}</a>
                                         <form method="post" action="/tools/menu-editor/{{$.Menu.ReferenceID}}/items/{{.ReferenceID}}/delete" class="d-inline" 
                                               hx-post="/tools/menu-editor/{{$.Menu.ReferenceID}}/items/{{.ReferenceID}}/delete"
                                               hx-confirm="Excluir este item?">
-                                            <button type="submit" class="btn btn-sm btn-outline-danger">Excluir</button>
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">{{t $.Locale "Delete"}}</button>
                                         </form>
                                     </td>
                                 </tr>
@@ -124,42 +124,42 @@
                     </div>
                     {{else}}
                     <div class="alert alert-secondary mb-4">
-                        <i class="bi bi-info-circle"></i> Nenhum item cadastrado. Adicione itens usando o formulário abaixo.
+                        <i class="bi bi-info-circle"></i> {{t $.Locale "No items yet. Add them with the form below."}}
                     </div>
                     {{end}}
 
                     <!-- Add New Item Form -->
                     <div class="card bg-body-secondary p-3">
-                        <h6 class="mb-3">Adicionar Novo Item</h6>
+                        <h6 class="mb-3">{{t $.Locale "Add a new item"}}</h6>
                         <form method="post" action="/tools/menu-editor/{{.Menu.ReferenceID}}/items/new" class="row g-2 align-items-end">
                             <input type="hidden" name="csrf_token" value="{{.Csrf}}">
                             
                             <div class="col-md-3">
                                 <label for="new_label" class="form-label form-label-sm">Label</label>
                                 <input type="text" class="form-control form-control-sm" id="new_label" 
-                                       name="label" placeholder="Início" required>
+                                       name="label" placeholder="{{t $.Locale "Home"}}" required>
                             </div>
                             <div class="col-md-3">
-                                <label for="new_machine_name" class="form-label form-label-sm">Nome Máquina</label>
+                                <label for="new_machine_name" class="form-label form-label-sm">{{t $.Locale "Machine name"}}</label>
                                 <input type="text" class="form-control form-control-sm" id="new_machine_name" 
                                        name="machine_name" required pattern="[a-z][a-z0-9_]*" placeholder="inicio">
                             </div>
                             <div class="col-md-2">
-                                <label for="new_icon" class="form-label form-label-sm">Ícone</label>
+                                <label for="new_icon" class="form-label form-label-sm">{{t $.Locale "Icon"}}</label>
                                 <input type="text" class="form-control form-control-sm" id="new_icon" 
                                        name="icon" placeholder="bi-house">
                             </div>
                             <div class="col-md-2">
-                                <label for="new_parent_id" class="form-label form-label-sm">Item Pai</label>
+                                <label for="new_parent_id" class="form-label form-label-sm">{{t $.Locale "Parent item"}}</label>
                                 <select class="form-select form-select-sm" id="new_parent_id" name="parent_id">
-                                    <option value="">- Raiz -</option>
+                                    <option value="">- {{t $.Locale "Root"}} -</option>
                                     {{range .AllItems}}
                                     <option value="{{.ReferenceID}}">{{.Label}}</option>
                                     {{end}}
                                 </select>
                             </div>
                             <div class="col-md-2">
-                                <button type="submit" class="btn btn-primary btn-sm w-100">Adicionar</button>
+                                <button type="submit" class="btn btn-primary btn-sm w-100">{{t $.Locale "Add"}}</button>
                             </div>
                         </form>
                     </div>
