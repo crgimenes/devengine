@@ -380,7 +380,9 @@ func TestLoginSubmit_RateLimited(t *testing.T) {
 	h, cleanup := setupHandler(t)
 	defer cleanup()
 
-	config.Cfg.RateLimitPerMin = 60
+	// PerMin of 1 makes mid-test refills negligible: under -race the slow
+	// bcrypt verifies used to outlast a 1-token-per-second refill window.
+	config.Cfg.RateLimitPerMin = 1
 	config.Cfg.RateLimitBurst = 2
 	ratelimit.Default.Reset()
 	defer ratelimit.Default.Reset()

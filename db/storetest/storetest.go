@@ -6,6 +6,7 @@
 package storetest
 
 import (
+	"database/sql"
 	"errors"
 	"strings"
 	"testing"
@@ -32,6 +33,61 @@ func Run(t *testing.T, open Factory) {
 	t.Run("Schema", func(t *testing.T) { testSchema(t, open(t)) })
 	t.Run("APITokens", func(t *testing.T) { testAPITokens(t, open(t)) })
 	t.Run("Tx", func(t *testing.T) { testTx(t, open(t)) })
+	t.Run("Core", func(t *testing.T) { testCore(t, open(t)) })
+}
+
+// testCore exercises the raw CoreStore surface external integrations use
+// (filodb adapter, snapshot CLI). Statements avoid placeholders on purpose:
+// their syntax is dialect-specific and outside this battery's scope.
+func testCore(t *testing.T, s db.Store) {
+	if s.RW() == nil || s.RO() == nil {
+		t.Fatal("RW/RO must expose the underlying pools")
+	}
+
+	err := s.Exec("CREATE TABLE qa_core (id INTEGER, name TEXT)")
+	if err != nil {
+		t.Fatalf("Exec create: %v", err)
+	}
+	err = s.Exec("INSERT INTO qa_core (id, name) VALUES (1, 'ana'), (2, 'bruno')")
+	if err != nil {
+		t.Fatalf("Exec insert: %v", err)
+	}
+
+	var n int
+	err = s.QueryRow("SELECT count(*) FROM qa_core").Scan(&n)
+	if err != nil || n != 2 {
+		t.Fatalf("QueryRow = %d, %v", n, err)
+	}
+	err = s.QueryRowRW("SELECT count(*) FROM qa_core").Scan(&n)
+	if err != nil || n != 2 {
+		t.Fatalf("QueryRowRW = %d, %v", n, err)
+	}
+
+	for _, q := range []func(string, ...any) (*sql.Rows, error){s.Query, s.QueryRW} {
+		rows, err := q("SELECT name FROM qa_core ORDER BY id")
+		if err != nil {
+			t.Fatalf("Query: %v", err)
+		}
+		var names []string
+		for rows.Next() {
+			var name string
+			err = rows.Scan(&name)
+			if err != nil {
+				t.Fatalf("scan: %v", err)
+			}
+			names = append(names, name)
+		}
+		err = rows.Err()
+		_ = rows.Close()
+		if err != nil || len(names) != 2 || names[0] != "ana" {
+			t.Fatalf("rows = %v, %v", names, err)
+		}
+	}
+
+	err = s.CheckpointWAL()
+	if err != nil {
+		t.Fatalf("CheckpointWAL: %v", err)
+	}
 }
 
 func testUsers(t *testing.T, s db.Store) {

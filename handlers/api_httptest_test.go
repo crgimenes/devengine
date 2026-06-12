@@ -2,10 +2,15 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
+	"strconv"
 	"strings"
+	"sync"
+	"sync/atomic"
 	"testing"
 
 	"github.com/crgimenes/devengine/db"
@@ -289,4 +294,137 @@ func TestAPITokenLifecycleOnProfile(t *testing.T) {
 	if api.Code != http.StatusUnauthorized {
 		t.Fatalf("revoked token still works: %d", api.Code)
 	}
+}
+
+// TestAPIAndFormInterleaved proves the REST API and the HTML runtime are
+// two doors into the same pipeline: edits through one are visible through
+// the other and optimistic locking spans both.
+func TestAPIAndFormInterleaved(t *testing.T) {
+	mux, s := newHTTPTestEnv(t)
+	seedAPIForm(t, s)
+	token := mintToken(t, s, "apiuser3")
+	browser := plantUser(t, "weboper", false)
+
+	// Create through the API.
+	rr := apiReq(t, mux, http.MethodPost, "/api/v1/itens", token, `{"titulo": "caderno", "quantidade": 3}`)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("api create = %d: %.300s", rr.Code, rr.Body.String())
+	}
+	ref, _ := decodeJSON(t, rr)["reference_id"].(string)
+
+	// The HTML edit form renders the API-created values.
+	rr = doGet(t, mux, "/form/itens/r/"+ref, browser)
+	assertRendered(t, rr, "form edit")
+	if !strings.Contains(rr.Body.String(), "caderno") {
+		t.Fatalf("HTML form missing API-created value: %.300s", rr.Body.String())
+	}
+
+	// Update through the HTML form (rev 1 came from creation).
+	rec, err := db.Storage.GetEAVRecordByRefID(ref)
+	if err != nil {
+		t.Fatalf("GetEAVRecordByRefID: %v", err)
+	}
+	form := url.Values{
+		"titulo":     {"caderno grande"},
+		"quantidade": {"5"},
+		"rev":        {strconv.Itoa(rec.Rev)},
+	}
+	rr = doPostForm(t, mux, "/form/itens/r/"+ref, form, browser)
+	if rr.Code != http.StatusSeeOther {
+		t.Fatalf("html update = %d: %.300s", rr.Code, rr.Body.String())
+	}
+
+	// The API sees the HTML edit.
+	rr = apiReq(t, mux, http.MethodGet, "/api/v1/itens/"+ref, token, "")
+	got := decodeJSON(t, rr)
+	values, _ := got["values"].(map[string]any)
+	if values["titulo"] != "caderno grande" || values["quantidade"] != float64(5) {
+		t.Fatalf("api does not see html edit: %v", values)
+	}
+	apiRev := int(got["rev"].(float64))
+
+	// A stale API update (rev from before the HTML edit) is a 409.
+	rr = apiReq(t, mux, http.MethodPut, "/api/v1/itens/"+ref, token,
+		fmt.Sprintf(`{"rev": %d, "titulo": "x", "quantidade": 1}`, rec.Rev))
+	if rr.Code != http.StatusConflict {
+		t.Fatalf("stale cross-door rev = %d, want 409", rr.Code)
+	}
+
+	// Fresh rev succeeds, and the HTML listing reflects it.
+	rr = apiReq(t, mux, http.MethodPut, "/api/v1/itens/"+ref, token,
+		fmt.Sprintf(`{"rev": %d, "titulo": "estojo", "quantidade": 2}`, apiRev))
+	if rr.Code != http.StatusOK {
+		t.Fatalf("fresh api update = %d: %.300s", rr.Code, rr.Body.String())
+	}
+	rr = doGet(t, mux, "/form/itens/list", browser)
+	assertRendered(t, rr, "form list")
+	if !strings.Contains(rr.Body.String(), "estojo") {
+		t.Fatal("html listing missing api edit")
+	}
+}
+
+// TestConcurrentRecordWrites hammers one record from parallel writers; the
+// rev trigger must serialize them so every successful bump is exactly +1.
+func TestConcurrentRecordWrites(t *testing.T) {
+	_, s := newHTTPTestEnv(t)
+	et, err := s.CreateEAVEntityType("Contador", "contador", "", "", "")
+	if err != nil {
+		t.Fatalf("CreateEAVEntityType: %v", err)
+	}
+	intAttr, err := s.CreateEAVAttribute(et.ID, "valor", "Valor", "", "INT",
+		false, false, false, nil, false, "", nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatalf("CreateEAVAttribute: %v", err)
+	}
+
+	rec, err := s.CreateEAVRecord(et.ID)
+	if err != nil {
+		t.Fatalf("CreateEAVRecord: %v", err)
+	}
+
+	const writers = 8
+	const attempts = 20
+	var wg sync.WaitGroup
+	var conflicts, successes atomic.Int64
+	for w := range writers {
+		wg.Add(1)
+		go func(seed int64) {
+			defer wg.Done()
+			for range attempts {
+				cur, err := s.GetEAVRecordByID(rec.ID)
+				if err != nil {
+					t.Errorf("GetEAVRecordByID: %v", err)
+					return
+				}
+				v := seed
+				_, err = s.UpsertEAVValueWithRev(rec.ID, intAttr.ID, cur.Rev,
+					nil, &v, nil, nil, nil)
+				if err == nil {
+					successes.Add(1)
+					continue
+				}
+				if errors.Is(err, db.ErrConflict) {
+					conflicts.Add(1)
+					continue
+				}
+				t.Errorf("unexpected write error: %v", err)
+				return
+			}
+		}(int64(w))
+	}
+	wg.Wait()
+
+	if successes.Load() == 0 {
+		t.Fatal("no write ever succeeded")
+	}
+	final, err := s.GetEAVRecordByID(rec.ID)
+	if err != nil {
+		t.Fatalf("final read: %v", err)
+	}
+	// Every successful optimistic write bumps rev by exactly 1.
+	if int64(final.Rev) != 1+successes.Load() {
+		t.Fatalf("rev = %d, want 1+%d successes (lost or double bump)",
+			final.Rev, successes.Load())
+	}
+	t.Logf("successes=%d conflicts=%d final rev=%d", successes.Load(), conflicts.Load(), final.Rev)
 }

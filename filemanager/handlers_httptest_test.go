@@ -98,6 +98,16 @@ func TestFileLifecycle(t *testing.T) {
 		t.Fatalf("metadata not updated: %+v", updated)
 	}
 
+	// Full-text search reaches the fresh description.
+	found, err := SearchFilesByUserIDFTS(u.ID, "relatorio", "", 0, 10)
+	if err != nil || len(found) != 1 || found[0].Filename != stored.Filename {
+		t.Fatalf("FTS after edit = %d, %v", len(found), err)
+	}
+	found, err = SearchFilesByUserIDFTS(u.ID, "inexistente", "", 0, 10)
+	if err != nil || len(found) != 0 {
+		t.Fatalf("FTS bogus term = %d, %v", len(found), err)
+	}
+
 	// Soft delete: file leaves the listing and stops being served.
 	rr = doFM(t, mux, http.MethodPost, "/files/delete", url.Values{
 		"file_id":    {stored.Filename},
@@ -114,6 +124,12 @@ func TestFileLifecycle(t *testing.T) {
 	rr = doFM(t, mux, http.MethodGet, servePath, nil, cookie)
 	if rr.Code != http.StatusNotFound {
 		t.Fatalf("serve after delete = %d, want 404", rr.Code)
+	}
+
+	// The FTS index forgets soft-deleted files.
+	found, _ = SearchFilesByUserIDFTS(u.ID, "relatorio", "", 0, 10)
+	if len(found) != 0 {
+		t.Fatalf("FTS still finds deleted file: %d", len(found))
 	}
 }
 

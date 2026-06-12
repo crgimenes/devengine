@@ -151,6 +151,192 @@ func TestEndToEndFlow(t *testing.T) {
 		t.Fatalf("record missing from listing: %.300s", rr.Body.String())
 	}
 
+	// --- authoring: a menu bound to the form shows up in the runtime ---
+	rr = doPostCSRF(t, mux, "/tools/menu-editor/new", url.Values{
+		"machine_name": {"suporte"}, "label": {"Suporte"},
+	}, sid)
+	if rr.Code != http.StatusSeeOther && rr.Code != http.StatusFound {
+		t.Fatalf("menu create = %d", rr.Code)
+	}
+	menu, err := db.Storage.GetMenuByMachineName("suporte")
+	if err != nil || menu == nil {
+		t.Fatalf("menu not created: %v", err)
+	}
+	rr = doPostCSRF(t, mux, "/tools/menu-editor/"+menu.ReferenceID+"/items/new", url.Values{
+		"machine_name": {"painel"}, "label": {"Painel de Chamados"},
+	}, sid)
+	if rr.Code != http.StatusSeeOther && rr.Code != http.StatusFound {
+		t.Fatalf("menu item create = %d", rr.Code)
+	}
+	rr = doPostForm(t, mux, "/tools/forms/"+formRef[1]+"/update", url.Values{
+		"machine_name": {"abrir_chamado"}, "label": {"Abrir Chamado"},
+		"entity_type_id": {etRef[1]},
+		"menu_id":        {menu.ReferenceID},
+	}, sid)
+	if rr.Code != http.StatusSeeOther {
+		t.Fatalf("form bind menu = %d", rr.Code)
+	}
+	rr = doGet(t, mux, "/form/abrir_chamado", sid)
+	assertRendered(t, rr, "/form/abrir_chamado with menu")
+	if !strings.Contains(rr.Body.String(), "Painel de Chamados") {
+		t.Fatalf("bound menu missing from runtime page: %.300s", rr.Body.String())
+	}
+
+	// --- authoring: a search form over the same entity ---
+	rr = doPostForm(t, mux, "/tools/forms/new", url.Values{
+		"machine_name": {"busca_chamados"}, "label": {"Busca de Chamados"},
+		"entity_type_id": {etRef[1]},
+	}, sid)
+	if rr.Code != http.StatusSeeOther {
+		t.Fatalf("search form create = %d", rr.Code)
+	}
+	searchRef := regexp.MustCompile(`/forms/([^/]+)/edit`).FindStringSubmatch(location(t, rr))
+	if searchRef == nil {
+		t.Fatalf("search form redirect without ref: %s", location(t, rr))
+	}
+	rr = doPostForm(t, mux, "/tools/forms/"+searchRef[1]+"/elements/new", url.Values{
+		"machine_name": {"assunto"}, "element_kind": {"field"}, "label": {"Assunto"},
+		"eav_attribute_id": {attrRef["assunto"]},
+	}, sid)
+	if rr.Code != http.StatusSeeOther {
+		t.Fatalf("search form element = %d", rr.Code)
+	}
+	rr = doPostForm(t, mux, "/tools/forms/"+searchRef[1]+"/update", url.Values{
+		"machine_name": {"busca_chamados"}, "label": {"Busca de Chamados"},
+		"entity_type_id": {etRef[1]},
+		"is_search":      {"on"},
+	}, sid)
+	if rr.Code != http.StatusSeeOther {
+		t.Fatalf("search flag update = %d", rr.Code)
+	}
+
+	// Opening the search form lands on the listing with the record, and the
+	// text filter narrows it.
+	rr = doGet(t, mux, "/form/busca_chamados", sid)
+	assertRendered(t, rr, "/form/busca_chamados")
+	if !strings.Contains(rr.Body.String(), "Impressora pegou fogo") {
+		t.Fatalf("search form listing missing record: %.300s", rr.Body.String())
+	}
+	rr = doGet(t, mux, "/form/busca_chamados/list?q=impressora", sid)
+	assertRendered(t, rr, "search with filter")
+	if !strings.Contains(rr.Body.String(), "Impressora pegou fogo") {
+		t.Fatal("filter missed the record")
+	}
+	rr = doGet(t, mux, "/form/busca_chamados/list?q=geladeira", sid)
+	if strings.Contains(rr.Body.String(), "Impressora pegou fogo") {
+		t.Fatal("filter matched a record it should not")
+	}
+
+	// --- relationships: a reference field resolves its display value ---
+	rr = doPostForm(t, mux, "/tools/database-schema/eav/new", url.Values{
+		"name": {"Cliente"}, "machine_name": {"cliente"},
+	}, sid)
+	if rr.Code != http.StatusSeeOther {
+		t.Fatalf("cliente entity = %d", rr.Code)
+	}
+	cliRef := regexp.MustCompile(`/eav/([^/]+)/edit`).FindStringSubmatch(location(t, rr))
+	rr = doPostForm(t, mux, "/tools/database-schema/eav/"+cliRef[1]+"/attributes/new", url.Values{
+		"machine_name": {"nome"}, "label": {"Nome"}, "primitive_kind": {"TEXT"},
+	}, sid)
+	if rr.Code != http.StatusSeeOther {
+		t.Fatalf("nome attribute = %d", rr.Code)
+	}
+
+	cliEntity, err := db.Storage.GetEAVEntityTypeByMachineName("cliente")
+	if err != nil {
+		t.Fatalf("cliente lookup: %v", err)
+	}
+	anaRec, err := db.Storage.CreateEAVRecord(cliEntity.ID)
+	if err != nil {
+		t.Fatalf("ana record: %v", err)
+	}
+	cliAttrs, err := db.Storage.ListEAVAttributesByEntityTypeID(cliEntity.ID)
+	if err != nil || len(cliAttrs) != 1 {
+		t.Fatalf("cliente attrs: %v", err)
+	}
+	ana := "Ana Souza"
+	err = db.Storage.UpsertEAVValue(anaRec.ID, cliAttrs[0].ID, nil, nil, nil, &ana, nil)
+	if err != nil {
+		t.Fatalf("ana value: %v", err)
+	}
+	// Reference choices only offer active records.
+	err = db.Storage.UpdateEAVRecordStatus(anaRec.ID, anaRec.Rev, "active")
+	if err != nil {
+		t.Fatalf("activate ana: %v", err)
+	}
+
+	rr = doPostForm(t, mux, "/tools/database-schema/eav/"+etRef[1]+"/attributes/new", url.Values{
+		"machine_name": {"cliente"}, "label": {"Cliente"}, "primitive_kind": {"TEXT"},
+	}, sid)
+	if rr.Code != http.StatusSeeOther {
+		t.Fatalf("cliente ref attribute = %d", rr.Code)
+	}
+	chamadoAttrs, err := db.Storage.ListEAVAttributesByEntityTypeID(*form.EAVEntityTypeID)
+	if err != nil {
+		t.Fatalf("chamado attrs: %v", err)
+	}
+	var cliAttrRef string
+	for _, a := range chamadoAttrs {
+		if a.MachineName == "cliente" {
+			cliAttrRef = a.ReferenceID
+		}
+	}
+	rr = doPostForm(t, mux, "/tools/forms/"+formRef[1]+"/elements/new", url.Values{
+		"machine_name": {"cliente"}, "element_kind": {"field"}, "label": {"Cliente"},
+		"eav_attribute_id": {cliAttrRef},
+		"ui_kind":          {"reference"},
+	}, sid)
+	if rr.Code != http.StatusSeeOther {
+		t.Fatalf("reference element = %d", rr.Code)
+	}
+	// The plugin options (entity/display) are configured on the element
+	// edit screen, exactly like the authoring UI does it.
+	formEls, err := db.Storage.ListFormElements(form.ID)
+	if err != nil {
+		t.Fatalf("ListFormElements: %v", err)
+	}
+	var refEl *db.FormElement
+	for i := range formEls {
+		if formEls[i].MachineName == "cliente" {
+			refEl = &formEls[i]
+		}
+	}
+	if refEl == nil {
+		t.Fatal("reference element not found")
+	}
+	rr = doPostForm(t, mux,
+		"/tools/forms/"+formRef[1]+"/elements/"+refEl.ReferenceID+"/update", url.Values{
+			"machine_name": {"cliente"}, "element_kind": {"field"},
+			"label": {"Cliente"}, "z_order": {"3"}, "col_span": {"12"},
+			"alignment":        {"left"},
+			"eav_attribute_id": {cliAttrRef},
+			"ui_kind":          {"reference"},
+			"ui_meta_json":     {"{\"entity\": \"cliente\", \"display\": \"nome\"}"},
+		}, sid)
+	if rr.Code != http.StatusSeeOther && rr.Code != http.StatusOK {
+		t.Fatalf("reference element meta update = %d", rr.Code)
+	}
+
+	// The create form offers Ana as a choice; a record pointing at her
+	// resolves the display name on the listing.
+	rr = doGet(t, mux, "/form/abrir_chamado", sid)
+	assertRendered(t, rr, "form with reference")
+	if !strings.Contains(rr.Body.String(), "Ana Souza") {
+		t.Fatalf("reference choices missing Ana: %.300s", rr.Body.String())
+	}
+	rr = doPostForm(t, mux, "/form/abrir_chamado", url.Values{
+		"assunto": {"Sem internet"}, "prioridade": {"2"},
+		"cliente": {anaRec.ReferenceID},
+	}, sid)
+	if !strings.Contains(location(t, rr), "successfully") {
+		t.Fatalf("reference submit rejected: %s", location(t, rr))
+	}
+	rr = doGet(t, mux, "/form/abrir_chamado/list?q=Ana", sid)
+	assertRendered(t, rr, "listing by reference display")
+	if !strings.Contains(rr.Body.String(), "Sem internet") {
+		t.Fatal("search by reference display missed the record")
+	}
+
 	// --- and the wrong password never got in ---
 	rr2 := httptest.NewRecorder()
 	req := httptest.NewRequest(http.MethodPost, "/login",
