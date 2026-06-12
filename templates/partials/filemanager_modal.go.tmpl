@@ -19,7 +19,7 @@
         </div>
 
         <div class="mb-3">
-          <label class="form-label" data-filemanager-upload-label>Fazer Upload</label>
+          <label class="form-label" data-filemanager-upload-label>{{t $.Locale "Upload"}}</label>
           <form id="fileManagerUploadForm" enctype="multipart/form-data" class="needs-validation" novalidate>
             <div class="mb-3">
               <input class="form-control" type="file" id="fileManagerFileInput" name="file" required>
@@ -27,14 +27,14 @@
             </div>
 
             <div class="mb-3">
-              <label class="form-label" for="fileManagerDescription">Descrição (opcional)</label>
+              <label class="form-label" for="fileManagerDescription">{{t $.Locale "Description (optional)"}}</label>
               <textarea class="form-control" id="fileManagerDescription" name="description" rows="2" maxlength="500" placeholder="Descreva o arquivo..."></textarea>
-              <small class="form-text text-body-secondary">Máximo 500 caracteres</small>
+              <small class="form-text text-body-secondary">{{t $.Locale "Maximum 500 characters"}}</small>
             </div>
 
             <div id="fileManagerUploadStatus" class="mb-3"></div>
 
-            <button type="submit" class="btn btn-primary w-100" id="fileManagerUploadBtn">Fazer Upload</button>
+            <button type="submit" class="btn btn-primary w-100" id="fileManagerUploadBtn">{{t $.Locale "Upload"}}</button>
           </form>
         </div>
 

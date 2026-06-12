@@ -203,6 +203,7 @@ func (h *Handlers) FormsRuntimeList(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed          bool
 		User            db.User
+		Locale          string
 		Config          config.Config
 		Form            *db.Form
 		Attributes      []db.EAVAttribute
@@ -215,6 +216,7 @@ func (h *Handlers) FormsRuntimeList(w http.ResponseWriter, r *http.Request) {
 		MenuMachineName string
 	}{
 		Authed:          true,
+		Locale:          auth.RequestLocale(r),
 		User:            *user,
 		Config:          *h.cfg,
 		Form:            form,
@@ -260,6 +262,7 @@ func (h *Handlers) FormsRuntimeListRows(w http.ResponseWriter, r *http.Request) 
 	resolveReferenceDisplays(form, attributes, rows)
 
 	data := struct {
+		Locale     string
 		Form       *db.Form
 		Attributes []db.EAVAttribute
 		Rows       []RecordRow
@@ -267,6 +270,7 @@ func (h *Handlers) FormsRuntimeListRows(w http.ResponseWriter, r *http.Request) 
 		Filter     string
 		ColCount   int
 	}{
+		Locale:     auth.RequestLocale(r),
 		Form:       form,
 		Attributes: attributes,
 		Rows:       rows,

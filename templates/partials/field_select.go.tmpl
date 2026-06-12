@@ -14,7 +14,7 @@
         {{if $required}}required{{end}}
         {{if $readonly}}disabled{{end}}>
     {{if $allowEmpty}}
-    <option value="">Selecione...</option>
+    <option value="">{{t .Locale "Select…"}}</option>
     {{end}}
     {{range $options}}
     {{if eq (printf "%T" .) "map[string]interface {}"}}

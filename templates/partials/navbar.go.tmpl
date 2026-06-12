@@ -96,17 +96,17 @@
             </div>
             <div class="mt-3 d-flex flex-column gap-2">
                  <div class="d-flex gap-2">
-                    <a href="/me" class="btn btn-dark btn-sm flex-fill"><i class="bi bi-person"></i> Perfil</a>
-                    <a href="/logout" class="btn btn-dark btn-sm flex-fill"><i class="bi bi-box-arrow-right"></i> Sair</a>
+                    <a href="/me" class="btn btn-dark btn-sm flex-fill"><i class="bi bi-person"></i> {{t $.Locale "Profile"}}</a>
+                    <a href="/logout" class="btn btn-dark btn-sm flex-fill"><i class="bi bi-box-arrow-right"></i> {{t $.Locale "Sign out"}}</a>
                  </div>
-                 <a href="/files" class="btn btn-dark btn-sm w-100"><i class="bi bi-folder"></i> Meus Arquivos</a>
+                 <a href="/files" class="btn btn-dark btn-sm w-100"><i class="bi bi-folder"></i> {{t $.Locale "My files"}}</a>
             </div>
         </div>
 
         {{if .User.Sysop}}
         <div class="mobile-item-group mb-3">
              <div class="mobile-group-title text-uppercase text-muted fw-bold fs-xs mb-2 mt-3 px-2">
-                <i class="bi bi-tools me-1"></i> Ferramentas
+                <i class="bi bi-tools me-1"></i> {{t $.Locale "Tools"}}
             </div>
             <a href="/tools" class="mobile-link">
                 <i class="bi bi-speedometer2"></i> <span>Dashboard</span>
@@ -138,7 +138,7 @@
 
             {{if not .Authed}}
                <div class="mt-4">
-                  <a href="/login" class="btn btn-primary w-100 rounded-pill py-2">Fazer Login</a>
+                  <a href="/login" class="btn btn-primary w-100 rounded-pill py-2">{{t $.Locale "Sign in"}}</a>
                </div>
             {{end}}
         </div>

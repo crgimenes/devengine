@@ -6,12 +6,12 @@
 <div id="plugin-options-container" class="mb-4">
     <!-- Group (fieldset) options -->
     <div id="options-group" class="plugin-options-panel d-none">
-        <h6 class="text-muted mb-3">Opções do Grupo</h6>
+        <h6 class="text-muted mb-3">{{t .Locale "Group options"}}</h6>
         <div class="form-check mb-2">
             <input class="form-check-input plugin-option" type="checkbox" id="opt_show_legend" 
                    data-key="show_legend" {{if index $meta "show_legend"}}checked{{end}}>
             <label class="form-check-label" for="opt_show_legend">
-                Mostrar título (legend)
+                {{t .Locale "Show title (legend)"}}
             </label>
         </div>
         <div class="form-check mb-2">
@@ -25,31 +25,31 @@
 
     <!-- Accordion options -->
     <div id="options-accordion" class="plugin-options-panel d-none">
-        <h6 class="text-muted mb-3">Opções do Accordion</h6>
+        <h6 class="text-muted mb-3">{{t .Locale "Accordion options"}}</h6>
         <div class="form-check mb-2">
             <input class="form-check-input plugin-option" type="checkbox" id="opt_expanded_by_default" 
                    data-key="expanded_by_default" {{if index $meta "expanded_by_default"}}checked{{end}}>
             <label class="form-check-label" for="opt_expanded_by_default">
-                Expandido por padrão
+                {{t .Locale "Expanded by default"}}
             </label>
         </div>
         <div class="form-check mb-2">
             <input class="form-check-input plugin-option" type="checkbox" id="opt_show_header" 
                    data-key="show_header" {{if index $meta "show_header"}}checked{{end}}>
             <label class="form-check-label" for="opt_show_header">
-                Mostrar cabeçalho
+                {{t .Locale "Show header"}}
             </label>
         </div>
     </div>
 
     <!-- Card options -->
     <div id="options-card" class="plugin-options-panel d-none">
-        <h6 class="text-muted mb-3">Opções do Card</h6>
+        <h6 class="text-muted mb-3">{{t .Locale "Card options"}}</h6>
         <div class="form-check mb-2">
             <input class="form-check-input plugin-option" type="checkbox" id="opt_card_show_header" 
                    data-key="show_header" {{if index $meta "show_header"}}checked{{end}}>
             <label class="form-check-label" for="opt_card_show_header">
-                Mostrar cabeçalho
+                {{t .Locale "Show header"}}
             </label>
         </div>
         <div class="form-check mb-2">
@@ -60,10 +60,10 @@
             </label>
         </div>
         <div class="mb-3">
-            <label for="opt_header_bg" class="form-label">Cor de fundo do cabeçalho</label>
+            <label for="opt_header_bg" class="form-label">{{t .Locale "Header background color"}}</label>
             <select class="form-select form-select-sm plugin-option" id="opt_header_bg" data-key="header_bg">
-                <option value="default" {{if eq (index $meta "header_bg") "default"}}selected{{end}}>Padrão</option>
-                <option value="primary" {{if eq (index $meta "header_bg") "primary"}}selected{{end}}>Primária</option>
+                <option value="default" {{if eq (index $meta "header_bg") "default"}}selected{{end}}>{{t .Locale "Default"}}</option>
+                <option value="primary" {{if eq (index $meta "header_bg") "primary"}}selected{{end}}>{{t .Locale "Primary"}}</option>
                 <option value="dark" {{if eq (index $meta "header_bg") "dark"}}selected{{end}}>Escura</option>
             </select>
         </div>
@@ -71,9 +71,9 @@
 
     <!-- Tabs options -->
     <div id="options-tabs" class="plugin-options-panel d-none">
-        <h6 class="text-muted mb-3">Opções de Tabs</h6>
+        <h6 class="text-muted mb-3">{{t .Locale "Tabs options"}}</h6>
         <div class="mb-3">
-            <label for="opt_active_tab" class="form-label">Tab ativa por padrão (índice, começa em 0)</label>
+            <label for="opt_active_tab" class="form-label">{{t .Locale "Active tab by default (index, starts at 0)"}}</label>
             <input type="number" class="form-control form-control-sm plugin-option" id="opt_active_tab" 
                    data-key="active_tab" value="{{index $meta "active_tab"}}" min="0">
         </div>
@@ -81,7 +81,7 @@
 
     <!-- Carousel options -->
     <div id="options-carousel" class="plugin-options-panel d-none">
-        <h6 class="text-muted mb-3">Opções do Carousel</h6>
+        <h6 class="text-muted mb-3">{{t .Locale "Carousel options"}}</h6>
         <div class="row">
             <div class="col-md-6">
                 <div class="form-check mb-2">
@@ -102,7 +102,7 @@
                     <input class="form-check-input plugin-option" type="checkbox" id="opt_fade" 
                            data-key="fade" {{if index $meta "fade"}}checked{{end}}>
                     <label class="form-check-label" for="opt_fade">
-                        Transição fade (em vez de slide)
+                        {{t .Locale "Fade transition (instead of slide)"}}
                     </label>
                 </div>
             </div>
@@ -116,8 +116,8 @@
 
     <!-- Field type options - organized by ui_kind -->
     <div id="options-field" class="plugin-options-panel d-none">
-        <h6 class="text-muted mb-3">Opções do Campo</h6>
-        <p class="small text-muted">Configure opções específicas baseadas no Plugin de UI selecionado acima.</p>
+        <h6 class="text-muted mb-3">{{t .Locale "Field options"}}</h6>
+        <p class="small text-muted">{{t .Locale "Configure options specific to the UI plugin picked above."}}</p>
         
         <!-- Text field options -->
         <div id="field-options-text" class="field-ui-options">
@@ -128,7 +128,7 @@
             </div>
             <div class="row">
                 <div class="col-md-6 mb-2">
-                    <label for="opt_text_maxLength" class="form-label small">Tamanho máximo</label>
+                    <label for="opt_text_maxLength" class="form-label small">{{t .Locale "Maximum length"}}</label>
                     <input type="number" class="form-control form-control-sm plugin-option" id="opt_text_maxLength" 
                            data-key="maxLength" value="{{index $meta "maxLength"}}" min="0">
                 </div>
@@ -153,7 +153,7 @@
                            data-key="rows" value="{{index $meta "rows"}}" min="1" max="20">
                 </div>
                 <div class="col-md-6 mb-2">
-                    <label for="opt_textarea_maxLength" class="form-label small">Tamanho máximo</label>
+                    <label for="opt_textarea_maxLength" class="form-label small">{{t .Locale "Maximum length"}}</label>
                     <input type="number" class="form-control form-control-sm plugin-option" id="opt_textarea_maxLength" 
                            data-key="maxLength" value="{{index $meta "maxLength"}}" min="0">
                 </div>
@@ -169,12 +169,12 @@
         <div id="field-options-int" class="field-ui-options d-none">
             <div class="row">
                 <div class="col-md-4 mb-2">
-                    <label for="opt_int_min" class="form-label small">Mínimo</label>
+                    <label for="opt_int_min" class="form-label small">{{t .Locale "Minimum"}}</label>
                     <input type="number" class="form-control form-control-sm plugin-option" id="opt_int_min" 
                            data-key="min" value="{{index $meta "min"}}">
                 </div>
                 <div class="col-md-4 mb-2">
-                    <label for="opt_int_max" class="form-label small">Máximo</label>
+                    <label for="opt_int_max" class="form-label small">{{t .Locale "Maximum"}}</label>
                     <input type="number" class="form-control form-control-sm plugin-option" id="opt_int_max" 
                            data-key="max" value="{{index $meta "max"}}">
                 </div>
@@ -190,12 +190,12 @@
         <div id="field-options-decimal" class="field-ui-options d-none">
             <div class="row">
                 <div class="col-md-3 mb-2">
-                    <label for="opt_decimal_min" class="form-label small">Mínimo</label>
+                    <label for="opt_decimal_min" class="form-label small">{{t .Locale "Minimum"}}</label>
                     <input type="number" step="any" class="form-control form-control-sm plugin-option" id="opt_decimal_min" 
                            data-key="min" value="{{index $meta "min"}}">
                 </div>
                 <div class="col-md-3 mb-2">
-                    <label for="opt_decimal_max" class="form-label small">Máximo</label>
+                    <label for="opt_decimal_max" class="form-label small">{{t .Locale "Maximum"}}</label>
                     <input type="number" step="any" class="form-control form-control-sm plugin-option" id="opt_decimal_max" 
                            data-key="max" value="{{index $meta "max"}}">
                 </div>
@@ -215,9 +215,9 @@
         <!-- Bool options -->
         <div id="field-options-bool" class="field-ui-options d-none">
             <div class="mb-2">
-                <label for="opt_bool_style" class="form-label small">Estilo de exibição</label>
+                <label for="opt_bool_style" class="form-label small">{{t .Locale "Display style"}}</label>
                 <select class="form-select form-select-sm plugin-option" id="opt_bool_style" data-key="style">
-                    <option value="select" {{if eq (index $meta "style") "select"}}selected{{end}}>Dropdown (Sim/Não)</option>
+                    <option value="select" {{if eq (index $meta "style") "select"}}selected{{end}}>{{t .Locale "Dropdown (Yes/No)"}}</option>
                     <option value="checkbox" {{if eq (index $meta "style") "checkbox"}}selected{{end}}>Checkbox</option>
                     <option value="switch" {{if eq (index $meta "style") "switch"}}selected{{end}}>Switch</option>
                 </select>
@@ -235,12 +235,12 @@
             </div>
             <div class="row">
                 <div class="col-md-6 mb-2">
-                    <label for="opt_datetime_minDate" class="form-label small">Data mínima</label>
+                    <label for="opt_datetime_minDate" class="form-label small">{{t .Locale "Minimum date"}}</label>
                     <input type="date" class="form-control form-control-sm plugin-option" id="opt_datetime_minDate" 
                            data-key="minDate" value="{{index $meta "minDate"}}">
                 </div>
                 <div class="col-md-6 mb-2">
-                    <label for="opt_datetime_maxDate" class="form-label small">Data máxima</label>
+                    <label for="opt_datetime_maxDate" class="form-label small">{{t .Locale "Maximum date"}}</label>
                     <input type="date" class="form-control form-control-sm plugin-option" id="opt_datetime_maxDate" 
                            data-key="maxDate" value="{{index $meta "maxDate"}}">
                 </div>
@@ -253,17 +253,17 @@
                 <input class="form-check-input plugin-option" type="checkbox" id="opt_select_allowEmpty" 
                        data-key="allowEmpty" {{if index $meta "allowEmpty"}}checked{{end}}>
                 <label class="form-check-label" for="opt_select_allowEmpty">
-                    Permitir opção vazia
+                    {{t .Locale "Allow an empty option"}}
                 </label>
             </div>
             <div class="form-check mb-2">
                 <input class="form-check-input plugin-option" type="checkbox" id="opt_select_multiple" 
                        data-key="multiple" {{if index $meta "multiple"}}checked{{end}}>
                 <label class="form-check-label" for="opt_select_multiple">
-                    Seleção múltipla
+                    {{t .Locale "Multiple selection"}}
                 </label>
             </div>
-            <p class="small text-muted">Opções devem ser configuradas diretamente no JSON abaixo.</p>
+            <p class="small text-muted">{{t .Locale "Options are configured directly in the JSON below."}}</p>
         </div>
 
         <!-- Image options -->
@@ -271,8 +271,8 @@
             <div class="mb-2">
                 <label for="opt_image_alt_text" class="form-label small">Texto Alternativo</label>
                 <input type="text" class="form-control form-control-sm plugin-option" id="opt_image_alt_text" 
-                       data-key="alt_text" value="{{index $meta "alt_text"}}" placeholder="Descrição da imagem">
-                <div class="form-text">Texto exibido se a imagem não carregar</div>
+                       data-key="alt_text" value="{{index $meta "alt_text"}}" placeholder="{{t .Locale "Image description"}}">
+                <div class="form-text">{{t .Locale "Text shown when the image fails to load"}}</div>
             </div>
         </div>
 
@@ -348,12 +348,12 @@
 
     <!-- Button - options are in separate section, not in ui_meta_json -->
     <div id="options-button" class="plugin-options-panel d-none">
-        <p class="text-muted small">Veja as configurações do botão na seção abaixo.</p>
+        <p class="text-muted small">{{t .Locale "See the button settings in the section below."}}</p>
     </div>
 
     <!-- Divider - no options -->
     <div id="options-divider" class="plugin-options-panel d-none">
-        <p class="text-muted small">Divisores não possuem opções adicionais.</p>
+        <p class="text-muted small">{{t .Locale "Dividers have no extra options."}}</p>
     </div>
 </div>
 {{end}}

@@ -12,7 +12,7 @@
             <div class="col-md-6">
                 <div class="card">
                     <div class="card-body">
-                        <h1 class="card-title mb-4">Meu Perfil</h1>
+                        <h1 class="card-title mb-4">{{t $.Locale "My profile"}}</h1>
 
                         {{if .Error}}
                             <div class="alert alert-danger alert-dismissible fade show" 
@@ -65,13 +65,13 @@
                             <!-- Username -->
                             <div class="mb-3">
                                 <label for="username" 
-                                    class="form-label">Nome de usuario</label>
+                                    class="form-label">{{t $.Locale "Username"}}</label>
                                 <input type="text" 
                                        class="form-control" 
                                        id="username" 
                                        name="username" 
                                     value="{{.User.Username}}" required
-                                    placeholder="Escolha um nome de usuario"
+                                    placeholder="{{t $.Locale "Pick a username"}}"
                                     autofocus>
                                 <small class="form-text text-muted">
                                     O nome de usuario deve ser unico e unico em todo o sistema
@@ -88,7 +88,7 @@
 
                             <!-- File Upload -->
                             <div class="mb-3">
-                                <label for="avatar_file" class="form-label">Upload do Avatar</label>
+                                <label for="avatar_file" class="form-label">{{t $.Locale "Avatar upload"}}</label>
                                 <input class="form-control" 
                                         type="file" 
                                         id="avatar_file"
@@ -98,8 +98,8 @@
 
                             <!-- Buttons -->
                             <div class="d-grid gap-2">
-                                <button type="submit" class="btn btn-primary">Salvar Perfil</button>
-                                <a href="/" class="btn btn-secondary">Cancelar</a>
+                                <button type="submit" class="btn btn-primary">{{t $.Locale "Save profile"}}</button>
+                                <a href="/" class="btn btn-secondary">{{t $.Locale "Cancel"}}</a>
                             </div>
                         </form>
                     </div>

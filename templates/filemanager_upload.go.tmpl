@@ -3,7 +3,7 @@
 <head>
     {{template "head" .}}
     <link rel="stylesheet" href="/assets/use-bootstrap-tag.min.css?v={{.Config.GitTag}}">
-    <title>Enviar Arquivo</title>
+    <title>{{t $.Locale "Upload file"}}</title>
     
     
 </head>
@@ -16,7 +16,7 @@
             <div class="col-md-8">
                 <div class="card">
                     <div class="card-body">
-                        <h1 class="card-title mb-4">Enviar Arquivo</h1>
+                        <h1 class="card-title mb-4">{{t $.Locale "Upload file"}}</h1>
 
                         {{if .Error}}
                             <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -37,38 +37,38 @@
 
                             <!-- File Upload -->
                             <div class="mb-4">
-                                <label for="file" class="form-label">Arquivo</label>
+                                <label for="file" class="form-label">{{t $.Locale "File"}}</label>
                                 <input class="form-control form-control-lg" type="file" id="file" name="file" accept="image/*,video/*,audio/*" required>
-                                <small class="form-text text-body-secondary">Tipos aceitos: imagens (JPG, PNG, GIF, WebP), vídeos (MP4, WebM, Ogg), áudio (MP3, WAV, OGG)</small>
+                                <small class="form-text text-body-secondary">{{t $.Locale "Accepted types: images (JPG, PNG, GIF, WebP), videos (MP4, WebM, Ogg), audio (MP3, WAV, OGG)"}}</small>
                             </div>
 
                             <input type="hidden" id="original_filename" name="original_filename">
 
                             <!-- File Description -->
                             <div class="mb-4">
-                                <label for="description" class="form-label">Descrição</label>
+                                <label for="description" class="form-label">{{t $.Locale "Description"}}</label>
                                 <textarea 
                                     class="form-control" 
                                     id="description" 
                                     name="description" 
                                     rows="3" 
-                                    placeholder="Descreva o arquivo ou adicione notas sobre seu conteúdo" 
+                                    placeholder="{{t $.Locale "Describe the file or add notes about its content"}}" 
                                     maxlength="500"></textarea>
-                                <small class="form-text text-body-secondary">Máximo 500 caracteres</small>
+                                <small class="form-text text-body-secondary">{{t $.Locale "Maximum 500 characters"}}</small>
                             </div>
 
                             <!-- Categorias (tags) -->
                             <div class="mb-4">
                                 <label for="tagInput" class="form-label">Categorias</label>
-                                <input id="tagInput" type="text" name="filetag" class="form-control" value="" placeholder="Digite e pressione Enter" autocomplete="off" data-ub-tag-separator="," data-ub-tag-max="20">
-                                <div class="form-text" id="tagHelp">Pressione Enter, vírgula ou Tab para criar uma tag. Acentos são permitidos; vírgula não é permitida dentro de uma tag.</div>
-                                <div class="invalid-feedback">Tags inválidas. Use letras (com acentos), números, espaço e . _ - /. Máx. 32 caracteres por tag, 20 tags, 512 no total.</div>
+                                <input id="tagInput" type="text" name="filetag" class="form-control" value="" placeholder="{{t $.Locale "Type and press Enter"}}" autocomplete="off" data-ub-tag-separator="," data-ub-tag-max="20">
+                                <div class="form-text" id="tagHelp">{{t $.Locale "Press Enter, comma or Tab to create a tag. Accents are allowed; commas are not allowed inside a tag."}}</div>
+                                <div class="invalid-feedback">{{t $.Locale "Invalid tags. Use letters (accents ok), numbers, space and . _ - /. Max 32 chars per tag, 20 tags, 512 total."}}</div>
                             </div>
 
                             <!-- Buttons -->
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end gap-2">
-                                <a href="/files" class="btn btn-secondary">Cancelar</a>
-                                <button type="submit" class="btn btn-primary">Enviar Arquivo</button>
+                                <a href="/files" class="btn btn-secondary">{{t $.Locale "Cancel"}}</a>
+                                <button type="submit" class="btn btn-primary">{{t $.Locale "Upload file"}}</button>
                             </div>
                         </form>
 
@@ -77,23 +77,23 @@
                         <!-- File Type Reference -->
                         <div class="card bg-body-secondary border-0">
                             <div class="card-body">
-                                <h6 class="card-title mb-3">Tipos de Arquivo Suportados</h6>
+                                <h6 class="card-title mb-3">{{t $.Locale "Supported file types"}}</h6>
                                 <div class="row g-3">
                                     <div class="col-md-6">
                                         <strong class="text-body-secondary">Imagens:</strong>
                                         <small class="d-block text-body-secondary">JPEG, PNG, GIF, WebP</small>
                                     </div>
                                     <div class="col-md-6">
-                                        <strong class="text-body-secondary">Vídeos:</strong>
+                                        <strong class="text-body-secondary">{{t $.Locale "Videos"}}:</strong>
                                         <small class="d-block text-body-secondary">MP4, WebM, Ogg</small>
                                     </div>
                                     <div class="col-md-6">
-                                        <strong class="text-body-secondary">Áudio:</strong>
+                                        <strong class="text-body-secondary">{{t $.Locale "Audio"}}:</strong>
                                         <small class="d-block text-body-secondary">MP3, WAV, OGG, M4A</small>
                                     </div>
                                     <div class="col-md-6">
                                         <strong class="text-body-secondary">Limite:</strong>
-                                        <small class="d-block text-body-secondary">Máximo 500 MB por arquivo</small>
+                                        <small class="d-block text-body-secondary">{{t $.Locale "Maximum 500 MB per file"}}</small>
                                     </div>
                                 </div>
                             </div>

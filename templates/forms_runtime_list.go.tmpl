@@ -25,12 +25,12 @@
         <form method="get" action="/form/{{.Form.MachineName}}/list" class="mb-3">
             <div class="input-group">
                 <input type="text" name="q" class="form-control"
-                       placeholder="Buscar em campos de texto…"
+                       placeholder="{{t $.Locale "Search text fields…"}}"
                        value="{{.Filter}}">
                 {{if .Filter}}
-                <a href="/form/{{.Form.MachineName}}/list" class="btn btn-outline-secondary">Limpar</a>
+                <a href="/form/{{.Form.MachineName}}/list" class="btn btn-outline-secondary">{{t $.Locale "Clear"}}</a>
                 {{end}}
-                <button type="submit" class="btn btn-primary">Buscar</button>
+                <button type="submit" class="btn btn-primary">{{t $.Locale "Search"}}</button>
             </div>
         </form>
 
@@ -42,7 +42,7 @@
                         {{range .Attributes}}
                         <th>{{.Label}}</th>
                         {{end}}
-                        <th class="text-end">Ações</th>
+                        <th class="text-end">{{t $.Locale "Actions"}}</th>
                     </tr>
                 </thead>
                 <tbody id="records-body">
@@ -53,7 +53,7 @@
         {{else}}
         <p class="text-muted">
             {{if .Filter}}Nenhum registro corresponde a "{{.Filter}}".
-            {{else}}Nenhum registro ainda. Use <a href="/form/{{.Form.MachineName}}">Novo</a> para criar o primeiro.
+            {{else}}{{t $.Locale "No records yet."}} <a href="/form/{{.Form.MachineName}}">{{t $.Locale "New"}}</a>
             {{end}}
         </p>
         {{end}}

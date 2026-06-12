@@ -1,11 +1,11 @@
 {{define "tools_sidebar"}}
 <div class="card mb-4">
   <div class="card-header">
-    <h5 class="mb-0">{{template "icon-tools"}} Ferramentas</h5>
+    <h5 class="mb-0">{{template "icon-tools"}} {{t $.Locale "Tools"}}</h5>
   </div>
   <div class="list-group list-group-flush">
     <a href="/tools" class="list-group-item list-group-item-action{{if eq .CurrentPage "tools"}} active{{end}}">
-      Visão Geral
+      {{t $.Locale "Overview"}}
     </a>
     <a href="/tools/database-schema" class="list-group-item list-group-item-action{{if eq .CurrentPage "database-schema"}} active{{end}}">
       Database Schema
@@ -14,19 +14,19 @@
       Forms
     </a>
     <a href="/tools/translations" class="list-group-item list-group-item-action{{if eq .CurrentPage "translations"}} active{{end}}">
-      Traduções
+      {{t $.Locale "Translations"}}
     </a>
     <a href="/tools/search-forms" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center{{if eq .CurrentPage "search-forms"}} active{{end}}">
       Busca Global
     </a>
     <a href="/tools/users" class="list-group-item list-group-item-action{{if eq .CurrentPage "users"}} active{{end}}">
-      Usuários
+      {{t $.Locale "Users"}}
     </a>
     <a href="/tools/menu-editor" class="list-group-item list-group-item-action{{if eq .CurrentPage "menu-editor"}} active{{end}}">
       Menu Editor
     </a>
     <a href="/tools/filo" class="list-group-item list-group-item-action{{if eq .CurrentPage "filo"}} active{{end}}">
-      Código Filo
+      {{t $.Locale "Filo code"}}
     </a>
   </div>
 </div>

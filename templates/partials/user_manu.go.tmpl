@@ -21,13 +21,13 @@
     <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
       <li><span class="dropdown-item-text">{{.User.Username}}{{if .User.Email}} - {{.User.Email}}{{end}}</span></li>
       <li><hr class="dropdown-divider"></li>
-      <li><a class="dropdown-item" href="/me">Meu Perfil</a></li>
-      <li><a class="dropdown-item" href="/files">Meus Arquivos</a></li>
+      <li><a class="dropdown-item" href="/me">{{t $.Locale "My profile"}}</a></li>
+      <li><a class="dropdown-item" href="/files">{{t $.Locale "My files"}}</a></li>
       {{if .User.Sysop}}
       {{template "tools_menu" .}}
       {{end}}
       <li><hr class="dropdown-divider"></li>
-      <li><a class="dropdown-item" href="/logout">Sair</a></li>
+      <li><a class="dropdown-item" href="/logout">{{t $.Locale "Sign out"}}</a></li>
     </ul>
 </li>
 {{end}}

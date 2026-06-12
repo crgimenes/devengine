@@ -54,7 +54,7 @@
                                 <label for="icon" class="form-label">{{t $.Locale "Icon"}}</label>
                                 <input type="text" class="form-control" id="icon" name="icon" 
                                        value="{{.Item.Icon}}" placeholder="bi-house">
-                                <div class="form-text">Classe Bootstrap Icons (<a href="https://icons.getbootstrap.com/" target="_blank">ver ícones</a>)</div>
+                                <div class="form-text">{{t $.Locale "Bootstrap Icons class"}} (<a href="https://icons.getbootstrap.com/" target="_blank">{{t $.Locale "browse icons"}}</a>)</div>
                             </div>
 
                             <div class="col-md-6 mb-3">
@@ -95,7 +95,7 @@
                         <div class="mb-3">
                             <label for="js_code" class="form-label">{{t $.Locale "JavaScript code"}}</label>
                             <textarea class="form-control font-monospace" id="js_code" name="js_code" rows="4" 
-                                      placeholder="alert('Olá!');&#10;console.log('teste');">{{.Item.JSCode}}</textarea>
+                                      placeholder="alert('Hello!');&#10;console.log('test');">{{.Item.JSCode}}</textarea>
                             <div class="form-text">{{t $.Locale "JavaScript run on the client when the item is clicked"}}</div>
                         </div>
 

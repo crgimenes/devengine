@@ -45,10 +45,12 @@ func (h *Handlers) ToolsFilo(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed      bool
 		User        db.User
+		Locale      string
 		Config      config.Config
 		CurrentPage string
 	}{
 		Authed:      true,
+		Locale:      auth.RequestLocale(r),
 		User:        *user,
 		Config:      *h.cfg,
 		CurrentPage: "filo",
@@ -87,6 +89,7 @@ func (h *Handlers) ToolsFiloRun(w http.ResponseWriter, r *http.Request) {
 
 // filoResult is the shape passed to the result fragment template.
 type filoResult struct {
+	Locale     string
 	Script     string
 	Globals    []FiloGlobalView
 	Result     string
@@ -98,7 +101,7 @@ type filoResult struct {
 
 func (h *Handlers) runFiloScript(r *http.Request, user *db.User, script, globalsJSON string) filoResult {
 	if strings.TrimSpace(script) == "" {
-		return filoResult{Script: script, UserError: tr(r, "Empty script.")}
+		return filoResult{Locale: auth.RequestLocale(r), Script: script, UserError: tr(r, "Empty script.")}
 	}
 
 	globals := make(map[string]filo.Value)
@@ -106,7 +109,7 @@ func (h *Handlers) runFiloScript(r *http.Request, user *db.User, script, globals
 		raw := map[string]any{}
 		err := json.Unmarshal([]byte(globalsJSON), &raw)
 		if err != nil {
-			return filoResult{Script: script, UserError: tr(r, "Invalid globals JSON: %s", err.Error())}
+			return filoResult{Locale: auth.RequestLocale(r), Script: script, UserError: tr(r, "Invalid globals JSON: %s", err.Error())}
 		}
 		for k, v := range raw {
 			globals[k] = goToFilo(v)
@@ -123,13 +126,14 @@ func (h *Handlers) runFiloScript(r *http.Request, user *db.User, script, globals
 	elapsed := time.Since(start)
 
 	out := filoResult{
+		Locale:    auth.RequestLocale(r),
 		Script:    script,
 		ElapsedMS: float64(elapsed.Nanoseconds()) / 1e6,
 	}
 
 	if execErr != nil {
 		if strings.Contains(execErr.Error(), "empty script") {
-			out.UserError = "Script vazio."
+			out.UserError = tr(r, "Empty script.")
 			return out
 		}
 		out.SysError = execErr.Error()

@@ -179,7 +179,7 @@
 
                         <!-- Plugin Options Panel -->
                         <h5 class="mb-3 border-bottom pb-2">{{t $.Locale "Plugin options"}}</h5>
-                        {{template "plugin_options_panel" (dict "Meta" (parseGroupMeta .Element.UIMetaJSON .Element.ElementKind) "ElementKind" .Element.ElementKind)}}
+                        {{template "plugin_options_panel" (dict "Meta" (parseGroupMeta .Element.UIMetaJSON .Element.ElementKind) "ElementKind" .Element.ElementKind "Locale" $.Locale)}}
 
                         <!-- UI Meta JSON -->
                         <h5 class="mb-3 border-bottom pb-2">{{t $.Locale "Advanced settings (JSON)"}}</h5>
@@ -241,16 +241,16 @@
                             <div class="mb-3">
                                 <label for="button_filo_code" class="form-label">{{t $.Locale "Filo code (server)"}}</label>
                                 <textarea class="form-control font-monospace" id="button_filo_code" name="button_filo_code" 
-                                          rows="6" placeholder=";; Variáveis disponíveis: form_*, user_*, campos do formulário
-;; Variáveis de controle: error, message, redirect_to">{{.Element.ButtonFiloCode}}</textarea>
+                                          rows="6" placeholder=";; Available variables: form_*, user_*, the form fields
+;; Control variables: error, message, redirect_to">{{.Element.ButtonFiloCode}}</textarea>
                                 <div class="form-text">{{t $.Locale "Runs on the server. Never visible to the user."}}</div>
                             </div>
                             
                             <div class="mb-3">
                                 <label for="button_js_code" class="form-label">JavaScript (cliente)</label>
                                 <textarea class="form-control font-monospace" id="button_js_code" name="button_js_code" 
-                                          rows="4" placeholder="// formData contém os dados do formulário
-// return false para cancelar a ação">{{.Element.ButtonJSCode}}</textarea>
+                                          rows="4" placeholder="// formData holds the form data
+// return false to cancel the action">{{.Element.ButtonJSCode}}</textarea>
                                 <div class="form-text">Executado no navegador antes de enviar ao servidor. Retorne false para cancelar.</div>
                             </div>
                         </div>

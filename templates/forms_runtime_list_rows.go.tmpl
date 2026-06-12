@@ -7,14 +7,14 @@
     <td>
         {{$v := index $values .MachineName}}
         {{if eq $v nil}}<span class="text-muted">—</span>
-        {{else if eq .PrimitiveKind "BOOL"}}{{if $v}}Sim{{else}}Não{{end}}
+        {{else if eq .PrimitiveKind "BOOL"}}{{if $v}}{{t $.Locale "Yes"}}{{else}}{{t $.Locale "No"}}{{end}}
         {{else if eq .PrimitiveKind "DATETIME"}}{{fmtDatetime $v}}
         {{else}}{{$v}}{{end}}
     </td>
     {{end}}
     <td class="text-end">
         <a class="btn btn-sm btn-outline-primary"
-           href="/form/{{$form.MachineName}}/r/{{.Record.ReferenceID}}">Abrir</a>
+           href="/form/{{$form.MachineName}}/r/{{.Record.ReferenceID}}">{{t $.Locale "Open"}}</a>
     </td>
 </tr>
 {{end}}

@@ -7,7 +7,7 @@
       <img src="/file/{{.UserRefID}}/{{urlquery .Filename}}" alt="{{if .OriginalFilename}}{{.OriginalFilename}}{{else}}{{.Filename}}{{end}}" class="w-100 h-100 object-fit-contain" loading="lazy">
     {{- else if eq .MediaKind "video" -}}
       <video src="/file/{{.UserRefID}}/{{urlquery .Filename}}" class="w-100 h-100 object-fit-contain" preload="metadata" autoplay playsinline webkit-playsinline muted loop data-autoplay-visible="true" data-generate-poster="true">
-        Seu navegador não suporta a reprodução de vídeo.
+        {{t .Locale "Your browser does not support video playback."}}
       </video>
     {{- else if eq .MediaKind "audio" -}}
       {{template "icon-audio" .}}
@@ -27,7 +27,7 @@
 
     <!-- Short description -->
     <p class="card-text small {{if .Filedescription}}text-body{{else}}text-body-secondary fst-italic{{end}} text-truncate" style="max-height: 3rem;">
-      {{if .Filedescription}}{{.Filedescription}}{{else}}sem descrição{{end}}
+      {{if .Filedescription}}{{.Filedescription}}{{else}}{{t .Locale "no description"}}{{end}}
     </p>
 
     <!-- Tags / Categories -->

@@ -27,7 +27,7 @@
                     {{if $node.Element.HelpText}}<p class="text-muted">{{$node.Element.HelpText}}</p>{{end}}
                     <div class="row">
                         {{range $node.Children}}
-                            {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 1) "Form" $form "RecordRefID" $recordRef)}}
+                            {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 1) "Form" $form "RecordRefID" $recordRef "Locale" $.Locale)}}
                         {{end}}
                     </div>
                 </div>

@@ -32,7 +32,7 @@
                                 {{- if eq .MediaKind "audio" -}}
                                     {{/* Para audio: apenas a barra de controle, sem caixa quadrada */}}
                                     <audio src="/file/{{.User.ReferenceID}}/{{urlquery .File.Filename}}" class="w-100" controls preload="metadata">
-                                        Seu navegador não suporta a reprodução de áudio.
+                                        {{t $.Locale "Your browser does not support audio playback."}}
                                     </audio>
                                 {{- else -}}
                                     <div class="ratio ratio-1x1 bg-body-secondary d-flex align-items-center justify-content-center rounded overflow-hidden">
@@ -40,48 +40,48 @@
                                             <img src="/file/{{.User.ReferenceID}}/{{urlquery .File.Filename}}" alt="{{.File.OriginalFilename}}" class="w-100 h-100 object-fit-contain">
                                         {{- else if eq .MediaKind "video" -}}
                                             <video id="file-preview-video" src="/file/{{.User.ReferenceID}}/{{urlquery .File.Filename}}" class="w-100 h-100 object-fit-contain" preload="auto" controls playsinline muted>
-                                                Seu navegador não suporta a reprodução de vídeo.
+                                                {{t $.Locale "Your browser does not support video playback."}}
                                             </video>
                                         {{- else -}}
                                             {{template "icon-file" .}}
                                         {{- end }}
                                     </div>
                                 {{- end }}
-                                <p class="text-muted small mt-3 mb-0"><strong>Arquivo:</strong> {{.File.OriginalFilename}}</p>
+                                <p class="text-muted small mt-3 mb-0"><strong>{{t $.Locale "File"}}:</strong> {{.File.OriginalFilename}}</p>
                                 <p class="text-muted small"><strong>Tipo:</strong> {{.File.Filetype}}</p>
                                 <p class="text-muted small"><strong>Tamanho:</strong> {{.File.Filesize}} bytes</p>
                                 {{if eq .File.Filetype "video/mpeg"}}
                                 <div class="alert alert-warning alert-sm mt-2" role="alert">
-                                    <strong>⚠️ Compatibilidade:</strong> Arquivos MPEG podem não reproduzir no Chrome. Use Safari, Firefox, ou converta para MP4 para melhor compatibilidade.
+                                    <strong>⚠️ {{t $.Locale "Compatibility:"}}</strong> {{t $.Locale "MPEG files may not play on Chrome. Use Safari, Firefox, or convert to MP4."}}
                                 </div>
                                 {{end}}
                             </div>
 
                             <!-- Description -->
                             <div class="mb-3">
-                                <label for="description" class="form-label">Descrição</label>
+                                <label for="description" class="form-label">{{t $.Locale "Description"}}</label>
                                 <textarea 
                                     class="form-control" 
                                     id="description" 
                                     name="description" 
                                     rows="3" 
-                                    placeholder="Descreva o arquivo ou adicione notas sobre seu conteúdo" 
+                                    placeholder="{{t $.Locale "Describe the file or add notes about its content"}}" 
                                     maxlength="500">{{.File.Filedescription}}</textarea>
-                                <small class="form-text text-body-secondary">Máximo 500 caracteres</small>
+                                <small class="form-text text-body-secondary">{{t $.Locale "Maximum 500 characters"}}</small>
                             </div>
 
                                                         <!-- Categorias (tags) -->
                                                         <div class="mb-4">
                                                                 <label for="tagInput" class="form-label">Categorias</label>
-                                                                <input id="tagInput" type="text" name="filetag" class="form-control" value="{{.File.Filetag}}" placeholder="Digite e pressione Enter" autocomplete="off" data-ub-tag-separator="," data-ub-tag-max="20">
-                                                                <div class="form-text" id="tagHelp">Pressione Enter, vírgula ou Tab para criar uma tag. Acentos são permitidos; vírgula não é permitida dentro de uma tag.</div>
-                                                                <div class="invalid-feedback">Tags inválidas. Use letras (com acentos), números, espaço e . _ - /. Máx. 32 caracteres por tag, 20 tags, 512 no total.</div>
+                                                                <input id="tagInput" type="text" name="filetag" class="form-control" value="{{.File.Filetag}}" placeholder="{{t $.Locale "Type and press Enter"}}" autocomplete="off" data-ub-tag-separator="," data-ub-tag-max="20">
+                                                                <div class="form-text" id="tagHelp">{{t $.Locale "Press Enter, comma or Tab to create a tag. Accents are allowed; commas are not allowed inside a tag."}}</div>
+                                                                <div class="invalid-feedback">{{t $.Locale "Invalid tags. Use letters (accents ok), numbers, space and . _ - /. Max 32 chars per tag, 20 tags, 512 total."}}</div>
                                                         </div>
 
                             <!-- Buttons -->
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end gap-2">
-                                <a href="/files" class="btn btn-secondary">Cancelar</a>
-                                <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                                <a href="/files" class="btn btn-secondary">{{t $.Locale "Cancel"}}</a>
+                                <button type="submit" class="btn btn-primary">{{t $.Locale "Save changes"}}</button>
                             </div>
                         </form>
                     </div>
@@ -89,14 +89,14 @@
                 <!-- Danger zone: delete file -->
                 <div class="card mt-3">
                     <div class="card-body">
-                        <h2 class="h6 card-title mb-3">Excluir arquivo</h2>
+                        <h2 class="h6 card-title mb-3">{{t $.Locale "Delete file"}}</h2>
                         <p class="mb-3">Tem certeza que deseja excluir este arquivo?</p>
                         <form method="POST" action="/files/delete">
                             <input type="hidden" name="csrf_token" value="{{.Csrf}}">
                             <input type="hidden" name="file_id" value="{{.File.Filename}}">
                             <button type="submit" class="btn btn-outline-danger d-inline-flex align-items-center gap-2">
                                 {{template "icon-trash" .}}
-                                <span>Excluir arquivo</span>
+                                <span>{{t $.Locale "Delete file"}}</span>
                             </button>
                         </form>
                     </div>

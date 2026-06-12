@@ -14,7 +14,7 @@
         <a href="/form/{{$targetEntity}}/r/{{.ReferenceID}}"
            class="list-group-item list-group-item-action">{{.Label}}</a>
         {{else}}
-        <div class="list-group-item text-muted">Nenhum item relacionado.</div>
+        <div class="list-group-item text-muted">{{t .Locale "No related items."}}</div>
         {{end}}
         <a href="/form/{{$targetEntity}}?prefill={{$targetAttr}}={{$parentRef}}"
            class="list-group-item list-group-item-action text-primary">

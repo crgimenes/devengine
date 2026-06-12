@@ -14,6 +14,7 @@ type formRuntimePage struct {
 	Authed          bool
 	User            db.User
 	Config          config.Config
+	Locale          string
 	Form            *db.Form
 	EntityType      *db.EAVEntityType
 	Elements        []FormRuntimeElement
@@ -117,6 +118,7 @@ func (h *Handlers) renderRuntimeForm(
 		Authed:          true,
 		User:            *user,
 		Config:          *h.cfg,
+		Locale:          auth.RequestLocale(r),
 		Form:            ctx.form,
 		EntityType:      ctx.entityType,
 		Elements:        runtimeElements,

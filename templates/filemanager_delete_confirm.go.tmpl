@@ -11,7 +11,7 @@
       <div class="col-md-8">
         <div class="card border-danger-subtle">
           <div class="card-body">
-            <h1 class="h5 card-title mb-3">Confirmar exclusão</h1>
+            <h1 class="h5 card-title mb-3">{{t $.Locale "Confirm deletion"}}</h1>
             <p class="mb-4">Tem certeza que deseja excluir o arquivo <strong>{{.File.OriginalFilename}}</strong>?</p>
 
             <div class="ratio ratio-1x1 bg-body-secondary d-flex align-items-center justify-content-center rounded overflow-hidden mb-3">
@@ -19,11 +19,11 @@
                 <img src="/file/{{.User.ReferenceID}}/{{urlquery .File.Filename}}" alt="{{.File.OriginalFilename}}" class="w-100 h-100 object-fit-contain">
               {{- else if eq .MediaKind "video" -}}
                 <video src="/file/{{.User.ReferenceID}}/{{urlquery .File.Filename}}" class="w-100 h-100 object-fit-contain" preload="metadata" playsinline muted>
-                  Seu navegador não suporta a reprodução de vídeo.
+                  {{t $.Locale "Your browser does not support video playback."}}
                 </video>
               {{- else if eq .MediaKind "audio" -}}
                 <audio src="/file/{{.User.ReferenceID}}/{{urlquery .File.Filename}}" class="w-100" controls>
-                  Seu navegador não suporta a reprodução de áudio.
+                  {{t $.Locale "Your browser does not support audio playback."}}
                 </audio>
               {{- else -}}
                 {{template "icon-file" .}}
@@ -34,10 +34,10 @@
               <input type="hidden" name="csrf_token" value="{{.Csrf}}">
               <input type="hidden" name="file_id" value="{{.File.Filename}}">
               <input type="hidden" name="confirm" value="yes">
-              <a href="/files/edit?id={{.File.Filename}}" class="btn btn-secondary">Cancelar</a>
+              <a href="/files/edit?id={{.File.Filename}}" class="btn btn-secondary">{{t $.Locale "Cancel"}}</a>
               <button type="submit" class="btn btn-danger d-inline-flex align-items-center gap-2">
                 {{template "icon-trash" .}}
-                <span>Excluir definitivamente</span>
+                <span>{{t $.Locale "Delete permanently"}}</span>
               </button>
             </form>
 

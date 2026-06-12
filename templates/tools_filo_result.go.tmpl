@@ -6,7 +6,7 @@
 
     {{if .SysError}}
     <div class="alert alert-danger mb-3" role="alert">
-        <strong>Erro de execução:</strong><br>
+        <strong>{{t $.Locale "Execution error:"}}</strong><br>
         <pre class="mb-0 small">{{.SysError}}</pre>
     </div>
     {{end}}
@@ -26,7 +26,7 @@
 
     {{if .Globals}}
     <div>
-        <label class="form-label small text-muted mb-1">Globals após execução</label>
+        <label class="form-label small text-muted mb-1">{{t $.Locale "Globals after execution"}}</label>
         <div class="table-responsive">
             <table class="table table-sm table-bordered mb-0">
                 <thead>

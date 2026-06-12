@@ -74,7 +74,7 @@
                         {{if .Record}}{{$recordRef = .Record.ReferenceID}}{{end}}
                         <div class="row">
                             {{range .ElementsTree}}
-                                {{template "render_element" (dict "Node" . "Values" $.Values "Depth" 0 "Form" $.Form "RecordRefID" $recordRef)}}
+                                {{template "render_element" (dict "Node" . "Values" $.Values "Depth" 0 "Form" $.Form "RecordRefID" $recordRef "Locale" $.Locale)}}
                             {{end}}
                         </div>
 
@@ -87,11 +87,11 @@
                         <div class="d-flex gap-2">
                             {{if $showSubmit}}
                             <button type="submit" class="btn btn-primary">
-                                {{if .Record}}Salvar Alterações{{else}}Criar Registro{{end}}
+                                {{if .Record}}{{t $.Locale "Save changes"}}{{else}}{{t $.Locale "Create record"}}{{end}}
                             </button>
                             {{end}}
                             {{if $showCancel}}
-                            <a href="/tools/forms/{{.Form.ReferenceID}}/records" class="btn btn-secondary">Cancelar</a>
+                            <a href="/tools/forms/{{.Form.ReferenceID}}/records" class="btn btn-secondary">{{t $.Locale "Cancel"}}</a>
                             {{end}}
                         </div>
                         {{end}}
@@ -155,24 +155,24 @@
         <div class="col-12"><hr class="my-4"></div>
     
     {{else if eq $node.Element.ElementKind "group"}}
-        {{template "group_fieldset" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "RecordRefID" $recordRef "Meta" (parseGroupMeta $node.Element.UIMetaJSON "group"))}}
+        {{template "group_fieldset" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "RecordRefID" $recordRef "Meta" (parseGroupMeta $node.Element.UIMetaJSON "group") "Locale" $.Locale)}}
     
     {{else if eq $node.Element.ElementKind "accordion"}}
-        {{template "group_accordion" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "RecordRefID" $recordRef "Meta" (parseGroupMeta $node.Element.UIMetaJSON "accordion"))}}
+        {{template "group_accordion" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "RecordRefID" $recordRef "Meta" (parseGroupMeta $node.Element.UIMetaJSON "accordion") "Locale" $.Locale)}}
     
     {{else if eq $node.Element.ElementKind "card"}}
-        {{template "group_card" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "RecordRefID" $recordRef "Meta" (parseGroupMeta $node.Element.UIMetaJSON "card"))}}
+        {{template "group_card" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "RecordRefID" $recordRef "Meta" (parseGroupMeta $node.Element.UIMetaJSON "card") "Locale" $.Locale)}}
     
     {{else if eq $node.Element.ElementKind "tabs"}}
-        {{template "group_tabs" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "RecordRefID" $recordRef "Meta" (parseGroupMeta $node.Element.UIMetaJSON "tabs"))}}
+        {{template "group_tabs" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "RecordRefID" $recordRef "Meta" (parseGroupMeta $node.Element.UIMetaJSON "tabs") "Locale" $.Locale)}}
     
     {{else if eq $node.Element.ElementKind "carousel"}}
-        {{template "group_carousel" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "RecordRefID" $recordRef "Meta" (parseGroupMeta $node.Element.UIMetaJSON "carousel"))}}
+        {{template "group_carousel" (dict "Node" $node "Values" $values "Depth" $depth "Form" $form "RecordRefID" $recordRef "Meta" (parseGroupMeta $node.Element.UIMetaJSON "carousel") "Locale" $.Locale)}}
     
     {{else if eq $node.Element.ElementKind "button"}}
         {{/* Button element */}}
         <div class="col-12 col-md-{{$node.Element.ColSpan}} mb-3{{if eq $node.Element.Alignment "center"}} mx-auto{{else if eq $node.Element.Alignment "right"}} ms-auto{{end}}">
-            {{template "field_button" (dict "Element" $node.Element "FormMachineName" $form.MachineName)}}
+            {{template "field_button" (dict "Element" $node.Element "FormMachineName" $form.MachineName "Locale" $.Locale)}}
             {{if $node.Element.HelpText}}
                 <div class="form-text">{{$node.Element.HelpText}}</div>
             {{end}}
@@ -200,7 +200,7 @@
             </label>
             {{end}}
             
-            {{renderField (printf "field_%s" $uiKind) (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly "RecordRefID" $recordRef "FormMachineName" $form.MachineName)}}
+            {{renderField (printf "field_%s" $uiKind) (dict "Meta" $meta "Name" $node.Element.MachineName "Value" $value "Required" $node.Attribute.IsRequired "Readonly" $node.Element.IsReadonly "RecordRefID" $recordRef "FormMachineName" $form.MachineName "Locale" $.Locale)}}
 
             {{with $node.FieldError}}
                 <div class="text-danger small mt-1">{{.}}</div>
@@ -228,7 +228,7 @@
             </label>
             {{end}}
             
-            {{renderField (printf "field_%s" $uiKind) (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly "RecordRefID" $recordRef "FormMachineName" $form.MachineName)}}
+            {{renderField (printf "field_%s" $uiKind) (dict "Meta" $meta "Name" $node.Element.MachineName "Value" nil "Required" false "Readonly" $node.Element.IsReadonly "RecordRefID" $recordRef "FormMachineName" $form.MachineName "Locale" $.Locale)}}
             
             {{if not $node.Element.HideHelpText}}
             {{if $node.Element.HelpText}}

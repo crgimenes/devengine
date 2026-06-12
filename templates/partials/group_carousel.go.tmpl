@@ -40,7 +40,7 @@
                         {{if $child.Element.HelpText}}<p class="text-muted">{{$child.Element.HelpText}}</p>{{end}}
                         <div class="row">
                             {{range $child.Children}}
-                                {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 2) "Form" $form "RecordRefID" $recordRef)}}
+                                {{template "render_element" (dict "Node" . "Values" $values "Depth" (add $depth 2) "Form" $form "RecordRefID" $recordRef "Locale" $.Locale)}}
                             {{end}}
                         </div>
                     </div>
@@ -53,12 +53,12 @@
             <button class="carousel-control-prev" type="button" 
                     data-bs-target="#carousel_{{$node.Element.MachineName}}" data-bs-slide="prev">
                 <span class="carousel-control-prev-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Anterior</span>
+                <span class="visually-hidden">{{t $.Locale "Previous"}}</span>
             </button>
             <button class="carousel-control-next" type="button" 
                     data-bs-target="#carousel_{{$node.Element.MachineName}}" data-bs-slide="next">
                 <span class="carousel-control-next-icon" aria-hidden="true"></span>
-                <span class="visually-hidden">Próximo</span>
+                <span class="visually-hidden">{{t $.Locale "Next"}}</span>
             </button>
             {{end}}
         </div>

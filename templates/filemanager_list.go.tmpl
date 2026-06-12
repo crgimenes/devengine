@@ -10,7 +10,7 @@
   hx-get="/files/list?offset={{.NextOffset}}&limit={{.Limit}}{{if .Q}}&q={{.Q | urlquery}}{{end}}{{if .Sort}}&sort={{.Sort | urlquery}}{{end}}"
      hx-trigger="revealed"
      hx-swap="outerHTML">
-  <div class="small text-body-secondary">Carregando mais...</div>
+  <div class="small text-body-secondary">{{t $.Locale "Loading more…"}}</div>
 </div>
 {{- end }}
 {{end}}

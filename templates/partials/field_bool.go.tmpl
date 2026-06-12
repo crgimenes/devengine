@@ -15,7 +15,7 @@
            value="true"
            {{if eq $value true}}checked{{end}}
            {{if $readonly}}disabled{{end}}>
-    <label class="form-check-label" for="{{$name}}">Sim</label>
+    <label class="form-check-label" for="{{$name}}">{{t .Locale "Yes"}}</label>
 </div>
 
 {{else if eq $style "switch"}}
@@ -26,7 +26,7 @@
            value="true"
            {{if eq $value true}}checked{{end}}
            {{if $readonly}}disabled{{end}}>
-    <label class="form-check-label" for="{{$name}}">Sim</label>
+    <label class="form-check-label" for="{{$name}}">{{t .Locale "Yes"}}</label>
 </div>
 
 {{else}}
@@ -37,8 +37,8 @@
         {{if $required}}required{{end}}
         {{if $readonly}}disabled{{end}}>
     <option value="">Selecione...</option>
-    <option value="true" {{if eq $value true}}selected{{end}}>Sim</option>
-    <option value="false" {{if eq $value false}}selected{{end}}>Não</option>
+    <option value="true" {{if eq $value true}}selected{{end}}>{{t .Locale "Yes"}}</option>
+    <option value="false" {{if eq $value false}}selected{{end}}>{{t .Locale "No"}}</option>
 </select>
 {{end}}
 {{end}}

@@ -139,10 +139,12 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		MediaKind        string
 		CreatedAt        string
 		UserRefID        string
+		Locale           string
 	}
 	fileList := make([]fileVM, 0, len(files))
 	for _, f := range files {
 		fileList = append(fileList, fileVM{
+			Locale:           auth.RequestLocale(r),
 			ID:               f.ID,
 			OriginalFilename: f.OriginalFilename,
 			Filename:         f.Filename,
@@ -161,6 +163,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed     bool
 		User       db.User
+		Locale     string
 		Files      []fileVM
 		Limit      int
 		NextOffset int
@@ -172,6 +175,7 @@ func indexHandler(w http.ResponseWriter, r *http.Request) {
 		Sort       string
 	}{
 		Authed:     true,
+		Locale:     auth.RequestLocale(r),
 		User:       *u,
 		Files:      fileList,
 		Limit:      limit,
@@ -256,10 +260,12 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		MediaKind        string
 		CreatedAt        string
 		UserRefID        string
+		Locale           string
 	}
 	fileList := make([]fileVM, 0, len(files))
 	for _, f := range files {
 		fileList = append(fileList, fileVM{
+			Locale:           auth.RequestLocale(r),
 			ID:               f.ID,
 			OriginalFilename: f.OriginalFilename,
 			Filename:         f.Filename,
@@ -278,6 +284,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed     bool
 		User       db.User
+		Locale     string
 		Files      []fileVM
 		Limit      int
 		NextOffset int
@@ -289,6 +296,7 @@ func listHandler(w http.ResponseWriter, r *http.Request) {
 		Sort       string
 	}{
 		Authed:     true,
+		Locale:     auth.RequestLocale(r),
 		User:       *u,
 		Files:      fileList,
 		Limit:      limit,
@@ -315,12 +323,14 @@ func renderUploadError(w http.ResponseWriter, r *http.Request, u *db.User, messa
 	data := struct {
 		Authed  bool
 		User    db.User
+		Locale  string
 		Error   string
 		Message string
 		Config  config.Config
 		Csrf    string
 	}{
 		Authed: true,
+		Locale: auth.RequestLocale(r),
 		User:   *u,
 		Error:  message,
 		Config: *config.Cfg,
@@ -354,12 +364,14 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		data := struct {
 			Authed  bool
 			User    db.User
+			Locale  string
 			Error   string
 			Message string
 			Config  config.Config
 			Csrf    string
 		}{
 			Authed: true,
+			Locale: auth.RequestLocale(r),
 			User:   *u,
 			Config: *config.Cfg,
 			Csrf:   csrf,
@@ -511,11 +523,13 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 			data := struct {
 				Authed  bool
 				User    db.User
+				Locale  string
 				Error   string
 				Message string
 				Config  config.Config
 			}{
 				Authed: true,
+				Locale: auth.RequestLocale(r),
 				User:   *u,
 				Error:  "Categorias invalidas: " + nerr.Error(),
 				Config: *config.Cfg,
@@ -598,6 +612,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 		data := struct {
 			Authed    bool
 			User      db.User
+			Locale    string
 			File      db.File
 			MediaKind string
 			Error     string
@@ -606,6 +621,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 			Csrf      string
 		}{
 			Authed:    true,
+			Locale:    auth.RequestLocale(r),
 			User:      *u,
 			File:      *file,
 			MediaKind: ClassifyMediaKind(file.Filetype, file.Filename),
@@ -637,6 +653,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 			data := struct {
 				Authed    bool
 				User      db.User
+				Locale    string
 				File      db.File
 				MediaKind string
 				Error     string
@@ -645,6 +662,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 				Csrf      string
 			}{
 				Authed:    true,
+				Locale:    auth.RequestLocale(r),
 				User:      *u,
 				File:      *file,
 				MediaKind: ClassifyMediaKind(file.Filetype, file.Filename),
@@ -736,6 +754,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed    bool
 		User      db.User
+		Locale    string
 		File      db.File
 		MediaKind string
 		Error     string
@@ -744,6 +763,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 		Csrf      string
 	}{
 		Authed:    true,
+		Locale:    auth.RequestLocale(r),
 		User:      *u,
 		File:      *f,
 		MediaKind: ClassifyMediaKind(f.Filetype, f.Filename),

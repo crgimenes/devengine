@@ -1,14 +1,14 @@
 {{define "tools_menu"}}
 <li class="dropdown-submenu">
-  <a class="dropdown-item dropdown-toggle" href="/tools">{{template "icon-tools"}} Ferramentas</a>
+  <a class="dropdown-item dropdown-toggle" href="/tools">{{template "icon-tools"}} {{t $.Locale "Tools"}}</a>
   <ul class="dropdown-menu">
     <li><a class="dropdown-item" href="/tools/database-schema">Database Schema</a></li>
     <li><a class="dropdown-item" href="/tools/forms">Forms</a></li>
-    <li><a class="dropdown-item" href="/tools/translations">Traduções</a></li>
+    <li><a class="dropdown-item" href="/tools/translations">{{t $.Locale "Translations"}}</a></li>
     <li><a class="dropdown-item" href="/tools/search-forms">Busca Global</a></li>
     <li><a class="dropdown-item" href="/tools/users">Users</a></li>
     <li><a class="dropdown-item" href="/tools/menu-editor">Menu Editor</a></li>
-    <li><a class="dropdown-item" href="/tools/filo">Código Filo</a></li>
+    <li><a class="dropdown-item" href="/tools/filo">{{t $.Locale "Filo code"}}</a></li>
   </ul>
 </li>
 {{end}}

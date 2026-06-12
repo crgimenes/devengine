@@ -23,56 +23,56 @@
                 <div class="d-flex justify-content-between align-items-end mb-4 flex-wrap gap-2">
                     <div>
                         <h2 class="mb-1">Ferramentas</h2>
-                        <p class="text-muted mb-0">Administração do sistema.</p>
+                        <p class="text-muted mb-0">{{t $.Locale "System administration."}}</p>
                     </div>
                 </div>
 
                 <div class="row row-cols-1 row-cols-md-2 g-3">
                     {{template "tool_card" (dict
                         "Title" "Database Schema"
-                        "Description" "Definir entity types EAV, atributos tipados e scripts Filo de pre_save / pos_load."
+                        "Description" (t $.Locale "Define EAV entity types, typed attributes and pre_save / pos_load Filo scripts.")
                         "URL" "/tools/database-schema"
                         "Icon" "bi-database")}}
 
                     {{template "tool_card" (dict
                         "Title" "Forms"
-                        "Description" "Construir formulários sobre EAV: elementos, hierarquia, validações e botões."
+                        "Description" (t $.Locale "Build forms over EAV: elements, hierarchy, validations and buttons.")
                         "URL" "/tools/forms"
                         "Icon" "bi-input-cursor-text")}}
 
                     {{template "tool_card" (dict
-                        "Title" "Usuários"
-                        "Description" "Listar, editar, promover, desabilitar e resetar senha de usuários."
+                        "Title" (t $.Locale "Users")
+                        "Description" (t $.Locale "List, edit, promote, disable and reset user passwords.")
                         "URL" "/tools/users"
                         "Icon" "bi-people")}}
 
                     {{template "tool_card" (dict
-                        "Title" "Convites"
-                        "Description" "Gerar links de convite de uso único para novos usuários."
+                        "Title" (t $.Locale "Invites")
+                        "Description" (t $.Locale "Mint single-use invite links for new users.")
                         "URL" "/tools/invites"
                         "Icon" "bi-envelope-plus")}}
 
                     {{template "tool_card" (dict
                         "Title" "Menu Editor"
-                        "Description" "Definir menus de navegação reutilizáveis com itens recursivos e ações Filo."
+                        "Description" (t $.Locale "Define reusable navigation menus with recursive items and Filo actions.")
                         "URL" "/tools/menu-editor"
                         "Icon" "bi-list-nested")}}
 
                     {{template "tool_card" (dict
                         "Title" "Filo REPL"
-                        "Description" "Testar scripts Filo com os mesmos builtins do runtime (str-*, eav-*, file-*, session-*)."
+                        "Description" (t $.Locale "Try Filo scripts with the runtime builtins (str-*, eav-*, file-*, session-*).")
                         "URL" "/tools/filo"
                         "Icon" "bi-terminal")}}
 
                     {{template "tool_card" (dict
-                        "Title" "Traduções"
-                        "Description" "Ajustar os textos do sistema por idioma e adicionar novas traduções."
+                        "Title" (t $.Locale "Translations")
+                        "Description" (t $.Locale "Adjust the system texts per language and add new translations.")
                         "URL" "/tools/translations"
                         "Icon" "bi-translate")}}
 
                     {{template "tool_card" (dict
-                        "Title" "Busca Global"
-                        "Description" "Busca global: uma consulta sobre os campos de texto de todas as tabelas."
+                        "Title" (t $.Locale "Global search")
+                        "Description" (t $.Locale "One query across the text fields of every table.")
                         "URL" "/tools/search-forms"
                         "Icon" "bi-search")}}
                 </div>
