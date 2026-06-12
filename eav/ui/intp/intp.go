@@ -2,6 +2,7 @@
 package intp
 
 import (
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -9,9 +10,14 @@ import (
 	"strings"
 
 	"github.com/crgimenes/devengine/eav/ui"
+	"github.com/crgimenes/devengine/templates"
 )
 
+//go:embed field_int.go.tmpl
+var templatesFS embed.FS
+
 func init() {
+	templates.RegisterFS(templatesFS)
 	ui.Register("int", func() ui.FieldUI { return Plugin{} })
 }
 
@@ -27,6 +33,15 @@ func (Plugin) ID() string               { return "int" }
 func (Plugin) PrimitiveKinds() []string { return []string{"INT"} }
 func (Plugin) HasPersistence() bool     { return true }
 func (Plugin) SupportsReadOnly() bool   { return true }
+
+func (Plugin) Defaults() map[string]any {
+	return map[string]any{
+		"min":         nil,
+		"max":         nil,
+		"step":        1,
+		"placeholder": "",
+	}
+}
 
 func (Plugin) ParseOptions(raw string) any {
 	var o Options

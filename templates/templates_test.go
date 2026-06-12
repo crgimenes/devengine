@@ -5,6 +5,8 @@ import (
 	"maps"
 	"strings"
 	"testing"
+
+	"github.com/crgimenes/devengine/eav/ui"
 )
 
 func TestGetGroupDefaults(t *testing.T) {
@@ -158,40 +160,44 @@ func TestParseGroupMetaIntegration(t *testing.T) {
 }
 
 func TestGetFieldDefaults(t *testing.T) {
-	tests := []struct {
-		name        string
-		uiKind      string
-		expectedLen int
-		checkKey    string
-	}{
-		{"text defaults", "text", 4, "placeholder"},
-		{"textarea defaults", "textarea", 3, "rows"},
-		{"int defaults", "int", 4, "step"},
-		{"decimal defaults", "decimal", 5, "decimalPlaces"},
-		{"bool defaults", "bool", 1, "style"},
-		{"datetime defaults", "datetime", 3, "includeTime"},
-		{"select defaults", "select", 3, "options"},
-		{"unknown returns empty", "unknown", 0, ""},
+	// Plugin-owned kinds delegate to the registry (per-plugin values are
+	// asserted in eav/ui/defaults); media kinds and unknown ids fall back.
+	ui.Register("stubkind", func() ui.FieldUI { return stubDefaultsPlugin{} })
+
+	got := getFieldDefaults("stubkind")
+	if len(got) != 1 || got["answer"] != 42 {
+		t.Fatalf("registered plugin defaults not used: %v", got)
 	}
 
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			defaults := getFieldDefaults(tc.uiKind)
+	for kind, key := range map[string]string{
+		"image": "alt_text",
+		"video": "controls",
+		"audio": "controls",
+	} {
+		d := getFieldDefaults(kind)
+		if _, ok := d[key]; !ok {
+			t.Errorf("media fallback %s missing key %s: %v", kind, key, d)
+		}
+	}
 
-			if len(defaults) != tc.expectedLen {
-				t.Errorf("expected %d keys, got %d", tc.expectedLen, len(defaults))
-			}
-
-			if tc.checkKey != "" {
-				if _, ok := defaults[tc.checkKey]; !ok {
-					t.Errorf("expected key %q not found", tc.checkKey)
-				}
-			}
-		})
+	if d := getFieldDefaults("unknown"); len(d) != 0 {
+		t.Errorf("unknown kind must return empty defaults: %v", d)
 	}
 }
 
+type stubDefaultsPlugin struct{}
+
+func (stubDefaultsPlugin) ID() string                     { return "stubkind" }
+func (stubDefaultsPlugin) PrimitiveKinds() []string       { return []string{"TEXT"} }
+func (stubDefaultsPlugin) HasPersistence() bool           { return true }
+func (stubDefaultsPlugin) SupportsReadOnly() bool         { return true }
+func (stubDefaultsPlugin) Defaults() map[string]any       { return map[string]any{"answer": 42} }
+func (stubDefaultsPlugin) ParseOptions(string) any        { return nil }
+func (stubDefaultsPlugin) Parse(string, any) (any, error) { return nil, nil }
+func (stubDefaultsPlugin) Validate(any, any) error        { return nil }
+
 func TestParseFieldMetaIntegration(t *testing.T) {
+	ui.Register("stubkind", func() ui.FieldUI { return stubDefaultsPlugin{} })
 	parseFieldMeta := func(jsonStr string, uiKind string) map[string]any {
 		defaults := getFieldDefaults(uiKind)
 		if jsonStr == "" {
@@ -212,11 +218,10 @@ func TestParseFieldMetaIntegration(t *testing.T) {
 		checkKey string
 		expected any
 	}{
-		{"empty JSON uses defaults", "", "text", "inputMode", "text"},
-		{"invalid JSON uses defaults", "{bad}", "textarea", "rows", 3},
-		{"override placeholder", `{"placeholder": "Nome"}`, "text", "placeholder", "Nome"},
-		{"override rows", `{"rows": 10}`, "textarea", "rows", float64(10)},
-		{"bool style checkbox", `{"style": "checkbox"}`, "bool", "style", "checkbox"},
+		{"empty JSON uses plugin defaults", "", "stubkind", "answer", 42},
+		{"invalid JSON uses plugin defaults", "{bad}", "stubkind", "answer", 42},
+		{"stored JSON overrides defaults", "{\"answer\": 7}", "stubkind", "answer", float64(7)},
+		{"media fallback", "", "image", "alt_text", ""},
 	}
 
 	for _, tc := range tests {

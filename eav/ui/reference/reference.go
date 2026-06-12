@@ -16,6 +16,7 @@
 package reference
 
 import (
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,7 +27,11 @@ import (
 	"github.com/crgimenes/devengine/templates"
 )
 
+//go:embed field_reference.go.tmpl
+var templatesFS embed.FS
+
 func init() {
+	templates.RegisterFS(templatesFS)
 	ui.Register("reference", func() ui.FieldUI { return Plugin{} })
 	templates.RegisterReferenceChoicesProvider(choicesFor)
 }
@@ -43,6 +48,10 @@ func (Plugin) ID() string               { return "reference" }
 func (Plugin) PrimitiveKinds() []string { return []string{"TEXT"} }
 func (Plugin) HasPersistence() bool     { return true }
 func (Plugin) SupportsReadOnly() bool   { return true }
+
+func (Plugin) Defaults() map[string]any {
+	return map[string]any{}
+}
 
 func (Plugin) ParseOptions(raw string) any {
 	var o Options

@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/crgimenes/devengine/eav/ui"
 	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/devengine/log"
 )
@@ -107,53 +108,19 @@ func getGroupDefaults(elementKind string) map[string]any {
 }
 
 // getFieldDefaults returns default metadata values for field plugin types.
-// These are used when ui_meta_json is empty or missing fields.
+// These are used when ui_meta_json is empty or missing fields. Registered
+// plugins declare their own defaults; the switch below only covers media
+// kinds that are not plugins yet.
 func getFieldDefaults(uiKind string) map[string]any {
+	p, ok := ui.Get(uiKind)
+	if ok {
+		d := p.Defaults()
+		if d != nil {
+			return d
+		}
+		return map[string]any{}
+	}
 	switch uiKind {
-	case "text":
-		return map[string]any{
-			"placeholder": "",
-			"maxLength":   0,
-			"pattern":     "",
-			"inputMode":   "text",
-		}
-	case "textarea":
-		return map[string]any{
-			"placeholder": "",
-			"rows":        3,
-			"maxLength":   0,
-		}
-	case "int":
-		return map[string]any{
-			"min":         nil,
-			"max":         nil,
-			"step":        1,
-			"placeholder": "",
-		}
-	case "decimal":
-		return map[string]any{
-			"min":           nil,
-			"max":           nil,
-			"step":          "any",
-			"decimalPlaces": 2,
-			"placeholder":   "",
-		}
-	case "bool":
-		return map[string]any{
-			"style": "select", // select, checkbox, switch
-		}
-	case "datetime":
-		return map[string]any{
-			"includeTime": true,
-			"minDate":     "",
-			"maxDate":     "",
-		}
-	case "select":
-		return map[string]any{
-			"options":    []any{},
-			"allowEmpty": true,
-			"multiple":   false,
-		}
 	case "image":
 		return map[string]any{
 			"alt_text": "",
@@ -390,7 +357,11 @@ func templateFuncMap() template.FuncMap {
 		"parseFieldMeta": func(jsonStr string, uiKind string) map[string]any {
 			return parseMetaWithDefaults(jsonStr, getFieldDefaults(uiKind))
 		},
-		"renderField":         renderField,
+		"renderField": renderField,
+		// uiPluginIDs lists registered field plugins; renderFieldOptions
+		// renders a plugin's field_options_<id> define when it ships one.
+		"uiPluginIDs":         ui.IDs,
+		"renderFieldOptions":  renderFieldOptions,
 		"eavReferenceChoices": tmplReferenceChoices,
 		"eavSubformRecords":   tmplSubformRecords,
 		"getMenuItems":        tmplGetMenuItems,
@@ -518,19 +489,37 @@ func htmlDatetime(value any, includeTime any) string {
 	return t.Format("2006-01-02T15:04")
 }
 
+// renderFieldOptions renders the field_options_<id> define a plugin may
+// ship for the authoring options panel. Plugins without one render nothing.
+func renderFieldOptions(id string, data any) (template.HTML, error) {
+	if tpl == nil {
+		return "", errors.New("templates not loaded")
+	}
+	t := tpl.Lookup("field_options_" + id)
+	if t == nil {
+		return "", nil
+	}
+	var buf strings.Builder
+	err := t.Execute(&buf, data)
+	if err != nil {
+		return "", err
+	}
+	return template.HTML(buf.String()), nil // #nosec G203 -- buf was produced by html/template which already escaped untrusted values
+}
+
 // renderField executes the partial named `name` against data. Falls back to
-// field_text when `name` is unknown so a form with an unregistered ui_kind
-// still renders something usable.
+// the engine-owned field_fallback partial when `name` is unknown so a form
+// with an unregistered ui_kind still renders something usable.
 func renderField(name string, data any) (template.HTML, error) {
 	if tpl == nil {
 		return "", errors.New("templates not loaded")
 	}
 	t := tpl.Lookup(name)
 	if t == nil {
-		t = tpl.Lookup("field_text")
+		t = tpl.Lookup("field_fallback")
 	}
 	if t == nil {
-		return "", fmt.Errorf("template %q not found and field_text fallback missing", name)
+		return "", fmt.Errorf("template %q not found and field_fallback missing", name)
 	}
 	var buf strings.Builder
 	err := t.Execute(&buf, data)

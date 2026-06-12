@@ -1,0 +1,49 @@
+{{define "field_subform"}}
+{{$meta := .Meta}}
+{{$parentRef := .RecordRefID}}
+{{$targetEntity := index $meta "target_entity"}}
+{{$targetAttr := index $meta "target_attr"}}
+{{$display := index $meta "display"}}
+
+{{if not $parentRef}}
+<div class="text-muted small">Salve o registro primeiro para gerenciar os itens relacionados.</div>
+{{else}}
+    {{$records := eavSubformRecords $targetEntity $targetAttr $parentRef $display}}
+    <div class="list-group">
+        {{range $records}}
+        <a href="/form/{{$targetEntity}}/r/{{.ReferenceID}}"
+           class="list-group-item list-group-item-action">{{.Label}}</a>
+        {{else}}
+        <div class="list-group-item text-muted">{{t .Locale "No related items."}}</div>
+        {{end}}
+        <a href="/form/{{$targetEntity}}?prefill={{$targetAttr}}={{$parentRef}}"
+           class="list-group-item list-group-item-action text-primary">
+            + Novo
+        </a>
+    </div>
+{{end}}
+{{end}}
+
+{{define "field_options_subform"}}
+{{$meta := .Meta}}
+        <div id="field-options-subform" class="field-ui-options d-none">
+            <div class="mb-2">
+                <label for="opt_subform_targetEntity" class="form-label small">{{t .Locale "Related table (machine name)"}}</label>
+                <input type="text" class="form-control form-control-sm plugin-option" id="opt_subform_targetEntity"
+                       data-key="target_entity" value="{{index $meta "target_entity"}}" list="entity-machine-names"
+                       placeholder="{{t .Locale "e.g. order_item"}}">
+            </div>
+            <div class="mb-2">
+                <label for="opt_subform_targetAttr" class="form-label small">{{t .Locale "Attribute pointing back at this record"}}</label>
+                <input type="text" class="form-control form-control-sm plugin-option" id="opt_subform_targetAttr"
+                       data-key="target_attr" value="{{index $meta "target_attr"}}" list="attribute-machine-names"
+                       placeholder="{{t .Locale "e.g. order"}}">
+            </div>
+            <div class="mb-2">
+                <label for="opt_subform_display" class="form-label small">{{t .Locale "Display attribute (machine name)"}}</label>
+                <input type="text" class="form-control form-control-sm plugin-option" id="opt_subform_display"
+                       data-key="display" value="{{index $meta "display"}}" list="attribute-machine-names"
+                       placeholder="{{t .Locale "e.g. description"}}">
+            </div>
+        </div>
+{{end}}

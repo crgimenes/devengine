@@ -6,6 +6,7 @@
 package decimal
 
 import (
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -14,9 +15,14 @@ import (
 	"strings"
 
 	"github.com/crgimenes/devengine/eav/ui"
+	"github.com/crgimenes/devengine/templates"
 )
 
+//go:embed field_decimal.go.tmpl
+var templatesFS embed.FS
+
 func init() {
+	templates.RegisterFS(templatesFS)
 	ui.Register("decimal", func() ui.FieldUI { return Plugin{} })
 }
 
@@ -32,6 +38,16 @@ func (Plugin) ID() string               { return "decimal" }
 func (Plugin) PrimitiveKinds() []string { return []string{"REAL"} }
 func (Plugin) HasPersistence() bool     { return true }
 func (Plugin) SupportsReadOnly() bool   { return true }
+
+func (Plugin) Defaults() map[string]any {
+	return map[string]any{
+		"min":           nil,
+		"max":           nil,
+		"step":          "any",
+		"decimalPlaces": 2,
+		"placeholder":   "",
+	}
+}
 
 func (Plugin) ParseOptions(raw string) any {
 	var o Options

@@ -1,0 +1,41 @@
+{{define "field_int"}}
+{{$meta := .Meta}}
+{{$name := .Name}}
+{{$value := .Value}}
+{{$required := .Required}}
+{{$readonly := .Readonly}}
+<input type="number" 
+       class="form-control" 
+       id="{{$name}}" 
+       name="{{$name}}"
+       value="{{$value}}"
+       {{if index $meta "min"}}min="{{index $meta "min"}}"{{end}}
+       {{if index $meta "max"}}max="{{index $meta "max"}}"{{end}}
+       {{if index $meta "step"}}step="{{index $meta "step"}}"{{end}}
+       {{if index $meta "placeholder"}}placeholder="{{index $meta "placeholder"}}"{{end}}
+       {{if $required}}required{{end}}
+       {{if $readonly}}readonly{{end}}>
+{{end}}
+
+{{define "field_options_int"}}
+{{$meta := .Meta}}
+        <div id="field-options-int" class="field-ui-options d-none">
+            <div class="row">
+                <div class="col-md-4 mb-2">
+                    <label for="opt_int_min" class="form-label small">{{t .Locale "Minimum"}}</label>
+                    <input type="number" class="form-control form-control-sm plugin-option" id="opt_int_min" 
+                           data-key="min" value="{{index $meta "min"}}">
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label for="opt_int_max" class="form-label small">{{t .Locale "Maximum"}}</label>
+                    <input type="number" class="form-control form-control-sm plugin-option" id="opt_int_max" 
+                           data-key="max" value="{{index $meta "max"}}">
+                </div>
+                <div class="col-md-4 mb-2">
+                    <label for="opt_int_step" class="form-label small">Passo</label>
+                    <input type="number" class="form-control form-control-sm plugin-option" id="opt_int_step" 
+                           data-key="step" value="{{index $meta "step"}}" min="1">
+                </div>
+            </div>
+        </div>
+{{end}}

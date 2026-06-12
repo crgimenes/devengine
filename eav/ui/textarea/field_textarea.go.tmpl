@@ -1,0 +1,40 @@
+{{define "field_textarea"}}
+{{$meta := .Meta}}
+{{$name := .Name}}
+{{$value := .Value}}
+{{$required := .Required}}
+{{$readonly := .Readonly}}
+{{$rows := index $meta "rows"}}
+{{if not $rows}}{{$rows = 3}}{{end}}
+<textarea class="form-control" 
+          id="{{$name}}" 
+          name="{{$name}}"
+          rows="{{$rows}}"
+          {{if index $meta "placeholder"}}placeholder="{{index $meta "placeholder"}}"{{end}}
+          {{if and (index $meta "maxLength") (gt (index $meta "maxLength") 0)}}maxlength="{{index $meta "maxLength"}}"{{end}}
+          {{if $required}}required{{end}}
+          {{if $readonly}}readonly{{end}}>{{$value}}</textarea>
+{{end}}
+
+{{define "field_options_textarea"}}
+{{$meta := .Meta}}
+        <div id="field-options-textarea" class="field-ui-options d-none">
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <label for="opt_textarea_rows" class="form-label small">Linhas</label>
+                    <input type="number" class="form-control form-control-sm plugin-option" id="opt_textarea_rows" 
+                           data-key="rows" value="{{index $meta "rows"}}" min="1" max="20">
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label for="opt_textarea_maxLength" class="form-label small">{{t .Locale "Maximum length"}}</label>
+                    <input type="number" class="form-control form-control-sm plugin-option" id="opt_textarea_maxLength" 
+                           data-key="maxLength" value="{{index $meta "maxLength"}}" min="0">
+                </div>
+            </div>
+            <div class="mb-2">
+                <label for="opt_textarea_placeholder" class="form-label small">Placeholder</label>
+                <input type="text" class="form-control form-control-sm plugin-option" id="opt_textarea_placeholder" 
+                       data-key="placeholder" value="{{index $meta "placeholder"}}">
+            </div>
+        </div>
+{{end}}

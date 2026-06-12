@@ -1,0 +1,16 @@
+{{define "field_fallback"}}
+{{/* Engine-owned fallback: renders a plain text input when an element's
+     ui_kind has no registered plugin (or the plugin ships no template), so
+     the form stays usable. */}}
+{{$name := .Name}}
+{{$value := .Value}}
+{{$required := .Required}}
+{{$readonly := .Readonly}}
+<input type="text"
+       class="form-control"
+       id="{{$name}}"
+       name="{{$name}}"
+       value="{{$value}}"
+       {{if $required}}required{{end}}
+       {{if $readonly}}readonly{{end}}>
+{{end}}

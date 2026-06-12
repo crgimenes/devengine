@@ -6,6 +6,7 @@
 package datetime
 
 import (
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -13,9 +14,14 @@ import (
 	"time"
 
 	"github.com/crgimenes/devengine/eav/ui"
+	"github.com/crgimenes/devengine/templates"
 )
 
+//go:embed field_datetime.go.tmpl
+var templatesFS embed.FS
+
 func init() {
+	templates.RegisterFS(templatesFS)
 	ui.Register("datetime", func() ui.FieldUI { return Plugin{} })
 }
 
@@ -32,6 +38,14 @@ func (Plugin) ID() string               { return "datetime" }
 func (Plugin) PrimitiveKinds() []string { return []string{"DATETIME"} }
 func (Plugin) HasPersistence() bool     { return true }
 func (Plugin) SupportsReadOnly() bool   { return true }
+
+func (Plugin) Defaults() map[string]any {
+	return map[string]any{
+		"includeTime": true,
+		"minDate":     "",
+		"maxDate":     "",
+	}
+}
 
 func (Plugin) ParseOptions(raw string) any {
 	var o Options

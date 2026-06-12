@@ -1,0 +1,48 @@
+{{define "field_decimal"}}
+{{$meta := .Meta}}
+{{$name := .Name}}
+{{$value := .Value}}
+{{$required := .Required}}
+{{$readonly := .Readonly}}
+{{$step := index $meta "step"}}
+{{if not $step}}{{$step = "any"}}{{end}}
+<input type="number" 
+       class="form-control" 
+       id="{{$name}}" 
+       name="{{$name}}"
+       value="{{$value}}"
+       step="{{$step}}"
+       {{if index $meta "min"}}min="{{index $meta "min"}}"{{end}}
+       {{if index $meta "max"}}max="{{index $meta "max"}}"{{end}}
+       {{if index $meta "placeholder"}}placeholder="{{index $meta "placeholder"}}"{{end}}
+       {{if $required}}required{{end}}
+       {{if $readonly}}readonly{{end}}>
+{{end}}
+
+{{define "field_options_decimal"}}
+{{$meta := .Meta}}
+        <div id="field-options-decimal" class="field-ui-options d-none">
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <label for="opt_decimal_min" class="form-label small">{{t .Locale "Minimum"}}</label>
+                    <input type="number" step="any" class="form-control form-control-sm plugin-option" id="opt_decimal_min" 
+                           data-key="min" value="{{index $meta "min"}}">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="opt_decimal_max" class="form-label small">{{t .Locale "Maximum"}}</label>
+                    <input type="number" step="any" class="form-control form-control-sm plugin-option" id="opt_decimal_max" 
+                           data-key="max" value="{{index $meta "max"}}">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="opt_decimal_step" class="form-label small">Passo</label>
+                    <input type="text" class="form-control form-control-sm plugin-option" id="opt_decimal_step" 
+                           data-key="step" value="{{index $meta "step"}}" placeholder="any">
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="opt_decimal_places" class="form-label small">Casas decimais</label>
+                    <input type="number" class="form-control form-control-sm plugin-option" id="opt_decimal_places" 
+                           data-key="decimalPlaces" value="{{index $meta "decimalPlaces"}}" min="0" max="10">
+                </div>
+            </div>
+        </div>
+{{end}}

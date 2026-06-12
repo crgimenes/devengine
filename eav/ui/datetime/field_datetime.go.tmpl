@@ -1,0 +1,43 @@
+{{define "field_datetime"}}
+{{$meta := .Meta}}
+{{$name := .Name}}
+{{$value := .Value}}
+{{$required := .Required}}
+{{$readonly := .Readonly}}
+{{$includeTime := index $meta "includeTime"}}
+{{if eq $includeTime nil}}{{$includeTime = true}}{{end}}
+<input type="{{if $includeTime}}datetime-local{{else}}date{{end}}" 
+       class="form-control" 
+       id="{{$name}}" 
+       name="{{$name}}"
+       value="{{htmlDatetime $value $includeTime}}"
+       {{if index $meta "minDate"}}min="{{index $meta "minDate"}}"{{end}}
+       {{if index $meta "maxDate"}}max="{{index $meta "maxDate"}}"{{end}}
+       {{if $required}}required{{end}}
+       {{if $readonly}}readonly{{end}}>
+{{end}}
+
+{{define "field_options_datetime"}}
+{{$meta := .Meta}}
+        <div id="field-options-datetime" class="field-ui-options d-none">
+            <div class="form-check mb-2">
+                <input class="form-check-input plugin-option" type="checkbox" id="opt_datetime_includeTime" 
+                       data-key="includeTime" {{if index $meta "includeTime"}}checked{{end}}>
+                <label class="form-check-label" for="opt_datetime_includeTime">
+                    Incluir hora
+                </label>
+            </div>
+            <div class="row">
+                <div class="col-md-6 mb-2">
+                    <label for="opt_datetime_minDate" class="form-label small">{{t .Locale "Minimum date"}}</label>
+                    <input type="date" class="form-control form-control-sm plugin-option" id="opt_datetime_minDate" 
+                           data-key="minDate" value="{{index $meta "minDate"}}">
+                </div>
+                <div class="col-md-6 mb-2">
+                    <label for="opt_datetime_maxDate" class="form-label small">{{t .Locale "Maximum date"}}</label>
+                    <input type="date" class="form-control form-control-sm plugin-option" id="opt_datetime_maxDate" 
+                           data-key="maxDate" value="{{index $meta "maxDate"}}">
+                </div>
+            </div>
+        </div>
+{{end}}

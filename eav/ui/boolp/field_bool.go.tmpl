@@ -42,3 +42,17 @@
 </select>
 {{end}}
 {{end}}
+
+{{define "field_options_bool"}}
+{{$meta := .Meta}}
+        <div id="field-options-bool" class="field-ui-options d-none">
+            <div class="mb-2">
+                <label for="opt_bool_style" class="form-label small">{{t .Locale "Display style"}}</label>
+                <select class="form-select form-select-sm plugin-option" id="opt_bool_style" data-key="style">
+                    <option value="select" {{if eq (index $meta "style") "select"}}selected{{end}}>{{t .Locale "Dropdown (Yes/No)"}}</option>
+                    <option value="checkbox" {{if eq (index $meta "style") "checkbox"}}selected{{end}}>Checkbox</option>
+                    <option value="switch" {{if eq (index $meta "style") "switch"}}selected{{end}}>Switch</option>
+                </select>
+            </div>
+        </div>
+{{end}}

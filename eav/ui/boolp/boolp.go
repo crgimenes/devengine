@@ -2,13 +2,19 @@
 package boolp
 
 import (
+	"embed"
 	"errors"
 	"strings"
 
 	"github.com/crgimenes/devengine/eav/ui"
+	"github.com/crgimenes/devengine/templates"
 )
 
+//go:embed field_bool.go.tmpl
+var templatesFS embed.FS
+
 func init() {
+	templates.RegisterFS(templatesFS)
 	ui.Register("bool", func() ui.FieldUI { return Plugin{} })
 }
 
@@ -18,6 +24,12 @@ func (Plugin) ID() string               { return "bool" }
 func (Plugin) PrimitiveKinds() []string { return []string{"BOOL"} }
 func (Plugin) HasPersistence() bool     { return true }
 func (Plugin) SupportsReadOnly() bool   { return true }
+
+func (Plugin) Defaults() map[string]any {
+	return map[string]any{
+		"style": "select", // select, checkbox, switch
+	}
+}
 
 func (Plugin) ParseOptions(string) any { return nil }
 

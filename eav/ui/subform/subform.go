@@ -19,6 +19,7 @@
 package subform
 
 import (
+	"embed"
 	"encoding/json"
 	"strconv"
 
@@ -27,7 +28,11 @@ import (
 	"github.com/crgimenes/devengine/templates"
 )
 
+//go:embed field_subform.go.tmpl
+var templatesFS embed.FS
+
 func init() {
+	templates.RegisterFS(templatesFS)
 	ui.Register("subform", func() ui.FieldUI { return Plugin{} })
 	templates.RegisterSubformRecordsProvider(recordsFor)
 }
@@ -41,10 +46,14 @@ type Options struct {
 
 type Plugin struct{}
 
-func (Plugin) ID() string                     { return "subform" }
-func (Plugin) PrimitiveKinds() []string       { return nil }
-func (Plugin) HasPersistence() bool           { return false }
-func (Plugin) SupportsReadOnly() bool         { return true }
+func (Plugin) ID() string               { return "subform" }
+func (Plugin) PrimitiveKinds() []string { return nil }
+func (Plugin) HasPersistence() bool     { return false }
+func (Plugin) SupportsReadOnly() bool   { return true }
+
+func (Plugin) Defaults() map[string]any {
+	return map[string]any{}
+}
 func (Plugin) Parse(string, any) (any, error) { return nil, nil }
 func (Plugin) Validate(any, any) error        { return nil }
 

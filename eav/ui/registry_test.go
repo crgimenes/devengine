@@ -13,6 +13,7 @@ func (p stubPlugin) ID() string                   { return p.id }
 func (stubPlugin) PrimitiveKinds() []string       { return []string{"TEXT"} }
 func (stubPlugin) HasPersistence() bool           { return true }
 func (stubPlugin) SupportsReadOnly() bool         { return true }
+func (stubPlugin) Defaults() map[string]any       { return nil }
 func (stubPlugin) ParseOptions(string) any        { return nil }
 func (stubPlugin) Parse(string, any) (any, error) { return nil, nil }
 func (stubPlugin) Validate(any, any) error        { return nil }

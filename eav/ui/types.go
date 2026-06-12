@@ -11,6 +11,9 @@ type FieldUI interface {
 	PrimitiveKinds() []string
 	HasPersistence() bool
 	SupportsReadOnly() bool
+	// Defaults returns the ui_meta values assumed when ui_meta_json omits
+	// them; the authoring panel and the renderer merge stored JSON on top.
+	Defaults() map[string]any
 	ParseOptions(rawJSON string) any
 	Parse(raw string, opts any) (any, error)
 	Validate(value any, opts any) error

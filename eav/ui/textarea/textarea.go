@@ -2,15 +2,21 @@
 package textarea
 
 import (
+	"embed"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"unicode/utf8"
 
 	"github.com/crgimenes/devengine/eav/ui"
+	"github.com/crgimenes/devengine/templates"
 )
 
+//go:embed field_textarea.go.tmpl
+var templatesFS embed.FS
+
 func init() {
+	templates.RegisterFS(templatesFS)
 	ui.Register("textarea", func() ui.FieldUI { return Plugin{} })
 }
 
@@ -26,6 +32,14 @@ func (Plugin) ID() string               { return "textarea" }
 func (Plugin) PrimitiveKinds() []string { return []string{"TEXT"} }
 func (Plugin) HasPersistence() bool     { return true }
 func (Plugin) SupportsReadOnly() bool   { return true }
+
+func (Plugin) Defaults() map[string]any {
+	return map[string]any{
+		"placeholder": "",
+		"rows":        3,
+		"maxLength":   0,
+	}
+}
 
 func (Plugin) ParseOptions(raw string) any {
 	var o Options

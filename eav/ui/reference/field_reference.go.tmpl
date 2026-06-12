@@ -1,0 +1,48 @@
+{{define "field_reference"}}
+{{$meta := .Meta}}
+{{$name := .Name}}
+{{$value := .Value}}
+{{$required := .Required}}
+{{$readonly := .Readonly}}
+{{$entity := index $meta "entity"}}
+{{$display := index $meta "display"}}
+{{$allowEmpty := index $meta "allow_empty"}}
+<select class="form-select"
+        id="{{$name}}"
+        name="{{$name}}"
+        {{if $required}}required{{end}}
+        {{if $readonly}}disabled{{end}}>
+    {{if or (not $required) $allowEmpty}}
+    <option value="">--</option>
+    {{end}}
+    {{range eavReferenceChoices $entity $display}}
+    <option value="{{.Value}}" {{if eq $value .Value}}selected{{end}}>{{.Label}}</option>
+    {{end}}
+</select>
+{{end}}
+
+{{define "field_options_reference"}}
+{{$meta := .Meta}}
+        <div id="field-options-reference" class="field-ui-options d-none">
+            <div class="mb-2">
+                <label for="opt_reference_entity" class="form-label small">{{t .Locale "Referenced table (machine name)"}}</label>
+                <input type="text" class="form-control form-control-sm plugin-option" id="opt_reference_entity"
+                       data-key="entity" value="{{index $meta "entity"}}" list="entity-machine-names"
+                       placeholder="{{t .Locale "e.g. customer"}}">
+            </div>
+            <div class="mb-2">
+                <label for="opt_reference_display" class="form-label small">{{t .Locale "Display attribute (machine name)"}}</label>
+                <input type="text" class="form-control form-control-sm plugin-option" id="opt_reference_display"
+                       data-key="display" value="{{index $meta "display"}}" list="attribute-machine-names"
+                       placeholder="{{t .Locale "e.g. name"}}">
+                <div class="form-text">{{t .Locale "Shown on selects and listings instead of the record id."}}</div>
+            </div>
+            <div class="form-check mb-2">
+                <input class="form-check-input plugin-option" type="checkbox" id="opt_reference_allowEmpty"
+                       data-key="allow_empty" {{if index $meta "allow_empty"}}checked{{end}}>
+                <label class="form-check-label" for="opt_reference_allowEmpty">
+                    {{t .Locale "Allow an empty option"}}
+                </label>
+            </div>
+        </div>
+{{end}}
