@@ -288,3 +288,56 @@ func TestTranslationsImportCSV(t *testing.T) {
 		t.Fatalf("overrides = %v (%v)", overrides, err)
 	}
 }
+
+// A pre_save block authored in Filo is a user message and passes verbatim;
+// an infrastructure failure (broken script) shows the generic text + ref id
+// and never the internal detail. The db.UserError sentinel drives the split.
+func TestSaveErrorSentinelSeparatesUserFromInfra(t *testing.T) {
+	mux, s := newHTTPTestEnv(t)
+	user := plantUser(t, "user", false)
+
+	seed := func(machine, preSave string) {
+		t.Helper()
+		et, err := s.CreateEAVEntityType(machine, machine, "", preSave, "")
+		if err != nil {
+			t.Fatalf("CreateEAVEntityType(%s): %v", machine, err)
+		}
+		attr, err := s.CreateEAVAttribute(et.ID, "nome", "Nome", "", "TEXT",
+			false, false, false, nil, false, "", nil, nil, nil, nil, nil)
+		if err != nil {
+			t.Fatalf("CreateEAVAttribute: %v", err)
+		}
+		form, err := s.CreateForm(machine, machine, "", &et.ID)
+		if err != nil {
+			t.Fatalf("CreateForm: %v", err)
+		}
+		_, err = s.CreateFormElement(form.ID, nil, "nome", "field", "Nome",
+			"", 0, 12, "", "", &attr.ID, false, false)
+		if err != nil {
+			t.Fatalf("CreateFormElement: %v", err)
+		}
+	}
+
+	seed("blocked", `(set error "bloqueado pelo script")`)
+	seed("broken", `(((this is not filo`)
+
+	rr := doPostForm(t, mux, "/form/blocked", url.Values{"nome": {"x"}}, user)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("blocked submit = %d", rr.Code)
+	}
+	if !strings.Contains(rr.Body.String(), "bloqueado pelo script") {
+		t.Fatalf("script message did not pass through: %.300s", rr.Body.String())
+	}
+
+	rr = doPostForm(t, mux, "/form/broken", url.Values{"nome": {"x"}}, user)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("broken submit = %d", rr.Code)
+	}
+	body := rr.Body.String()
+	if !strings.Contains(body, "Could not save (ref ") {
+		t.Fatalf("generic infra message missing: %.300s", body)
+	}
+	if strings.Contains(body, "pre_save script") || strings.Contains(body, "parse") {
+		t.Fatalf("infra detail leaked to the page: %.300s", body)
+	}
+}

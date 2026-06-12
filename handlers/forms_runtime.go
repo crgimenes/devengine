@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"maps"
 	"net/http"
@@ -20,7 +21,6 @@ import (
 	"github.com/crgimenes/devengine/filofile"
 	"github.com/crgimenes/devengine/filolog"
 	"github.com/crgimenes/devengine/filosession"
-	"github.com/crgimenes/devengine/utils"
 	"github.com/crgimenes/filo"
 	"github.com/crgimenes/filo/filostrings"
 )
@@ -219,7 +219,7 @@ func (h *Handlers) FormsRuntimeCreate(w http.ResponseWriter, r *http.Request) {
 	// (pre_save block, unique violation) re-render keeping the typed values.
 	_, recordRefID, err := insertRecordTx(tx, ctx.entityType, ctx.attributes, parsedValues)
 	if err != nil {
-		h.renderRuntimeForm(w, r, user, ctx, nil, parsedValues, nil, "", err.Error(), "")
+		h.renderRuntimeForm(w, r, user, ctx, nil, parsedValues, nil, "", saveErrorMessage(r, "insertRecordTx", err), "")
 		return
 	}
 
@@ -391,7 +391,7 @@ func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 	// Helper handles pre_save, revision update and value saving.
 	err = updateRecordTx(tx, ctx.entityType, record, ctx.attributes, parsedValues)
 	if err != nil {
-		h.renderRuntimeForm(w, r, user, ctx, record, parsedValues, nil, "", err.Error(), "")
+		h.renderRuntimeForm(w, r, user, ctx, record, parsedValues, nil, "", saveErrorMessage(r, "updateRecordTx", err), "")
 		return
 	}
 
@@ -608,16 +608,14 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 				return
 			}
 			if err := updateRecordTx(tx, entityType, currentRecord, attributes, parsedValues); err != nil {
-				log.Printf("[ERROR] updateRecordTx failed: %v", err)
-				jsonResponse(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+				jsonResponse(w, http.StatusBadRequest, map[string]string{"error": saveErrorMessage(r, "button updateRecordTx", err)})
 				return
 			}
 		} else {
 			var newRefID string
 			_, newRefID, err = insertRecordTx(tx, entityType, attributes, parsedValues)
 			if err != nil {
-				log.Printf("[ERROR] insertRecordTx failed: %v", err)
-				jsonResponse(w, http.StatusBadRequest, map[string]string{"error": err.Error()})
+				jsonResponse(w, http.StatusBadRequest, map[string]string{"error": saveErrorMessage(r, "button insertRecordTx", err)})
 				return
 			}
 			response["redirect_to"] = "/form/" + machineName + "/r/" + newRefID
@@ -904,138 +902,73 @@ func parseElementValue(el db.FormElement, attr *db.EAVAttribute, raw string) (an
 	return raw, nil
 }
 
-// insertRecordTx handles the creation of a new record within a transaction.
-// Executes pre_save script, inserts record, and inserts values.
+// runPreSave executes the entity's pre_save script inside the transaction.
+// A script-authored block comes back as db.UserError (meant for the user);
+// anything else is infrastructure.
+func runPreSave(tx *db.Transaction, entityType *db.EAVEntityType, values db.EAVRecordValues) (db.EAVRecordValues, error) {
+	if entityType.PreSave == "" {
+		return values, nil
+	}
+	dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
+	dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
+	scriptSetup := func(eng *filo.Engine) {
+		filostrings.RegisterBuiltins(eng)
+		filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
+	}
+	modified, userError, execErr := db.ExecutePreSaveScriptWithSetup(entityType, values, scriptSetup)
+	if execErr != nil {
+		return nil, fmt.Errorf("pre_save script: %w", execErr)
+	}
+	if userError != "" {
+		return nil, db.UserError(userError)
+	}
+	return modified, nil
+}
+
+// saveErrorMessage turns a save failure into what the user should read:
+// script-authored messages (db.UserError) pass through verbatim; anything
+// else is logged under a reference id and replaced by a generic text.
+func saveErrorMessage(r *http.Request, scope string, err error) string {
+	var userErr db.UserError
+	if errors.As(err, &userErr) {
+		return string(userErr)
+	}
+	ref := logRef(scope, err)
+	return tr(r, "Could not save (ref %s)", ref)
+}
+
+// insertRecordTx runs pre_save and creates the record with its values, all
+// inside the given transaction.
 func insertRecordTx(tx *db.Transaction, entityType *db.EAVEntityType, attributes []db.EAVAttribute, values db.EAVRecordValues) (int64, string, error) {
-	// Execute pre_save script with transaction context
-	if entityType.PreSave != "" {
-		dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
-		dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
-
-		scriptSetup := func(eng *filo.Engine) {
-			filostrings.RegisterBuiltins(eng)
-			filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
-		}
-		modifiedValues, userError, execErr := db.ExecutePreSaveScriptWithSetup(entityType, values, scriptSetup)
-		if execErr != nil {
-			return 0, "", fmt.Errorf("erro no script pre_save: %w", execErr)
-		}
-		if userError != "" {
-			return 0, "", fmt.Errorf("%s", userError)
-		}
-		values = modifiedValues
-	}
-
-	// Create record
-	refID := utils.NewOpaqueID()
-	var recordID int64
-	var recordRefID string
-	err := tx.QueryRow(`INSERT INTO eav_records (reference_id, entity_type_id, status, rev) VALUES (?, ?, 'active', 1) RETURNING id, reference_id`,
-		refID, entityType.ID).Scan(&recordID, &recordRefID)
+	values, err := runPreSave(tx, entityType, values)
 	if err != nil {
-		return 0, "", fmt.Errorf("erro ao criar registro: %w", err)
-	}
-
-	// Save values
-	if err := saveValuesTx(tx, recordID, attributes, values); err != nil {
 		return 0, "", err
 	}
-
+	recordID, recordRefID, err := tx.InsertEAVRecord(entityType.ID)
+	if err != nil {
+		return 0, "", fmt.Errorf("insert record: %w", err)
+	}
+	err = tx.SaveRecordValues(recordID, attributes, values)
+	if err != nil {
+		return 0, "", fmt.Errorf("save values: %w", err)
+	}
 	return recordID, recordRefID, nil
 }
 
-// updateRecordTx handles the update of an existing record within a transaction.
-// Executes pre_save script, updates record revision, and inserts/replaces values.
+// updateRecordTx runs pre_save, bumps the revision and replaces the values,
+// all inside the given transaction.
 func updateRecordTx(tx *db.Transaction, entityType *db.EAVEntityType, record *db.EAVRecord, attributes []db.EAVAttribute, values db.EAVRecordValues) error {
-	// Execute pre_save script
-	if entityType.PreSave != "" {
-		dbAdapter := filodb.NewSQLiteAdapter(db.Storage.RW(), db.Storage.RO())
-		dbCtxWithTx := filodb.NewContext(dbAdapter, &txAdapter{tx: tx})
-
-		scriptSetup := func(eng *filo.Engine) {
-			filostrings.RegisterBuiltins(eng)
-			filodb.RegisterDBBuiltins(eng, dbCtxWithTx)
-		}
-		modifiedValues, userError, execErr := db.ExecutePreSaveScriptWithSetup(entityType, values, scriptSetup)
-		if execErr != nil {
-			return fmt.Errorf("erro no script pre_save: %w", execErr)
-		}
-		if userError != "" {
-			return fmt.Errorf("%s", userError)
-		}
-		values = modifiedValues
-	}
-
-	// Update record rev
-	err := tx.Exec(`UPDATE eav_records SET rev = rev + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, record.ID)
+	values, err := runPreSave(tx, entityType, values)
 	if err != nil {
-		return fmt.Errorf("erro ao atualizar registro: %w", err)
+		return err
 	}
-
-	// Save values
-	return saveValuesTx(tx, record.ID, attributes, values)
-}
-
-// saveValuesTx inserts or replaces values for a record within a transaction.
-func saveValuesTx(tx *db.Transaction, recordID int64, attributes []db.EAVAttribute, values db.EAVRecordValues) error {
-	for machineName, rawValue := range values {
-		var attr *db.EAVAttribute
-		for i := range attributes {
-			if attributes[i].MachineName == machineName {
-				attr = &attributes[i]
-				break
-			}
-		}
-		if attr == nil {
-			continue
-		}
-		// Computed values persist too: applyComputedExprs already overwrote
-		// any user input upstream, and lists/CSV read straight from eav_values.
-
-		var vBool, vInt, vReal, vText, vDatetime any
-		switch attr.PrimitiveKind {
-		case "BOOL":
-			if b, ok := rawValue.(bool); ok {
-				vBool = b
-			}
-		case "INT":
-			if i, ok := rawValue.(int64); ok {
-				vInt = i
-			}
-		case "REAL":
-			if f, ok := rawValue.(float64); ok {
-				vReal = f
-			} else if i, ok := rawValue.(int64); ok {
-				vReal = float64(i)
-			}
-		case "DATETIME":
-			if s, ok := rawValue.(string); ok && s != "" {
-				vDatetime = s
-			}
-		default: // TEXT
-			if s, ok := rawValue.(string); ok {
-				vText = s
-			}
-		}
-
-		// No value set means the field is empty (e.g. an optional datetime).
-		// Storing a row with every column NULL violates the one-value CHECK, so
-		// drop any prior value and skip the insert.
-		if vBool == nil && vInt == nil && vReal == nil && vText == nil && vDatetime == nil {
-			err := tx.Exec(`DELETE FROM eav_values WHERE record_id = ? AND attribute_id = ?`,
-				recordID, attr.ID)
-			if err != nil {
-				return fmt.Errorf("erro ao limpar valor: %w", err)
-			}
-			continue
-		}
-
-		err := tx.Exec(`INSERT OR REPLACE INTO eav_values (record_id, attribute_id, v_bool, v_int, v_real, v_text, v_datetime)
-			VALUES (?, ?, ?, ?, ?, ?, ?)`,
-			recordID, attr.ID, vBool, vInt, vReal, vText, vDatetime)
-		if err != nil {
-			return fmt.Errorf("erro ao salvar valor: %w", err)
-		}
+	err = tx.BumpEAVRecordRev(record.ID)
+	if err != nil {
+		return fmt.Errorf("bump record rev: %w", err)
+	}
+	err = tx.SaveRecordValues(record.ID, attributes, values)
+	if err != nil {
+		return fmt.Errorf("save values: %w", err)
 	}
 	return nil
 }
