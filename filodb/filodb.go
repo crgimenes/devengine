@@ -26,7 +26,7 @@ import (
 )
 
 // DBStorage defines the database operations required by filodb.
-// This interface is implemented by *db.SQLite.
+// This interface is implemented by db.Store.
 type DBStorage interface {
 	Query(query string, args ...any) (*sql.Rows, error)
 	Exec(query string, args ...any) error
@@ -34,7 +34,7 @@ type DBStorage interface {
 }
 
 // DBTransaction defines transaction operations.
-// This interface is implemented by *db.Transaction.
+// This interface is implemented by db.Tx.
 type DBTransaction interface {
 	Query(query string, args ...any) (*sql.Rows, error)
 	Exec(query string, args ...any) error

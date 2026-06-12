@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/db/sqlite"
 )
 
 func TestRunSnapshotsDBAndData(t *testing.T) {
@@ -17,11 +17,11 @@ func TestRunSnapshotsDBAndData(t *testing.T) {
 
 	// Source database with real schema and one user.
 	dbPath := filepath.Join(dir, "app.db")
-	s, err := db.NewWithPath(dbPath)
+	s, err := sqlite.NewWithPath(dbPath)
 	if err != nil {
 		t.Fatalf("NewWithPath: %v", err)
 	}
-	err = db.RunMigrationOn(s)
+	err = sqlite.RunMigrationOn(s)
 	if err != nil {
 		t.Fatalf("RunMigrationOn: %v", err)
 	}
@@ -51,7 +51,7 @@ func TestRunSnapshotsDBAndData(t *testing.T) {
 
 	// The snapshot must be a working database containing the user.
 	snapPath := filepath.Join(outDir, "20260611-130000.db")
-	snap, err := db.NewWithPath(snapPath)
+	snap, err := sqlite.NewWithPath(snapPath)
 	if err != nil {
 		t.Fatalf("open snapshot: %v", err)
 	}
@@ -101,11 +101,11 @@ func TestRunSnapshotsDBAndData(t *testing.T) {
 func TestRunSkipsAbsentDataDir(t *testing.T) {
 	dir := t.TempDir()
 	dbPath := filepath.Join(dir, "app.db")
-	s, err := db.NewWithPath(dbPath)
+	s, err := sqlite.NewWithPath(dbPath)
 	if err != nil {
 		t.Fatalf("NewWithPath: %v", err)
 	}
-	err = db.RunMigrationOn(s)
+	err = sqlite.RunMigrationOn(s)
 	if err != nil {
 		t.Fatalf("RunMigrationOn: %v", err)
 	}

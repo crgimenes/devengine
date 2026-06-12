@@ -15,6 +15,7 @@ import (
 	"github.com/crgimenes/devengine/auth/basic"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/db/sqlite"
 	"github.com/crgimenes/devengine/ratelimit"
 	"github.com/crgimenes/devengine/session"
 	"github.com/crgimenes/devengine/utils"
@@ -33,11 +34,11 @@ func setupHandler(t *testing.T) (*basic.Handlers, func()) {
 func setupHandlerWith(t *testing.T, tmpl basic.TemplateExecutor) (*basic.Handlers, func()) {
 	t.Helper()
 
-	s, err := db.NewWithPath(filepath.Join(t.TempDir(), "test.db"))
+	s, err := sqlite.NewWithPath(filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {
 		t.Fatalf("NewWithPath: %v", err)
 	}
-	err = db.RunMigrationOn(s)
+	err = sqlite.RunMigrationOn(s)
 	if err != nil {
 		t.Fatalf("RunMigrationOn: %v", err)
 	}

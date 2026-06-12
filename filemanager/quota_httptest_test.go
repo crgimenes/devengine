@@ -12,21 +12,22 @@ import (
 
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/db/sqlite"
 	"github.com/crgimenes/devengine/session"
 	"github.com/crgimenes/devengine/utils"
 )
 
 // newQuotaTestEnv wires the filemanager routes over a fresh database with a
 // 1 MB quota and returns the mux plus an authenticated user cookie.
-func newQuotaTestEnv(t *testing.T) (*http.ServeMux, *db.SQLite, *db.User, *http.Cookie) {
+func newQuotaTestEnv(t *testing.T) (*http.ServeMux, db.Store, *db.User, *http.Cookie) {
 	t.Helper()
 
-	s, err := db.NewWithPath(filepath.Join(t.TempDir(), "fm.db"))
+	s, err := sqlite.NewWithPath(filepath.Join(t.TempDir(), "fm.db"))
 	if err != nil {
 		t.Fatalf("NewWithPath: %v", err)
 	}
 	t.Cleanup(func() { s.Close() })
-	err = db.RunMigrationOn(s)
+	err = sqlite.RunMigrationOn(s)
 	if err != nil {
 		t.Fatalf("RunMigrationOn: %v", err)
 	}
@@ -64,7 +65,7 @@ func newQuotaTestEnv(t *testing.T) (*http.ServeMux, *db.SQLite, *db.User, *http.
 }
 
 // seedUsage records metadata as if the user already stored size bytes.
-func seedUsage(t *testing.T, s *db.SQLite, userID, size int64) {
+func seedUsage(t *testing.T, s db.Store, userID, size int64) {
 	t.Helper()
 	_, err := s.SaveFileMetadata(&db.File{
 		UserID:           userID,

@@ -6,29 +6,30 @@ import (
 	"testing"
 
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/db/sqlite"
 )
 
-func newValidateTestStore(t *testing.T) *db.SQLite {
+func newValidateTestStore(t *testing.T) db.Store {
 	t.Helper()
-	s, err := db.NewWithPath(filepath.Join(t.TempDir(), "test.db"))
+	s, err := sqlite.NewWithPath(filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {
 		t.Fatalf("NewWithPath: %v", err)
 	}
-	err = db.RunMigrationOn(s)
+	err = sqlite.RunMigrationOn(s)
 	if err != nil {
 		t.Fatalf("RunMigrationOn: %v", err)
 	}
 	return s
 }
 
-func setStorage(t *testing.T, s *db.SQLite) {
+func setStorage(t *testing.T, s db.Store) {
 	t.Helper()
 	prev := db.Storage
 	db.Storage = s
 	t.Cleanup(func() { db.Storage = prev })
 }
 
-func textAttr(t *testing.T, s *db.SQLite, entityID int64, machine, label string) db.EAVAttribute {
+func textAttr(t *testing.T, s db.Store, entityID int64, machine, label string) db.EAVAttribute {
 	t.Helper()
 	a, err := s.CreateEAVAttribute(entityID, machine, label, "", "TEXT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
 	if err != nil {

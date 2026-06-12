@@ -7,24 +7,25 @@ import (
 	"time"
 
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/db/sqlite"
 	"github.com/crgimenes/filo"
 )
 
-func newTestStore(t *testing.T) *db.SQLite {
+func newTestStore(t *testing.T) db.Store {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "test.db")
-	s, err := db.NewWithPath(path)
+	s, err := sqlite.NewWithPath(path)
 	if err != nil {
 		t.Fatalf("NewWithPath: %v", err)
 	}
-	err = db.RunMigrationOn(s)
+	err = sqlite.RunMigrationOn(s)
 	if err != nil {
 		t.Fatalf("RunMigrationOn: %v", err)
 	}
 	return s
 }
 
-func insertFile(t *testing.T, s *db.SQLite, userID int64, filename, original, hash string, size int64, mime string) {
+func insertFile(t *testing.T, s db.Store, userID int64, filename, original, hash string, size int64, mime string) {
 	t.Helper()
 	now := time.Now().UTC().Format(time.RFC3339)
 	err := s.Exec(`INSERT INTO filemanager_files

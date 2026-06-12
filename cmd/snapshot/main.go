@@ -17,7 +17,7 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/db/sqlite"
 )
 
 func main() {
@@ -71,7 +71,7 @@ func snapshotDB(dbPath, dest string) error {
 	if err != nil {
 		return fmt.Errorf("database %q: %w", dbPath, err)
 	}
-	s, err := db.NewWithPath(dbPath)
+	s, err := sqlite.NewWithPath(dbPath)
 	if err != nil {
 		return fmt.Errorf("open db %q: %w", dbPath, err)
 	}

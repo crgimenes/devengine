@@ -12,17 +12,18 @@ import (
 
 	"github.com/crgimenes/devengine/auth/basic"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/db/sqlite"
 )
 
 func run(dbPath string) error {
-	s, err := db.NewWithPath(dbPath)
+	s, err := sqlite.NewWithPath(dbPath)
 	if err != nil {
 		return fmt.Errorf("open db %q: %w", dbPath, err)
 	}
 	defer s.Close()
 
 	db.Storage = s
-	err = db.RunMigration()
+	err = sqlite.RunMigration()
 	if err != nil {
 		return fmt.Errorf("run migrations: %w", err)
 	}

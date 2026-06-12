@@ -20,7 +20,7 @@ import (
 // database, routed through a mux so {id} path values resolve. Template errors
 // surface mid-render (HTTP 200 + "template error" appended to the partial
 // body), so render assertions must inspect the body, not just the status.
-func newHTTPTestEnv(t *testing.T) (*http.ServeMux, *db.SQLite) {
+func newHTTPTestEnv(t *testing.T) (*http.ServeMux, db.Store) {
 	t.Helper()
 
 	s := newValidateTestStore(t)
@@ -132,7 +132,7 @@ func TestToolsForbiddenForNonSysop(t *testing.T) {
 
 // seedTaskForm creates an entity type with one TEXT attribute, a form bound to
 // it, and one record holding the given title.
-func seedTaskForm(t *testing.T, s *db.SQLite, title string) *db.Form {
+func seedTaskForm(t *testing.T, s db.Store, title string) *db.Form {
 	t.Helper()
 	et, err := s.CreateEAVEntityType("Tarefa", "tarefa", "", "", "")
 	if err != nil {

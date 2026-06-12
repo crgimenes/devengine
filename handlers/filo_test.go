@@ -7,15 +7,16 @@ import (
 	"testing"
 
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/db/sqlite"
 )
 
-func newFiloTestStore(t *testing.T) *db.SQLite {
+func newFiloTestStore(t *testing.T) db.Store {
 	t.Helper()
-	s, err := db.NewWithPath(filepath.Join(t.TempDir(), "test.db"))
+	s, err := sqlite.NewWithPath(filepath.Join(t.TempDir(), "test.db"))
 	if err != nil {
 		t.Fatalf("NewWithPath: %v", err)
 	}
-	err = db.RunMigrationOn(s)
+	err = sqlite.RunMigrationOn(s)
 	if err != nil {
 		t.Fatalf("RunMigrationOn: %v", err)
 	}

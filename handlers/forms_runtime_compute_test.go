@@ -7,7 +7,7 @@ import (
 	"github.com/crgimenes/devengine/db"
 )
 
-func computedTextAttr(t *testing.T, s *db.SQLite, entityID int64, machine, label, expr string) db.EAVAttribute {
+func computedTextAttr(t *testing.T, s db.Store, entityID int64, machine, label, expr string) db.EAVAttribute {
 	t.Helper()
 	a, err := s.CreateEAVAttribute(entityID, machine, label, "", "TEXT", false, false, false, nil, true, expr, nil, nil, nil, nil, nil)
 	if err != nil {
@@ -16,7 +16,7 @@ func computedTextAttr(t *testing.T, s *db.SQLite, entityID int64, machine, label
 	return *a
 }
 
-func computedIntAttr(t *testing.T, s *db.SQLite, entityID int64, machine, label, expr string) db.EAVAttribute {
+func computedIntAttr(t *testing.T, s db.Store, entityID int64, machine, label, expr string) db.EAVAttribute {
 	t.Helper()
 	a, err := s.CreateEAVAttribute(entityID, machine, label, "", "INT", false, false, false, nil, true, expr, nil, nil, nil, nil, nil)
 	if err != nil {

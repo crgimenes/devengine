@@ -1,8 +1,9 @@
 package utils
 
-import "strings"
-
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestNormalizeTagsCSV_Empty(t *testing.T) {
 	csv, tags, err := NormalizeTagsCSV("")

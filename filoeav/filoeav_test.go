@@ -6,24 +6,25 @@ import (
 	"testing"
 
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/db/sqlite"
 	"github.com/crgimenes/filo"
 )
 
-func newTestStore(t *testing.T) *db.SQLite {
+func newTestStore(t *testing.T) db.Store {
 	t.Helper()
 	path := filepath.Join(t.TempDir(), "test.db")
-	s, err := db.NewWithPath(path)
+	s, err := sqlite.NewWithPath(path)
 	if err != nil {
 		t.Fatalf("NewWithPath: %v", err)
 	}
-	err = db.RunMigrationOn(s)
+	err = sqlite.RunMigrationOn(s)
 	if err != nil {
 		t.Fatalf("RunMigrationOn: %v", err)
 	}
 	return s
 }
 
-func seedPerson(t *testing.T, s *db.SQLite) (entityID int64, nameAttrID int64) {
+func seedPerson(t *testing.T, s db.Store) (entityID int64, nameAttrID int64) {
 	t.Helper()
 	et, err := s.CreateEAVEntityType("Person", "person", "", "", "")
 	if err != nil {
@@ -36,7 +37,7 @@ func seedPerson(t *testing.T, s *db.SQLite) (entityID int64, nameAttrID int64) {
 	return et.ID, attr.ID
 }
 
-func insertRecordWithName(t *testing.T, s *db.SQLite, entityID, attrID int64, name string) string {
+func insertRecordWithName(t *testing.T, s db.Store, entityID, attrID int64, name string) string {
 	t.Helper()
 	rec, err := s.CreateEAVRecord(entityID)
 	if err != nil {

@@ -1,9 +1,10 @@
 package handlers
 
 import (
-	"github.com/crgimenes/devengine/auth"
 	"net/http"
 	"strings"
+
+	"github.com/crgimenes/devengine/auth"
 
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"

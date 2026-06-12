@@ -90,8 +90,8 @@ func MdToHTML(md []byte) []byte {
 func MarkdownToHTMLHandler(w http.ResponseWriter, r *http.Request) {
 	_, _, _, err := auth.Prelude(w, r,
 		[]string{http.MethodPost},
-		true,  // check auth
-		true,  // prevent cache
+		true, // check auth
+		true, // prevent cache
 	)
 	if err != nil {
 		log.Printf("auth.Prelude error: %v", err)
@@ -123,8 +123,8 @@ func MarkdownToHTMLHandler(w http.ResponseWriter, r *http.Request) {
 func GetUserFilesHandler(w http.ResponseWriter, r *http.Request) {
 	u, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},
-		true,  // check auth
-		true,  // prevent cache
+		true, // check auth
+		true, // prevent cache
 	)
 	if err != nil {
 		log.Printf("auth.Prelude error: %v", err)

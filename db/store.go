@@ -6,7 +6,7 @@ import (
 )
 
 // Store is the storage contract the engine programs against. The global
-// Storage variable holds the active implementation; *SQLite is the only one
+// Storage variable holds the active implementation; db/sqlite is the only one
 // today, future backends (PostgreSQL, ...) live in their own packages with
 // SQL written for each database — no generic SQL layer.
 //
@@ -228,9 +228,3 @@ type I18nStore interface {
 type SchemaStore interface {
 	ListRelationalTables() ([]TableInfo, error)
 }
-
-// Compile-time checks: *SQLite is a Store and *Transaction is a Tx.
-var (
-	_ Store = (*SQLite)(nil)
-	_ Tx    = (*Transaction)(nil)
-)

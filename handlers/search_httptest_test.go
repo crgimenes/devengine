@@ -12,7 +12,7 @@ import (
 
 // seedSearchEntity creates an entity type with a single TEXT attribute and
 // one record per given value.
-func seedSearchEntity(t *testing.T, s *db.SQLite, name, machine string, values ...string) *db.EAVEntityType {
+func seedSearchEntity(t *testing.T, s db.Store, name, machine string, values ...string) *db.EAVEntityType {
 	t.Helper()
 	et, err := s.CreateEAVEntityType(name, machine, "", "", "")
 	if err != nil {

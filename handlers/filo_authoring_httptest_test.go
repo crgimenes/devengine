@@ -236,7 +236,7 @@ func TestListingResolvesReferenceDisplay(t *testing.T) {
 
 // seedDatetimeForm builds an entity with a single DATETIME attribute carrying
 // the given default, plus a bound form+element.
-func seedDatetimeForm(t *testing.T, s *db.SQLite, defaultValue string) *db.Form {
+func seedDatetimeForm(t *testing.T, s db.Store, defaultValue string) *db.Form {
 	t.Helper()
 	et, err := s.CreateEAVEntityType("Evento", "evento", "", "", "")
 	if err != nil {

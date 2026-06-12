@@ -11,7 +11,7 @@ import (
 )
 
 // addButton attaches a button element with the given Filo script to the form.
-func addButton(t *testing.T, s *db.SQLite, form *db.Form, machine, filoCode string, runSave bool) {
+func addButton(t *testing.T, s db.Store, form *db.Form, machine, filoCode string, runSave bool) {
 	t.Helper()
 	el, err := s.CreateFormElement(form.ID, nil, machine, "button", machine, "", 10, 12, "", "", nil, true, false)
 	if err != nil {
@@ -111,7 +111,7 @@ func TestFormsRuntimeButtonFiloErrorBlocks(t *testing.T) {
 
 // seedStockScenario builds produto (estoque INT) with one record at stock 10,
 // plus a pedido2 form with quantidade/produto fields bound to its own entity.
-func seedStockScenario(t *testing.T, s *db.SQLite) (form *db.Form, produtoRef string) {
+func seedStockScenario(t *testing.T, s db.Store) (form *db.Form, produtoRef string) {
 	t.Helper()
 	prodET, err := s.CreateEAVEntityType("Produto", "produto", "", "", "")
 	if err != nil {
@@ -161,7 +161,7 @@ func seedStockScenario(t *testing.T, s *db.SQLite) (form *db.Form, produtoRef st
 	return form, prod.ReferenceID
 }
 
-func stockOf(t *testing.T, s *db.SQLite, produtoRef string) int64 {
+func stockOf(t *testing.T, s db.Store, produtoRef string) int64 {
 	t.Helper()
 	rec, err := s.GetEAVRecordByRefID(produtoRef)
 	if err != nil {

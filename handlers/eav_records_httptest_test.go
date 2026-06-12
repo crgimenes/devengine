@@ -18,7 +18,7 @@ type adminEntity struct {
 
 // seedAdminEntity creates an entity type exercising every primitive kind plus
 // the validation knobs (required, unique, max_length).
-func seedAdminEntity(t *testing.T, s *db.SQLite, preSave string) adminEntity {
+func seedAdminEntity(t *testing.T, s db.Store, preSave string) adminEntity {
 	t.Helper()
 	et, err := s.CreateEAVEntityType("Item", "item", "", preSave, "")
 	if err != nil {
@@ -64,7 +64,7 @@ func fullRecordForm() url.Values {
 }
 
 // recordValues reads back the typed values of the newest record of the entity.
-func recordValues(t *testing.T, s *db.SQLite, ent adminEntity) (*db.EAVRecord, map[string]any) {
+func recordValues(t *testing.T, s db.Store, ent adminEntity) (*db.EAVRecord, map[string]any) {
 	t.Helper()
 	records, err := s.ListEAVRecordsCursor(ent.et.ID, 0, 10, "")
 	if err != nil {
