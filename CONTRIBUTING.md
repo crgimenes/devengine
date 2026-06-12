@@ -100,6 +100,12 @@ go test ./...
   Never log passwords, tokens or secrets.
 - **Errors shown to users** never carry `err.Error()`. Log the detail under
   a reference id (`logRef`) and show a generic message with the id.
+- **CSRF.** Applications wrap their mux with `middleware.CSRFProtection`
+  (the standard library's `http.CrossOriginProtection`): every
+  state-changing request from a browser must be same-origin. Session
+  cookies are `SameSite=Lax` as a second layer; some screens additionally
+  carry a double-submit token. Non-browser clients (curl, bearer-token API
+  calls) are unaffected.
 - **Listings** use ordered cursor-based infinite scroll
   (`WHERE id < ? ORDER BY id DESC`), not OFFSET pagination.
 
