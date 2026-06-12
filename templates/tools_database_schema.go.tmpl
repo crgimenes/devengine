@@ -29,7 +29,7 @@
                     </div>
                     
                     <p class="text-muted mb-4">
-                        Tabelas relacionais (criadas por migrations) e tabelas EAV (entidades dinâmicas).
+                        {{t $.Locale "Relational tables (created by migrations) and EAV tables (dynamic entities)."}}
                     </p>
 
                     {{if .Tables}}
@@ -56,7 +56,7 @@
                                                 Editar Estrutura
                                             </a>
                                         {{else}}
-                                            <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="Tabela relacional">
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" disabled title="{{t $.Locale "Relational table"}}">
                                                 View Schema
                                             </button>
                                         {{end}}

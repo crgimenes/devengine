@@ -149,6 +149,13 @@ func TestDashboardListsForms(t *testing.T) {
 		t.Fatal("dashboard missing form link")
 	}
 
+	// The page chrome follows the request locale (guards the Locale field
+	// on the dashboard data struct).
+	rr = getWithHeader(t, mux, "/", user, map[string]string{"Accept-Language": "pt-BR"})
+	if !strings.Contains(rr.Body.String(), "Formulários") {
+		t.Fatal("dashboard chrome not translated to pt-BR")
+	}
+
 	// Content translation applies to the card label.
 	i18n.SetContent("en-US", form.ReferenceID, "label", "Task entry (en)")
 	rr = getWithHeader(t, mux, "/", user, map[string]string{"Accept-Language": "en-US"})

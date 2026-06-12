@@ -37,7 +37,7 @@
                 <div class="card p-4 mb-4">
                     <div class="d-flex justify-content-between align-items-start mb-3">
                         <div>
-                            <h2 class="mb-1">Editar Tabela EAV</h2>
+                            <h2 class="mb-1">{{t $.Locale "Edit EAV table"}}</h2>
                             <p class="text-muted mb-0 small font-monospace">{{.EntityType.MachineName}}</p>
                         </div>
                         <div class="d-flex gap-2">
@@ -52,7 +52,7 @@
 
                     <form method="POST" action="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/edit">
                         <div class="mb-3">
-                            <label for="name" class="form-label">Nome <span class="text-danger">*</span></label>
+                            <label for="name" class="form-label">{{t $.Locale "Name"}} <span class="text-danger">*</span></label>
                             <input 
                                 type="text" 
                                 class="form-control" 
@@ -65,7 +65,7 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="description" class="form-label">Descrição</label>
+                            <label for="description" class="form-label">{{t $.Locale "Description"}}</label>
                             <textarea 
                                 class="form-control" 
                                 id="description" 
@@ -76,7 +76,7 @@
                         </div>
 
                         <div class="mb-4">
-                            <label for="pos_load" class="form-label">Script Pós-Carregamento (Filo)</label>
+                            <label for="pos_load" class="form-label">{{t $.Locale "Post-load script (Filo)"}}</label>
                             <textarea 
                                 class="form-control font-monospace" 
                                 id="pos_load" 
@@ -85,13 +85,12 @@
                                 placeholder="(set campo (str-concat campo &quot; - editado&quot;))"
                             >{{.EntityType.PosLoad}}</textarea>
                             <div class="form-text">
-                                Código Filo executado após carregar registros e defaults, antes de exibir.
-                                Se "error" estiver preenchida, mostra a mensagem na tela.
+                                {{t $.Locale "Filo code run after loading records and defaults, before display. A non-empty \"error\" shows the message on screen."}}
                             </div>
                         </div>
 
                         <div class="mb-4">
-                            <label for="pre_save" class="form-label">Script Pré-Salvamento (Filo)</label>
+                            <label for="pre_save" class="form-label">{{t $.Locale "Pre-save script (Filo)"}}</label>
                             <textarea 
                                 class="form-control font-monospace" 
                                 id="pre_save" 
@@ -100,20 +99,19 @@
                                 placeholder="(set error &quot;Mensagem de erro&quot;)"
                             >{{.EntityType.PreSave}}</textarea>
                             <div class="form-text">
-                                Código Filo executado antes de salvar registros. 
-                                Se "error" estiver preenchida, o salvamento é bloqueado.
+                                {{t $.Locale "Filo code run before saving records. A non-empty \"error\" blocks the save."}}
                             </div>
                         </div>
 
-                        <button type="submit" class="btn btn-primary">Salvar Alterações</button>
+                        <button type="submit" class="btn btn-primary">{{t $.Locale "Save changes"}}</button>
                     </form>
                 </div>
 
                 <!-- Attributes List -->
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h3 class="mb-0">Atributos</h3>
+                        <h3 class="mb-0">{{t $.Locale "Attributes"}}</h3>
                         <a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/attributes/new" class="btn btn-primary">
-                            Novo Atributo
+                            {{t $.Locale "New attribute"}}
                         </a>
                     </div>
 
@@ -122,10 +120,10 @@
                             <table class="table table-hover">
                                 <thead>
                                     <tr>
-                                        <th>Nome</th>
-                                        <th>Tipo</th>
+                                        <th>{{t $.Locale "Name"}}</th>
+                                        <th>{{t $.Locale "Type"}}</th>
                                         <th>Flags</th>
-                                        <th style="width: 150px;">Ações</th>
+                                        <th style="width: 150px;">{{t $.Locale "Actions"}}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -156,11 +154,11 @@
                                                 <div class="btn-group btn-group-sm" role="group">
                                                     <a href="/tools/database-schema/eav/{{$.EntityType.ReferenceID}}/attributes/{{.ReferenceID}}/edit" 
                                                        class="btn btn-outline-primary">
-                                                        Editar
+                                                        {{t $.Locale "Edit"}}
                                                     </a>
                                                     <form method="POST" action="/tools/database-schema/eav/{{$.EntityType.ReferenceID}}/attributes/{{.ReferenceID}}/delete" style="display: inline;" class="delete-attribute-form">
                                                         <button type="submit" class="btn btn-outline-danger btn-sm">
-                                                            Excluir
+                                                            {{t $.Locale "Delete"}}
                                                         </button>
                                                     </form>
                                                 </div>
@@ -172,7 +170,7 @@
                         </div>
                     {{else}}
                         <div class="alert alert-secondary mb-0" role="alert">
-                            <p class="mb-0">Nenhum atributo criado ainda. Clique em "Novo Atributo" para adicionar campos a esta tabela.</p>
+                            <p class="mb-0">{{t $.Locale "No attributes yet. Click \"New attribute\" to add fields to this table."}}</p>
                         </div>
                     {{end}}
                 </div>

@@ -154,10 +154,10 @@ func (h *Handlers) Home(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed  bool
 		User    db.User
+		Locale  string
 		Error   string
 		Message string
 		Config  config.Config
-		Locale  string
 		Forms   []db.Form
 	}{
 		Authed:  authed,
@@ -206,12 +206,14 @@ func (h *Handlers) Tools(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed      bool
 		User        db.User
+		Locale      string
 		Error       string
 		Message     string
 		Config      config.Config
 		CurrentPage string
 	}{
 		Authed:      true,
+		Locale:      auth.RequestLocale(r),
 		User:        *user,
 		Message:     message,
 		Config:      *h.cfg,
@@ -295,6 +297,7 @@ func (h *Handlers) ToolsDatabaseSchema(w http.ResponseWriter, r *http.Request) {
 	data := struct {
 		Authed      bool
 		User        db.User
+		Locale      string
 		Error       string
 		Message     string
 		Config      config.Config
@@ -302,6 +305,7 @@ func (h *Handlers) ToolsDatabaseSchema(w http.ResponseWriter, r *http.Request) {
 		Tables      []SchemaTable
 	}{
 		Authed:      true,
+		Locale:      auth.RequestLocale(r),
 		User:        *user,
 		Message:     message,
 		Config:      *h.cfg,
@@ -450,6 +454,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 	data := struct {
 		Authed      bool
 		User        db.User
+		Locale      string
 		Error       string
 		Message     string
 		Config      config.Config
@@ -457,6 +462,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVNew(w http.ResponseWriter, r *http.Requ
 		FormData    FormData
 	}{
 		Authed:      true,
+		Locale:      auth.RequestLocale(r),
 		User:        *user,
 		Config:      *h.cfg,
 		CurrentPage: "database-schema",
@@ -595,6 +601,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 	data := struct {
 		Authed      bool
 		User        db.User
+		Locale      string
 		Error       string
 		Message     string
 		Config      config.Config
@@ -604,6 +611,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVEdit(w http.ResponseWriter, r *http.Req
 		Attributes  []db.EAVAttribute
 	}{
 		Authed:      true,
+		Locale:      auth.RequestLocale(r),
 		User:        *user,
 		Message:     message,
 		Config:      *h.cfg,

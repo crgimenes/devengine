@@ -159,6 +159,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecords(w http.ResponseWriter, r *http.
 	data := struct {
 		Authed      bool
 		User        db.User
+		Locale      string
 		Config      config.Config
 		CurrentPage string
 		Message     string
@@ -170,6 +171,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecords(w http.ResponseWriter, r *http.
 		HasMore     bool
 	}{
 		Authed:      true,
+		Locale:      auth.RequestLocale(r),
 		User:        *user,
 		Config:      *h.cfg,
 		CurrentPage: "database-schema",
@@ -347,6 +349,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordNew(w http.ResponseWriter, r *htt
 	data := struct {
 		Authed       bool
 		User         db.User
+		Locale       string
 		Config       config.Config
 		CurrentPage  string
 		EntityType   *db.EAVEntityType
@@ -357,6 +360,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordNew(w http.ResponseWriter, r *htt
 		PosLoadError string
 	}{
 		Authed:       true,
+		Locale:       auth.RequestLocale(r),
 		User:         *user,
 		Config:       *h.cfg,
 		CurrentPage:  "database-schema",
@@ -738,6 +742,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordEdit(w http.ResponseWriter, r *ht
 	data := struct {
 		Authed       bool
 		User         db.User
+		Locale       string
 		Config       config.Config
 		CurrentPage  string
 		EntityType   *db.EAVEntityType
@@ -748,6 +753,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordEdit(w http.ResponseWriter, r *ht
 		PosLoadError string
 	}{
 		Authed:       true,
+		Locale:       auth.RequestLocale(r),
 		User:         *user,
 		Config:       *h.cfg,
 		CurrentPage:  "database-schema",

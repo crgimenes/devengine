@@ -30,6 +30,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeNew(w http.ResponseWriter, r *
 
 	data := struct {
 		Authed      bool
+		Locale      string
 		User        *db.User
 		Config      *config.Config
 		CurrentPage string
@@ -38,6 +39,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeNew(w http.ResponseWriter, r *
 		Message     string
 	}{
 		Authed:      authed,
+		Locale:      auth.RequestLocale(r),
 		User:        user,
 		Config:      config.Cfg,
 		CurrentPage: "tools",
@@ -78,6 +80,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeEdit(w http.ResponseWriter, r 
 
 	data := struct {
 		Authed      bool
+		Locale      string
 		User        *db.User
 		Config      *config.Config
 		CurrentPage string
@@ -86,6 +89,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeEdit(w http.ResponseWriter, r 
 		Message     string
 	}{
 		Authed:      authed,
+		Locale:      auth.RequestLocale(r),
 		User:        user,
 		Config:      config.Cfg,
 		CurrentPage: "tools",

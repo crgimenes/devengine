@@ -23,14 +23,14 @@
                 <!-- Header -->
                 <div class="mb-4">
                     <h2 class="mb-1">
-                        {{if .Attribute}}Editar{{else}}Novo{{end}} Atributo - {{.EntityType.Name}}
+                        {{if .Attribute}}{{t $.Locale "Edit attribute"}}{{else}}{{t $.Locale "New attribute"}}{{end}} - {{.EntityType.Name}}
                     </h2>
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb mb-0">
                             <li class="breadcrumb-item"><a href="/tools">Tools</a></li>
                             <li class="breadcrumb-item"><a href="/tools/database-schema">Database Schema</a></li>
                             <li class="breadcrumb-item"><a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/edit">{{.EntityType.Name}}</a></li>
-                            <li class="breadcrumb-item active">{{if .Attribute}}Editar{{else}}Novo{{end}} Atributo</li>
+                            <li class="breadcrumb-item active">{{if .Attribute}}{{t $.Locale "Edit attribute"}}{{else}}{{t $.Locale "New attribute"}}{{end}}</li>
                         </ol>
                     </nav>
                 </div>
@@ -52,12 +52,12 @@
                                 required
                                 maxlength="100"
                                 value="{{if .Attribute}}{{.Attribute.Label}}{{end}}"
-                                placeholder="ex: Nome do Produto, Preço, Data de Entrega">
-                            <div class="form-text">Texto legível para humanos</div>
+                                placeholder="{{t $.Locale "e.g. Product name, Price, Delivery date"}}">
+                            <div class="form-text">{{t $.Locale "Human-readable name"}}</div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="attr_machine_name" class="form-label">Nome da Máquina <span class="text-danger">*</span></label>
+                            <label for="attr_machine_name" class="form-label">{{t $.Locale "Machine name"}} <span class="text-danger">*</span></label>
                             <input 
                                 type="text" 
                                 class="form-control font-monospace" 
@@ -68,14 +68,14 @@
                                 maxlength="100"
                                 value="{{if .Attribute}}{{.Attribute.MachineName}}{{end}}"
                                 {{if .Attribute}}readonly{{end}}
-                                placeholder="ex: nome_produto, preco, data_entrega">
+                                placeholder="{{t $.Locale "e.g. product_name, price, delivery_date"}}">
                             <div class="invalid-feedback">
-                                Apenas letras minúsculas, números e underscores. Deve começar com letra.
+                                {{t $.Locale "Lowercase letters, numbers and underscores only. Must start with a letter."}}
                             </div>
                             {{if .Attribute}}
-                            <div class="form-text text-warning">⚠️ Nome da máquina não pode ser alterado após criação</div>
+                            <div class="form-text text-warning">⚠️ {{t $.Locale "Machine name cannot change after creation"}}</div>
                             {{else}}
-                            <div class="form-text">Identificador único (gerado automaticamente do label)</div>
+                            <div class="form-text">{{t $.Locale "Unique identifier (generated from the label)"}}</div>
                             {{end}}
                         </div>
 
@@ -87,27 +87,27 @@
                                 name="help_text" 
                                 rows="2"
                                 maxlength="500"
-                                placeholder="Descreva o propósito deste campo...">{{if .Attribute}}{{.Attribute.HelpText}}{{end}}</textarea>
+                                placeholder="{{t $.Locale "Describe the purpose of this field…"}}">{{if .Attribute}}{{.Attribute.HelpText}}{{end}}</textarea>
                         </div>
 
                         <div class="mb-3">
-                            <label for="attr_primitive_kind" class="form-label">Tipo <span class="text-danger">*</span></label>
+                            <label for="attr_primitive_kind" class="form-label">{{t $.Locale "Type"}} <span class="text-danger">*</span></label>
                             <select class="form-select" id="attr_primitive_kind" name="primitive_kind" required {{if .Attribute}}disabled{{end}}>
                                 <option value="">Selecione um tipo...</option>
                                 <option value="BOOL" {{if .Attribute}}{{if eq .Attribute.PrimitiveKind "BOOL"}}selected{{end}}{{end}}>BOOL - Verdadeiro/Falso</option>
-                                <option value="INT" {{if .Attribute}}{{if eq .Attribute.PrimitiveKind "INT"}}selected{{end}}{{end}}>INT - Número Inteiro</option>
-                                <option value="REAL" {{if .Attribute}}{{if eq .Attribute.PrimitiveKind "REAL"}}selected{{end}}{{end}}>REAL - Número Decimal</option>
+                                <option value="INT" {{if .Attribute}}{{if eq .Attribute.PrimitiveKind "INT"}}selected{{end}}{{end}}>INT - {{t $.Locale "Integer number"}}</option>
+                                <option value="REAL" {{if .Attribute}}{{if eq .Attribute.PrimitiveKind "REAL"}}selected{{end}}{{end}}>REAL - {{t $.Locale "Decimal number"}}</option>
                                 <option value="TEXT" {{if .Attribute}}{{if eq .Attribute.PrimitiveKind "TEXT"}}selected{{end}}{{end}}>TEXT - Texto</option>
                                 <option value="DATETIME" {{if .Attribute}}{{if eq .Attribute.PrimitiveKind "DATETIME"}}selected{{end}}{{end}}>DATETIME - Data/Hora</option>
                             </select>
                             {{if .Attribute}}
                             <input type="hidden" name="primitive_kind" value="{{.Attribute.PrimitiveKind}}">
-                            <div class="form-text text-warning">⚠️ Tipo não pode ser alterado após criação</div>
+                            <div class="form-text text-warning">⚠️ {{t $.Locale "Type cannot change after creation"}}</div>
                             {{end}}
                         </div>
 
                         <div class="mb-3" id="max_length_container" style="display: {{if .Attribute}}{{if eq .Attribute.PrimitiveKind "TEXT"}}block{{else}}none{{end}}{{else}}none{{end}};">
-                            <label for="attr_max_length" class="form-label">Tamanho Máximo (TEXT)</label>
+                            <label for="attr_max_length" class="form-label">{{t $.Locale "Maximum length (TEXT)"}}</label>
                             <input type="number" 
                                    class="form-control" 
                                    id="attr_max_length" 
@@ -116,26 +116,26 @@
                                    max="65535"
                                    value="{{if .Attribute}}{{if .Attribute.MaxLength}}{{.Attribute.MaxLength}}{{end}}{{end}}"
                                    placeholder="256">
-                            <div class="form-text">Máximo de caracteres permitidos (padrão: 256)</div>
+                            <div class="form-text">{{t $.Locale "Maximum characters allowed (default: 256)"}}</div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="attr_default_value" class="form-label">Valor Padrão</label>
+                            <label for="attr_default_value" class="form-label">{{t $.Locale "Default value"}}</label>
                             <input type="text" 
                                    class="form-control" 
                                    id="attr_default_value" 
                                    name="default_value" 
                                    value="{{if .Attribute}}{{if eq .Attribute.PrimitiveKind "BOOL"}}{{if .Attribute.DefaultVBool}}{{if .Attribute.DefaultVBool}}1{{else}}0{{end}}{{end}}{{else if eq .Attribute.PrimitiveKind "INT"}}{{if .Attribute.DefaultVInt}}{{.Attribute.DefaultVInt}}{{end}}{{else if eq .Attribute.PrimitiveKind "REAL"}}{{if .Attribute.DefaultVReal}}{{.Attribute.DefaultVReal}}{{end}}{{else if eq .Attribute.PrimitiveKind "TEXT"}}{{if .Attribute.DefaultVText}}{{.Attribute.DefaultVText}}{{end}}{{else if eq .Attribute.PrimitiveKind "DATETIME"}}{{if .Attribute.DefaultVDatetime}}{{.Attribute.DefaultVDatetime}}{{end}}{{end}}{{end}}"
                                    {{if not .Attribute}}disabled{{end}}
-                                   placeholder="Selecione um tipo primeiro">
-                            <div class="form-text">Valor inicial para novos registros (editável pelo usuário)</div>
+                                   placeholder="{{t $.Locale "Pick a type first"}}">
+                            <div class="form-text">{{t $.Locale "Initial value for new records (user editable)"}}</div>
                         </div>
 
                         <div class="mb-3">
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="attr_is_required" name="is_required" value="1" {{if .Attribute}}{{if .Attribute.IsRequired}}checked{{end}}{{end}}>
                                 <label class="form-check-label" for="attr_is_required">
-                                    Campo obrigatório
+                                    {{t $.Locale "Required field (label)"}}
                                 </label>
                             </div>
                         </div>
@@ -144,7 +144,7 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="attr_is_unique" name="is_unique" value="1" {{if .Attribute}}{{if .Attribute.IsUnique}}checked{{end}}{{end}}>
                                 <label class="form-check-label" for="attr_is_unique">
-                                    Valor único (não permite duplicatas)
+                                    {{t $.Locale "Unique value (no duplicates)"}}
                                 </label>
                             </div>
                         </div>
@@ -153,7 +153,7 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="attr_is_indexed" name="is_indexed" value="1" {{if .Attribute}}{{if .Attribute.IsIndexed}}checked{{end}}{{end}}>
                                 <label class="form-check-label" for="attr_is_indexed">
-                                    Criar índice (melhora performance de buscas)
+                                    {{t $.Locale "Create an index (faster searches)"}}
                                 </label>
                             </div>
                         </div>
@@ -162,30 +162,29 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="attr_is_computed" name="is_computed" value="1" {{if .Attribute}}{{if .Attribute.IsComputed}}checked{{end}}{{end}}>
                                 <label class="form-check-label" for="attr_is_computed">
-                                    Campo calculado (Filo)
+                                    {{t $.Locale "Computed field (Filo)"}}
                                 </label>
                             </div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="attr_computed_expr" class="form-label">Expressão de Cálculo (Filo)</label>
+                            <label for="attr_computed_expr" class="form-label">{{t $.Locale "Computed expression (Filo)"}}</label>
                             <textarea class="form-control font-monospace"
                                       id="attr_computed_expr"
                                       name="computed_expr"
                                       rows="3"
                                       placeholder='(* field:valor field:quantidade)'>{{if .Attribute}}{{.Attribute.ComputedExpr}}{{end}}</textarea>
                             <div class="form-text">
-                                Recalculado a cada salvamento, sobrescrevendo o valor digitado.
-                                Campos disponíveis como <code>field:&lt;nome&gt;</code>.
+                                {{t $.Locale "Recomputed on every save, overwriting typed input. Fields read as"}} <code>field:&lt;name&gt;</code>.
                             </div>
                         </div>
 
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
-                                {{if .Attribute}}Atualizar{{else}}Criar{{end}} Atributo
+                                {{if .Attribute}}{{t $.Locale "Update attribute"}}{{else}}{{t $.Locale "Create attribute"}}{{end}}
                             </button>
                             <a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/edit" class="btn btn-secondary">
-                                Cancelar
+                                {{t $.Locale "Cancel"}}
                             </a>
                         </div>
                     </form>

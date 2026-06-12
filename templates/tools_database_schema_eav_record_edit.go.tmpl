@@ -29,15 +29,15 @@
                 <!-- Header -->
                 <div class="mb-4">
                     <h2 class="mb-1">
-                        {{if .Record}}Editar{{else}}Novo{{end}} Registro - {{.EntityType.Name}}
+                        {{if .Record}}{{t $.Locale "Edit record"}}{{else}}{{t $.Locale "New record"}}{{end}} - {{.EntityType.Name}}
                     </h2>
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb mb-0">
                             <li class="breadcrumb-item"><a href="/tools">Tools</a></li>
                             <li class="breadcrumb-item"><a href="/tools/database-schema">Database Schema</a></li>
                             <li class="breadcrumb-item"><a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/edit">{{.EntityType.Name}}</a></li>
-                            <li class="breadcrumb-item"><a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/records">Registros</a></li>
-                            <li class="breadcrumb-item active">{{if .Record}}Editar{{else}}Novo{{end}}</li>
+                            <li class="breadcrumb-item"><a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/records">{{t $.Locale "Records"}}</a></li>
+                            <li class="breadcrumb-item active">{{if .Record}}{{t $.Locale "Edit"}}{{else}}{{t $.Locale "New"}}{{end}}</li>
                         </ol>
                     </nav>
                 </div>
@@ -77,9 +77,9 @@
                                             id="attr_{{.MachineName}}" 
                                             name="attr_{{.MachineName}}"
                                             {{if .IsRequired}}required{{end}}>
-                                        <option value="">Selecione...</option>
-                                        <option value="0" {{if eq $value false}}selected{{end}}>Não</option>
-                                        <option value="1" {{if eq $value true}}selected{{end}}>Sim</option>
+                                        <option value="">{{t $.Locale "Select…"}}</option>
+                                        <option value="0" {{if eq $value false}}selected{{end}}>{{t $.Locale "No"}}</option>
+                                        <option value="1" {{if eq $value true}}selected{{end}}>{{t $.Locale "Yes"}}</option>
                                     </select>
                                 {{else if eq .PrimitiveKind "INT"}}
                                     <input type="number" 
@@ -104,7 +104,7 @@
                                               rows="3"{{if .MaxLength}} maxlength="{{.MaxLength}}"{{end}}
                                               {{if .IsRequired}}required{{end}}>{{$value}}</textarea>
                                     {{if .MaxLength}}
-                                    <div class="form-text">Máximo: {{.MaxLength}} caracteres</div>
+                                    <div class="form-text">{{t $.Locale "Maximum: %d characters" .MaxLength}}</div>
                                     {{end}}
                                 {{else if eq .PrimitiveKind "DATETIME"}}
                                     <input type="datetime-local" 
@@ -120,7 +120,7 @@
                                 {{end}}
                                 
                                 {{if .IsUnique}}
-                                    <div class="form-text text-warning">⚠️ Este campo deve ser único</div>
+                                    <div class="form-text text-warning">⚠️ {{t $.Locale "This field must be unique"}}</div>
                                 {{end}}
                             </div>
                             {{end}}
@@ -128,10 +128,10 @@
 
                         <div class="d-flex gap-2">
                             <button type="submit" class="btn btn-primary">
-                                {{if .Record}}Atualizar{{else}}Criar{{end}} Registro
+                                {{if .Record}}{{t $.Locale "Update record"}}{{else}}{{t $.Locale "Create record"}}{{end}}
                             </button>
                             <a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/records" class="btn btn-secondary">
-                                Cancelar
+                                {{t $.Locale "Cancel"}}
                             </a>
                         </div>
                     </form>

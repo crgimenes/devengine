@@ -292,3 +292,37 @@ func TestFormsAuthoringPagesRenderWithRealTemplates(t *testing.T) {
 		})
 	}
 }
+
+// Render smoke over the database-schema authoring pages, ahead of the i18n
+// template sweep (slice 2).
+func TestSchemaAuthoringPagesRenderWithRealTemplates(t *testing.T) {
+	mux, s := newHTTPTestEnv(t)
+	admin := plantUser(t, "admin", true)
+	ent := seedAdminEntity(t, s, "")
+
+	attrs, err := s.ListEAVAttributesByEntityTypeID(ent.et.ID)
+	if err != nil || len(attrs) == 0 {
+		t.Fatalf("attributes: %v", err)
+	}
+	rec, err := s.CreateEAVRecord(ent.et.ID)
+	if err != nil {
+		t.Fatalf("CreateEAVRecord: %v", err)
+	}
+
+	base := "/tools/database-schema/eav/" + ent.et.ReferenceID
+	paths := []string{
+		"/tools/database-schema",
+		"/tools/database-schema/eav/new",
+		base + "/edit",
+		base + "/attributes/new",
+		base + "/attributes/" + attrs[0].ReferenceID + "/edit",
+		base + "/records",
+		base + "/records/new",
+		base + "/records/" + rec.ReferenceID + "/edit",
+	}
+	for _, p := range paths {
+		t.Run(p, func(t *testing.T) {
+			assertRendered(t, doGet(t, mux, p, admin), p)
+		})
+	}
+}

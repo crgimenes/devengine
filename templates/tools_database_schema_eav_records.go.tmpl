@@ -23,22 +23,22 @@
                 <!-- Header -->
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
-                        <h2 class="mb-1">{{.EntityType.Name}} - Registros</h2>
+                        <h2 class="mb-1">{{.EntityType.Name}} - {{t $.Locale "Records"}}</h2>
                         <nav aria-label="breadcrumb">
                             <ol class="breadcrumb mb-0">
                                 <li class="breadcrumb-item"><a href="/tools">Tools</a></li>
                                 <li class="breadcrumb-item"><a href="/tools/database-schema">Database Schema</a></li>
                                 <li class="breadcrumb-item"><a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/edit">{{.EntityType.Name}}</a></li>
-                                <li class="breadcrumb-item active">Registros</li>
+                                <li class="breadcrumb-item active">{{t $.Locale "Records"}}</li>
                             </ol>
                         </nav>
                     </div>
                     <div class="d-flex gap-2">
                         <a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/edit" class="btn btn-outline-secondary">
-                            <i class="bi bi-pencil"></i> Editar Tabela
+                            <i class="bi bi-pencil"></i> {{t $.Locale "Edit table"}}
                         </a>
                         <a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/records/new" class="btn btn-primary">
-                            <i class="bi bi-plus-circle"></i> Novo Registro
+                            <i class="bi bi-plus-circle"></i> {{t $.Locale "New record"}}
                         </a>
                     </div>
                 </div>
@@ -79,7 +79,7 @@
                                             <small class="text-muted">{{.Label}}:</small><br>
                                             <strong>
                                                 {{if eq $v nil}}<span class="text-muted">—</span>
-                                                {{else if eq .PrimitiveKind "BOOL"}}{{if $v}}Sim{{else}}Não{{end}}
+                                                {{else if eq .PrimitiveKind "BOOL"}}{{if $v}}{{t $.Locale "Yes"}}{{else}}{{t $.Locale "No"}}{{end}}
                                                 {{else if eq .PrimitiveKind "DATETIME"}}{{fmtDatetime $v}}
                                                 {{else}}{{$v}}{{end}}
                                             </strong>
@@ -97,14 +97,14 @@
                                 <div class="btn-group w-100" role="group">
                                     <a href="/tools/database-schema/eav/{{$.EntityType.ReferenceID}}/records/{{.Record.ReferenceID}}/edit" 
                                        class="btn btn-sm btn-outline-primary">
-                                        Editar
+                                        {{t $.Locale "Edit"}}
                                     </a>
                                     <form method="POST" 
                                           action="/tools/database-schema/eav/{{$.EntityType.ReferenceID}}/records/{{.Record.ReferenceID}}/delete" 
                                           style="display: inline;"
                                           class="delete-record-form">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">
-                                            Excluir
+                                            {{t $.Locale "Delete"}}
                                         </button>
                                     </form>
                                 </div>
@@ -127,9 +127,9 @@
                 {{if eq (len .Records) 0}}
                 <div class="text-center py-5">
                     <i class="bi bi-inbox fs-1 text-muted"></i>
-                    <p class="text-muted mt-3">Nenhum registro encontrado</p>
+                    <p class="text-muted mt-3">{{t $.Locale "No records found"}}</p>
                     <a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/records/new" class="btn btn-primary">
-                        Criar Primeiro Registro
+                        {{t $.Locale "Create the first record"}}
                     </a>
                 </div>
                 {{end}}

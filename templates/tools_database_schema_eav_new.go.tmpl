@@ -28,19 +28,19 @@
             <div class="col-md-9">
                 <div class="card p-4">
                     <div class="d-flex justify-content-between align-items-center mb-4">
-                        <h2 class="mb-0">New EAV Table</h2>
+                        <h2 class="mb-0">{{t $.Locale "New EAV table"}}</h2>
                         <a href="/tools/database-schema" class="btn btn-secondary">
                             Cancelar
                         </a>
                     </div>
                     
                     <p class="text-muted mb-4">
-                        Crie uma nova tabela EAV (Entity-Attribute-Value). Após criar a tabela, você poderá adicionar campos (atributos).
+                        {{t $.Locale "Create a new EAV (Entity-Attribute-Value) table. After creating it you can add fields (attributes)."}}
                     </p>
 
                     <form method="POST" action="/tools/database-schema/eav/new" class="needs-validation" novalidate>
                         <div class="mb-3">
-                            <label for="name" class="form-label">Nome <span class="text-danger">*</span></label>
+                            <label for="name" class="form-label">{{t $.Locale "Name"}} <span class="text-danger">*</span></label>
                             <input 
                                 type="text" 
                                 class="form-control" 
@@ -49,16 +49,16 @@
                                 value="{{.FormData.Name}}"
                                 required
                                 maxlength="100"
-                                placeholder="Ex: Produtos, Clientes, Projetos"
+                                placeholder="{{t $.Locale "e.g. Products, Customers, Projects"}}"
                             >
                             <div class="invalid-feedback">
                                 Por favor, informe um nome para a tabela.
                             </div>
-                            <div class="form-text">Nome legível para humanos</div>
+                            <div class="form-text">{{t $.Locale "Human-readable name"}}</div>
                         </div>
 
                         <div class="mb-3">
-                            <label for="machine_name" class="form-label">Nome da Máquina <span class="text-danger">*</span></label>
+                            <label for="machine_name" class="form-label">{{t $.Locale "Machine name"}} <span class="text-danger">*</span></label>
                             <input 
                                 type="text" 
                                 class="form-control font-monospace" 
@@ -68,29 +68,29 @@
                                 required
                                 pattern="[a-z][a-z0-9_]*"
                                 maxlength="100"
-                                placeholder="Ex: produtos, clientes, projetos"
+                                placeholder="{{t $.Locale "e.g. products, customers, projects"}}"
                             >
                             <div class="invalid-feedback">
-                                Apenas letras minúsculas, números e underscores. Deve começar com letra.
+                                {{t $.Locale "Lowercase letters, numbers and underscores only. Must start with a letter."}}
                             </div>
-                            <div class="form-text">Identificador único (gerado automaticamente do nome)</div>
+                            <div class="form-text">{{t $.Locale "Unique identifier (generated from the name)"}}</div>
                         </div>
 
                         <div class="mb-4">
-                            <label for="description" class="form-label">Descrição</label>
+                            <label for="description" class="form-label">{{t $.Locale "Description"}}</label>
                             <textarea 
                                 class="form-control" 
                                 id="description" 
                                 name="description" 
                                 rows="3"
                                 maxlength="500"
-                                placeholder="Descreva o propósito desta tabela..."
+                                placeholder="{{t $.Locale "Describe the purpose of this table…"}}"
                             >{{.FormData.Description}}</textarea>
-                            <div class="form-text">Opcional, até 500 caracteres</div>
+                            <div class="form-text">{{t $.Locale "Optional, up to 500 characters"}}</div>
                         </div>
 
                         <div class="mb-4">
-                            <label for="pos_load" class="form-label">Script Pós-Carregamento (Filo)</label>
+                            <label for="pos_load" class="form-label">{{t $.Locale "Post-load script (Filo)"}}</label>
                             <textarea 
                                 class="form-control font-monospace" 
                                 id="pos_load" 
@@ -99,13 +99,12 @@
                                 placeholder="(set campo (str-concat campo &quot; - editado&quot;))"
                             >{{.FormData.PosLoad}}</textarea>
                             <div class="form-text">
-                                Código Filo executado após carregar registros e defaults, antes de exibir.
-                                Se "error" estiver preenchida, mostra a mensagem na tela.
+                                {{t $.Locale "Filo code run after loading records and defaults, before display. A non-empty \"error\" shows the message on screen."}}
                             </div>
                         </div>
 
                         <div class="mb-4">
-                            <label for="pre_save" class="form-label">Script Pré-Salvamento (Filo)</label>
+                            <label for="pre_save" class="form-label">{{t $.Locale "Pre-save script (Filo)"}}</label>
                             <textarea 
                                 class="form-control font-monospace" 
                                 id="pre_save" 
@@ -114,15 +113,14 @@
                                 placeholder="(set error &quot;Mensagem de erro&quot;)"
                             >{{.FormData.PreSave}}</textarea>
                             <div class="form-text">
-                                Código Filo executado antes de salvar registros. 
-                                Se "error" estiver preenchida, o salvamento é bloqueado.
+                                {{t $.Locale "Filo code run before saving records. A non-empty \"error\" blocks the save."}}
                             </div>
                         </div>
 
 
                         <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">Criar Tabela</button>
-                            <a href="/tools/database-schema" class="btn btn-secondary">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">{{t $.Locale "Create table"}}</button>
+                            <a href="/tools/database-schema" class="btn btn-secondary">{{t $.Locale "Cancel"}}</a>
                         </div>
                     </form>
                 </div>
