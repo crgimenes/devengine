@@ -445,6 +445,18 @@ func init() {
 		"Dividers have no extra options.":               "Divisores não possuem opções adicionais.",
 		"Previous":                                      "Anterior",
 
+		// reference/subform options panel
+		"Referenced table (machine name)":                         "Tabela referenciada (nome de máquina)",
+		"Display attribute (machine name)":                        "Atributo de exibição (nome de máquina)",
+		"Shown on selects and listings instead of the record id.": "Mostrado nos selects e listagens no lugar do id do registro.",
+		"Related table (machine name)":                            "Tabela relacionada (nome de máquina)",
+		"Attribute pointing back at this record":                  "Atributo que aponta de volta para este registro",
+		"e.g. customer":                                           "ex: cliente",
+		"e.g. name":                                               "ex: nome",
+		"e.g. order_item":                                         "ex: item_pedido",
+		"e.g. order":                                              "ex: pedido",
+		"e.g. description":                                        "ex: descricao",
+
 		// record search
 		"Global search": "Busca global",
 		"One query across the text fields of every table.": "Uma consulta sobre os campos de texto de todas as tabelas.",

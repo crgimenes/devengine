@@ -322,3 +322,35 @@ func TestMenuItemCreateOpensItemEditor(t *testing.T) {
 		t.Fatalf("item editor missing the new item: %.300s", rr.Body.String())
 	}
 }
+
+// The element editor must offer the reference/subform option panels with
+// the datalists of real entity and attribute machine names.
+func TestElementEditOffersReferencePanel(t *testing.T) {
+	mux, s := newHTTPTestEnv(t)
+	admin := plantUser(t, "admin", true)
+	seedSearchEntity(t, s, "Cliente", "cliente", "Ana Souza")
+	form := seedTaskForm(t, s, "seed")
+
+	els, err := s.ListFormElements(form.ID)
+	if err != nil || len(els) == 0 {
+		t.Fatalf("ListFormElements: %v", err)
+	}
+
+	rr := doGet(t, mux,
+		"/tools/forms/"+form.ReferenceID+"/elements/"+els[0].ReferenceID+"/edit", admin)
+	assertRendered(t, rr, "/element edit")
+	body := rr.Body.String()
+	for _, want := range []string{
+		`id="field-options-reference"`,
+		`id="field-options-subform"`,
+		`data-key="entity"`,
+		`data-key="target_entity"`,
+		`id="entity-machine-names"`,
+		`value="cliente"`, // real entity in the datalist
+		`value="nome"`,    // real attribute in the datalist
+	} {
+		if !strings.Contains(body, want) {
+			t.Fatalf("%s missing from element editor", want)
+		}
+	}
+}

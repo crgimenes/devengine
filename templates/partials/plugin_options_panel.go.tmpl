@@ -266,6 +266,52 @@
             <p class="small text-muted">{{t .Locale "Options are configured directly in the JSON below."}}</p>
         </div>
 
+        <!-- Reference options -->
+        <div id="field-options-reference" class="field-ui-options d-none">
+            <div class="mb-2">
+                <label for="opt_reference_entity" class="form-label small">{{t .Locale "Referenced table (machine name)"}}</label>
+                <input type="text" class="form-control form-control-sm plugin-option" id="opt_reference_entity"
+                       data-key="entity" value="{{index $meta "entity"}}" list="entity-machine-names"
+                       placeholder="{{t .Locale "e.g. customer"}}">
+            </div>
+            <div class="mb-2">
+                <label for="opt_reference_display" class="form-label small">{{t .Locale "Display attribute (machine name)"}}</label>
+                <input type="text" class="form-control form-control-sm plugin-option" id="opt_reference_display"
+                       data-key="display" value="{{index $meta "display"}}" list="attribute-machine-names"
+                       placeholder="{{t .Locale "e.g. name"}}">
+                <div class="form-text">{{t .Locale "Shown on selects and listings instead of the record id."}}</div>
+            </div>
+            <div class="form-check mb-2">
+                <input class="form-check-input plugin-option" type="checkbox" id="opt_reference_allowEmpty"
+                       data-key="allow_empty" {{if index $meta "allow_empty"}}checked{{end}}>
+                <label class="form-check-label" for="opt_reference_allowEmpty">
+                    {{t .Locale "Allow an empty option"}}
+                </label>
+            </div>
+        </div>
+
+        <!-- Subform options -->
+        <div id="field-options-subform" class="field-ui-options d-none">
+            <div class="mb-2">
+                <label for="opt_subform_targetEntity" class="form-label small">{{t .Locale "Related table (machine name)"}}</label>
+                <input type="text" class="form-control form-control-sm plugin-option" id="opt_subform_targetEntity"
+                       data-key="target_entity" value="{{index $meta "target_entity"}}" list="entity-machine-names"
+                       placeholder="{{t .Locale "e.g. order_item"}}">
+            </div>
+            <div class="mb-2">
+                <label for="opt_subform_targetAttr" class="form-label small">{{t .Locale "Attribute pointing back at this record"}}</label>
+                <input type="text" class="form-control form-control-sm plugin-option" id="opt_subform_targetAttr"
+                       data-key="target_attr" value="{{index $meta "target_attr"}}" list="attribute-machine-names"
+                       placeholder="{{t .Locale "e.g. order"}}">
+            </div>
+            <div class="mb-2">
+                <label for="opt_subform_display" class="form-label small">{{t .Locale "Display attribute (machine name)"}}</label>
+                <input type="text" class="form-control form-control-sm plugin-option" id="opt_subform_display"
+                       data-key="display" value="{{index $meta "display"}}" list="attribute-machine-names"
+                       placeholder="{{t .Locale "e.g. description"}}">
+            </div>
+        </div>
+
         <!-- Image options -->
         <div id="field-options-image" class="field-ui-options d-none">
             <div class="mb-2">

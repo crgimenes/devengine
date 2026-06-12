@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -721,6 +722,29 @@ func (h *Handlers) ToolsFormsElementEdit(w http.ResponseWriter, r *http.Request)
 		}
 	}
 
+	// Datalists for the reference/subform options panel: every entity type
+	// plus the union of attribute machine names.
+	entityTypes, err := db.Storage.ListEAVEntityTypes()
+	if err != nil {
+		h.serverError(w, r, "ListEAVEntityTypes", err)
+		return
+	}
+	nameSet := map[string]bool{}
+	for _, et := range entityTypes {
+		attrs, aerr := db.Storage.ListEAVAttributesByEntityTypeID(et.ID)
+		if aerr != nil {
+			continue
+		}
+		for _, a := range attrs {
+			nameSet[a.MachineName] = true
+		}
+	}
+	attributeNames := make([]string, 0, len(nameSet))
+	for n := range nameSet {
+		attributeNames = append(attributeNames, n)
+	}
+	sort.Strings(attributeNames)
+
 	data := struct {
 		Authed            bool
 		User              db.User
@@ -733,6 +757,8 @@ func (h *Handlers) ToolsFormsElementEdit(w http.ResponseWriter, r *http.Request)
 		Element           *db.FormElement
 		EntityType        *db.EAVEntityType
 		EAVAttributes     []db.EAVAttribute
+		EntityTypes       []db.EAVEntityType
+		AttributeNames    []string
 		GroupElements     []db.FormElement
 		AllElements       []db.FormElement
 		ParentLabel       string
@@ -749,6 +775,8 @@ func (h *Handlers) ToolsFormsElementEdit(w http.ResponseWriter, r *http.Request)
 		Element:           element,
 		EntityType:        entityType,
 		EAVAttributes:     eavAttributes,
+		EntityTypes:       entityTypes,
+		AttributeNames:    attributeNames,
 		GroupElements:     filteredGroups,
 		AllElements:       allElements,
 		ParentLabel:       parentLabel,

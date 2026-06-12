@@ -179,6 +179,12 @@
 
                         <!-- Plugin Options Panel -->
                         <h5 class="mb-3 border-bottom pb-2">{{t $.Locale "Plugin options"}}</h5>
+                        <datalist id="entity-machine-names">
+                            {{range .EntityTypes}}<option value="{{.MachineName}}">{{.Name}}</option>{{end}}
+                        </datalist>
+                        <datalist id="attribute-machine-names">
+                            {{range .AttributeNames}}<option value="{{.}}"></option>{{end}}
+                        </datalist>
                         {{template "plugin_options_panel" (dict "Meta" (parseGroupMeta .Element.UIMetaJSON .Element.ElementKind) "ElementKind" .Element.ElementKind "Locale" $.Locale)}}
 
                         <!-- UI Meta JSON -->
