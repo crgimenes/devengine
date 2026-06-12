@@ -25,10 +25,12 @@ pool serves both, and `RW()`/`RO()` return the same handle.
 
 ## Migrations
 
-Engine migrations are embedded in this package (`*.up.sql`, PostgreSQL
-dialect, ids `0001`–`0999` mirroring the SQLite set). Application
-migrations register through `postgres.SetAppMigrationsFS` and use ids
-`1000`–`9999`. The schema-drift warning stores its fingerprint in the
+Until 1.0.0 the engine ships a single unified migration per backend:
+`0001_schema.up.sql` holds the complete schema in PostgreSQL dialect,
+mirroring the SQLite one. Schema changes edit it in place and databases
+are recreated from scratch; append-only history starts at 1.0.0.
+Application migrations register through `postgres.SetAppMigrationsFS`
+and use ids `1000`–`9999`. The schema-drift warning stores its fingerprint in the
 `devengine_meta` table (PostgreSQL has no `PRAGMA user_version`).
 
 ## Tests

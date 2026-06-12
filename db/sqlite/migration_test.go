@@ -279,7 +279,7 @@ func TestDuplicateMigrationID(t *testing.T) {
 	// Create app migrations that duplicate an engine migration ID
 	// Use exact same ID as engine migration to trigger duplicate detection
 	appFS := fstest.MapFS{
-		"0001_users_and_files.up.sql": &fstest.MapFile{
+		"0001_schema.up.sql": &fstest.MapFile{
 			Data: []byte("-- duplicate of engine migration"),
 		},
 	}
