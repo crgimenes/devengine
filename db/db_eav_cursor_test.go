@@ -156,3 +156,83 @@ func TestGetEAVValuesForRecordIDsBatches(t *testing.T) {
 		}
 	}
 }
+
+// The text filter must also match through ONE level of reference: a record
+// whose TEXT value holds the reference_id of a record whose own text
+// matches. Searching "Ana" finds the orders pointing at Ana Souza.
+func TestCursorFilterMatchesReferencedRecordText(t *testing.T) {
+	s := initTestDB(t)
+
+	clientes, err := s.CreateEAVEntityType("Cliente", "cliente", "", "", "")
+	if err != nil {
+		t.Fatalf("CreateEAVEntityType: %v", err)
+	}
+	nome, err := s.CreateEAVAttribute(clientes.ID, "nome", "Nome", "", "TEXT",
+		false, false, false, nil, false, "", nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatalf("CreateEAVAttribute: %v", err)
+	}
+	ana, err := s.CreateEAVRecord(clientes.ID)
+	if err != nil {
+		t.Fatalf("CreateEAVRecord: %v", err)
+	}
+	anaNome := "Ana Souza"
+	err = s.UpsertEAVValue(ana.ID, nome.ID, nil, nil, nil, &anaNome, nil)
+	if err != nil {
+		t.Fatalf("UpsertEAVValue: %v", err)
+	}
+
+	pedidos, err := s.CreateEAVEntityType("Pedido", "pedido", "", "", "")
+	if err != nil {
+		t.Fatalf("CreateEAVEntityType: %v", err)
+	}
+	cli, err := s.CreateEAVAttribute(pedidos.ID, "cliente", "Cliente", "", "TEXT",
+		false, false, false, nil, false, "", nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatalf("CreateEAVAttribute: %v", err)
+	}
+	pedido, err := s.CreateEAVRecord(pedidos.ID)
+	if err != nil {
+		t.Fatalf("CreateEAVRecord: %v", err)
+	}
+	err = s.UpsertEAVValue(pedido.ID, cli.ID, nil, nil, nil, &ana.ReferenceID, nil)
+	if err != nil {
+		t.Fatalf("UpsertEAVValue(ref): %v", err)
+	}
+	// A second order pointing nowhere, to prove filtering still narrows.
+	outro, err := s.CreateEAVRecord(pedidos.ID)
+	if err != nil {
+		t.Fatalf("CreateEAVRecord: %v", err)
+	}
+	texto := "sem cliente"
+	err = s.UpsertEAVValue(outro.ID, cli.ID, nil, nil, nil, &texto, nil)
+	if err != nil {
+		t.Fatalf("UpsertEAVValue: %v", err)
+	}
+
+	got, err := s.ListEAVRecordsCursor(pedidos.ID, 0, 10, "ana souza")
+	if err != nil {
+		t.Fatalf("ListEAVRecordsCursor: %v", err)
+	}
+	if len(got) != 1 || got[0].ID != pedido.ID {
+		t.Fatalf("filter through reference = %d records, want the one order", len(got))
+	}
+
+	// Direct text still matches as before.
+	got, err = s.ListEAVRecordsCursor(pedidos.ID, 0, 10, "sem cliente")
+	if err != nil {
+		t.Fatalf("ListEAVRecordsCursor: %v", err)
+	}
+	if len(got) != 1 || got[0].ID != outro.ID {
+		t.Fatalf("direct filter = %d records", len(got))
+	}
+
+	// And a miss is still a miss.
+	got, err = s.ListEAVRecordsCursor(pedidos.ID, 0, 10, "bruno")
+	if err != nil {
+		t.Fatalf("ListEAVRecordsCursor: %v", err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("miss returned %d records", len(got))
+	}
+}

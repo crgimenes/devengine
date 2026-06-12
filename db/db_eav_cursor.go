@@ -41,6 +41,11 @@ func (s *SQLite) ListEAVRecordsCursor(
 			args = append(args, cursorID)
 		}
 	} else {
+		// A record matches when one of its own TEXT values contains the
+		// filter, OR when a TEXT value is the reference_id of a record
+		// whose TEXT values contain it — so searching "Ana" finds the
+		// orders pointing at Ana even though the column stores her opaque
+		// id. One level of indirection only.
 		query.WriteString(`
         SELECT DISTINCT r.id, r.reference_id, r.entity_type_id, r.status, r.rev,
                         r.created_at, r.updated_at, COALESCE(r.deleted_at, '')
@@ -49,8 +54,20 @@ func (s *SQLite) ListEAVRecordsCursor(
         WHERE r.entity_type_id = ?
         AND r.deleted_at IS NULL
         AND v.v_text IS NOT NULL
-        AND LOWER(v.v_text) LIKE LOWER(?)`)
-		args = append(args, entityTypeID, "%"+textFilter+"%")
+        AND (
+            LOWER(v.v_text) LIKE LOWER(?)
+            OR EXISTS (
+                SELECT 1
+                FROM eav_records ref_r
+                JOIN eav_values ref_v ON ref_v.record_id = ref_r.id
+                WHERE ref_r.reference_id = v.v_text
+                AND ref_r.deleted_at IS NULL
+                AND ref_v.v_text IS NOT NULL
+                AND LOWER(ref_v.v_text) LIKE LOWER(?)
+            )
+        )`)
+		pattern := "%" + textFilter + "%"
+		args = append(args, entityTypeID, pattern, pattern)
 		if cursorID > 0 {
 			query.WriteString(`
         AND r.id < ?`)
