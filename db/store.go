@@ -57,6 +57,7 @@ type CoreStore interface {
 }
 
 // TokenStore persists single-use action tokens (invites, magic links).
+// expiresAt MUST be in UTC: expiry is compared against the database clock.
 type TokenStore interface {
 	StoreToken(token string, email string, action string, expiresAt time.Time) error
 	ConsumeToken(token, action string) (string, error)
@@ -97,6 +98,9 @@ type FileStore interface {
 }
 
 // EAVStore manages entity types, attributes, records and values.
+// Get* methods return ErrNotFound for missing rows (unlike UserStore and
+// FileStore, whose getters return nil, nil); stale-rev writes return
+// ErrConflict.
 type EAVStore interface {
 	CreateEAVEntityType(name, machineName, description, preSave, posLoad string) (*EAVEntityType, error)
 	GetEAVEntityTypeByID(id int64) (*EAVEntityType, error)
