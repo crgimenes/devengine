@@ -47,3 +47,35 @@ func TestParseRejects(t *testing.T) {
 		t.Fatal("Parse(\"maybe\") expected error")
 	}
 }
+
+func TestPluginMetadata(t *testing.T) {
+	p, ok := ui.Get("bool")
+	if !ok {
+		t.Fatal("bool plugin not registered")
+	}
+	if p.ID() != "bool" {
+		t.Fatalf("ID = %q", p.ID())
+	}
+	if kinds := p.PrimitiveKinds(); len(kinds) != 1 || kinds[0] != "BOOL" {
+		t.Fatalf("PrimitiveKinds = %v", kinds)
+	}
+	if !p.HasPersistence() || !p.SupportsReadOnly() {
+		t.Fatal("persistence/readonly flags wrong")
+	}
+	if d := p.Defaults(); d["style"] != "select" {
+		t.Fatalf("Defaults = %v", d)
+	}
+	if opts := p.ParseOptions(`{"style": "switch"}`); opts != nil {
+		t.Fatalf("ParseOptions = %v, want nil (bool has no options)", opts)
+	}
+}
+
+func TestValidateRequiresBool(t *testing.T) {
+	p, _ := ui.Get("bool")
+	if err := p.Validate(true, nil); err != nil {
+		t.Fatalf("Validate(true) = %v", err)
+	}
+	if err := p.Validate("yes", nil); err == nil {
+		t.Fatal("non-bool accepted")
+	}
+}

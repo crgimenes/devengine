@@ -99,6 +99,22 @@ func SortElementsHierarchically(elements []FormElement) []FormElement {
 		addWithChildren(root)
 	}
 
+	// Orphans (parent absent from the slice) must not vanish: append them at
+	// the end so the form still renders every element. The FK cascade makes
+	// this unreachable through normal deletes, but a pure function should
+	// not silently drop data.
+	if len(result) < len(elements) {
+		seen := make(map[int64]bool, len(result))
+		for _, el := range result {
+			seen[el.ID] = true
+		}
+		for _, el := range elements {
+			if !seen[el.ID] {
+				result = append(result, el)
+			}
+		}
+	}
+
 	return result
 }
 

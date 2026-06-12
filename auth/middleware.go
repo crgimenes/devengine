@@ -97,11 +97,6 @@ func Prelude(
 		return nil, "", false, nil
 	}
 
-	ref := r.Referer()
-	_ = ref
-	origin := r.Header.Get("Origin")
-	_ = origin
-
 	sid, ok := sessions.GetCookie(r)
 	if !ok {
 		http.Redirect(w, r, config.Cfg.BaseURL+config.Cfg.LoginURL, http.StatusFound)

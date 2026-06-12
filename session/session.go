@@ -250,11 +250,16 @@ func Put(sid string, u db.User) {
 	sessions.Unlock()
 }
 
+// Get returns the session user. Expired sessions do not authenticate even
+// before the periodic Cleanup sweep removes them.
 func Get(sid string) (db.User, bool) {
 	sessions.RLock()
 	s, ok := sessions.m[sid]
 	sessions.RUnlock()
-	return s.User, ok
+	if !ok || s.ExpiresAt < time.Now().Unix() {
+		return db.User{}, false
+	}
+	return s.User, true
 }
 
 func Del(sid string) {
@@ -264,9 +269,6 @@ func Del(sid string) {
 }
 
 func Cleanup() {
-	if len(sessions.m) == 0 {
-		return
-	}
 	now := time.Now().Unix()
 	sessions.Lock()
 	for sid, s := range sessions.m {
@@ -321,6 +323,14 @@ func SetCookie(w http.ResponseWriter, value string, maxAge time.Duration) {
 	if !secure {
 		name = insecureSessCookieName
 	}
+	// A negative duration clears the cookie: Max-Age=-1 plus an Expires far
+	// in the past, so deletion does not depend on the client's clock.
+	maxAgeSeconds := int(maxAge.Seconds())
+	expires := time.Now().Add(maxAge)
+	if maxAge < 0 {
+		maxAgeSeconds = -1
+		expires = time.Unix(1, 0)
+	}
 	http.SetCookie(w, &http.Cookie{ // #nosec G124 -- Secure=false only in explicit localhost dev mode (EnableInsecureCookie)
 		Name:     name,
 		Value:    value,
@@ -328,8 +338,8 @@ func SetCookie(w http.ResponseWriter, value string, maxAge time.Duration) {
 		HttpOnly: true,
 		Secure:   secure,
 		SameSite: http.SameSiteLaxMode,
-		MaxAge:   int(maxAge.Seconds()),
-		Expires:  time.Now().Add(maxAge),
+		MaxAge:   maxAgeSeconds,
+		Expires:  expires,
 	})
 }
 
