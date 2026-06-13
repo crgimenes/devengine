@@ -21,7 +21,7 @@ The philosophy in three lines:
 devengine/
 ├── assets/          embedded static files + the /assets handler (ETag, 304)
 ├── auth/            session prelude, request locale; auth/basic = login/invites
-├── cmd/             CLIs: admin-bootstrap (first sysop), snapshot (backups)
+├── cmd/             CLIs: devengine (init: scaffold + sysop), snapshot (backups)
 ├── config/          process configuration (populated from init.filo by apps)
 ├── db/              SQLite storage, migrations (*.up.sql), all SQL lives here
 ├── eav/ui/          field plugin registry + one package per plugin
@@ -46,7 +46,7 @@ cd devengine && go test ./...        # everything runs on a throwaway SQLite
 
 cd ../pedidos                        # or any sibling app
 go build -trimpath -o pedidos .
-go run github.com/crgimenes/devengine/cmd/admin-bootstrap -db pedidos.db
+go run github.com/crgimenes/devengine/cmd/devengine init -db pedidos.db
 ./pedidos                            # http://localhost:3233, config in init.filo
 ```
 
