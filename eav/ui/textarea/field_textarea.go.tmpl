@@ -11,7 +11,7 @@
           name="{{$name}}"
           rows="{{$rows}}"
           {{if index $meta "placeholder"}}placeholder="{{index $meta "placeholder"}}"{{end}}
-          {{if and (index $meta "maxLength") (gt (index $meta "maxLength") 0)}}maxlength="{{index $meta "maxLength"}}"{{end}}
+          {{if and (index $meta "max_length") (gt (index $meta "max_length") 0)}}maxlength="{{index $meta "max_length"}}"{{end}}
           {{if $required}}required{{end}}
           {{if $readonly}}readonly{{end}}>{{$value}}</textarea>
 {{end}}
@@ -26,9 +26,9 @@
                            data-key="rows" value="{{index $meta "rows"}}" min="1" max="20">
                 </div>
                 <div class="col-md-6 mb-2">
-                    <label for="opt_textarea_maxLength" class="form-label small">{{t .Locale "Maximum length"}}</label>
-                    <input type="number" class="form-control form-control-sm plugin-option" id="opt_textarea_maxLength" 
-                           data-key="maxLength" value="{{index $meta "maxLength"}}" min="0">
+                    <label for="opt_textarea_max_length" class="form-label small">{{t .Locale "Maximum length"}}</label>
+                    <input type="number" class="form-control form-control-sm plugin-option" id="opt_textarea_max_length" 
+                           data-key="max_length" value="{{index $meta "max_length"}}" min="0">
                 </div>
             </div>
             <div class="mb-2">

@@ -3,22 +3,24 @@
 {{$parentRef := .RecordRefID}}
 {{$targetEntity := index $meta "target_entity"}}
 {{$targetAttr := index $meta "target_attr"}}
+{{$targetForm := index $meta "target_form"}}
+{{if not $targetForm}}{{$targetForm = $targetEntity}}{{end}}
 {{$display := index $meta "display"}}
 
 {{if not $parentRef}}
-<div class="text-muted small">Salve o registro primeiro para gerenciar os itens relacionados.</div>
+<div class="text-muted small">{{t .Locale "Save the record first to manage related items."}}</div>
 {{else}}
     {{$records := eavSubformRecords $targetEntity $targetAttr $parentRef $display}}
     <div class="list-group">
         {{range $records}}
-        <a href="/form/{{$targetEntity}}/r/{{.ReferenceID}}"
+        <a href="/form/{{$targetForm}}/r/{{.ReferenceID}}"
            class="list-group-item list-group-item-action">{{.Label}}</a>
         {{else}}
         <div class="list-group-item text-muted">{{t .Locale "No related items."}}</div>
         {{end}}
-        <a href="/form/{{$targetEntity}}?prefill={{$targetAttr}}={{$parentRef}}"
+        <a href="/form/{{$targetForm}}?prefill={{$targetAttr}}={{$parentRef}}"
            class="list-group-item list-group-item-action text-primary">
-            + Novo
+            + {{t .Locale "New"}}
         </a>
     </div>
 {{end}}
@@ -38,6 +40,12 @@
                 <input type="text" class="form-control form-control-sm plugin-option" id="opt_subform_targetAttr"
                        data-key="target_attr" value="{{index $meta "target_attr"}}" list="attribute-machine-names"
                        placeholder="{{t .Locale "e.g. order"}}">
+            </div>
+            <div class="mb-2">
+                <label for="opt_subform_targetForm" class="form-label small">{{t .Locale "Form used to open and create items (machine name)"}}</label>
+                <input type="text" class="form-control form-control-sm plugin-option" id="opt_subform_targetForm"
+                       data-key="target_form" value="{{index $meta "target_form"}}"
+                       placeholder="{{t .Locale "defaults to the related table name"}}">
             </div>
             <div class="mb-2">
                 <label for="opt_subform_display" class="form-label small">{{t .Locale "Display attribute (machine name)"}}</label>

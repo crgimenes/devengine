@@ -930,12 +930,16 @@ func runPreSave(tx db.Tx, entityType *db.EAVEntityType, values db.EAVRecordValue
 }
 
 // saveErrorMessage turns a save failure into what the user should read:
-// script-authored messages (db.UserError) pass through verbatim; anything
-// else is logged under a reference id and replaced by a generic text.
+// script-authored messages (db.UserError) pass through verbatim, a stale
+// revision becomes an actionable conflict notice; anything else is logged
+// under a reference id and replaced by a generic text.
 func saveErrorMessage(r *http.Request, scope string, err error) string {
 	var userErr db.UserError
 	if errors.As(err, &userErr) {
 		return string(userErr)
+	}
+	if errors.Is(err, db.ErrConflict) {
+		return tr(r, "Conflict: the record was modified by another user. Reload the page.")
 	}
 	ref := logRef(scope, err)
 	return tr(r, "Could not save (ref %s)", ref)

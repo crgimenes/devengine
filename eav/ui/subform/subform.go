@@ -40,8 +40,12 @@ func init() {
 type Options struct {
 	TargetEntity string `json:"target_entity,omitempty"`
 	TargetAttr   string `json:"target_attr,omitempty"`
-	Display      string `json:"display,omitempty"`
-	Limit        int    `json:"limit,omitempty"`
+	// TargetForm is the machine name of the form used to open and create
+	// related records. Defaults to TargetEntity, which only works when a
+	// form with the same machine name as the entity exists.
+	TargetForm string `json:"target_form,omitempty"`
+	Display    string `json:"display,omitempty"`
+	Limit      int    `json:"limit,omitempty"`
 }
 
 type Plugin struct{}

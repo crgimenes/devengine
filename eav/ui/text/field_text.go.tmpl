@@ -4,15 +4,15 @@
 {{$value := .Value}}
 {{$required := .Required}}
 {{$readonly := .Readonly}}
-<input type="text" 
-       class="form-control" 
-       id="{{$name}}" 
+<input type="text"
+       class="form-control"
+       id="{{$name}}"
        name="{{$name}}"
        value="{{$value}}"
        {{if index $meta "placeholder"}}placeholder="{{index $meta "placeholder"}}"{{end}}
-       {{if and (index $meta "maxLength") (gt (index $meta "maxLength") 0)}}maxlength="{{index $meta "maxLength"}}"{{end}}
+       {{if and (index $meta "max_length") (gt (index $meta "max_length") 0)}}maxlength="{{index $meta "max_length"}}"{{end}}
        {{if index $meta "pattern"}}pattern="{{index $meta "pattern"}}"{{end}}
-       {{if index $meta "inputMode"}}inputmode="{{index $meta "inputMode"}}"{{end}}
+       {{if index $meta "input_mode"}}inputmode="{{index $meta "input_mode"}}"{{end}}
        {{if $required}}required{{end}}
        {{if $readonly}}readonly{{end}}>
 {{end}}
@@ -22,22 +22,22 @@
         <div id="field-options-text" class="field-ui-options d-none">
             <div class="mb-2">
                 <label for="opt_text_placeholder" class="form-label small">Placeholder</label>
-                <input type="text" class="form-control form-control-sm plugin-option" id="opt_text_placeholder" 
+                <input type="text" class="form-control form-control-sm plugin-option" id="opt_text_placeholder"
                        data-key="placeholder" value="{{index $meta "placeholder"}}">
             </div>
             <div class="row">
                 <div class="col-md-6 mb-2">
-                    <label for="opt_text_maxLength" class="form-label small">{{t .Locale "Maximum length"}}</label>
-                    <input type="number" class="form-control form-control-sm plugin-option" id="opt_text_maxLength" 
-                           data-key="maxLength" value="{{index $meta "maxLength"}}" min="0">
+                    <label for="opt_text_max_length" class="form-label small">{{t .Locale "Maximum length"}}</label>
+                    <input type="number" class="form-control form-control-sm plugin-option" id="opt_text_max_length"
+                           data-key="max_length" value="{{index $meta "max_length"}}" min="0">
                 </div>
                 <div class="col-md-6 mb-2">
-                    <label for="opt_text_inputMode" class="form-label small">Modo de entrada</label>
-                    <select class="form-select form-select-sm plugin-option" id="opt_text_inputMode" data-key="inputMode">
-                        <option value="text" {{if eq (index $meta "inputMode") "text"}}selected{{end}}>Texto</option>
-                        <option value="email" {{if eq (index $meta "inputMode") "email"}}selected{{end}}>Email</option>
-                        <option value="tel" {{if eq (index $meta "inputMode") "tel"}}selected{{end}}>Telefone</option>
-                        <option value="url" {{if eq (index $meta "inputMode") "url"}}selected{{end}}>URL</option>
+                    <label for="opt_text_input_mode" class="form-label small">{{t .Locale "Input mode"}}</label>
+                    <select class="form-select form-select-sm plugin-option" id="opt_text_input_mode" data-key="input_mode">
+                        <option value="text" {{if eq (index $meta "input_mode") "text"}}selected{{end}}>{{t .Locale "Text"}}</option>
+                        <option value="email" {{if eq (index $meta "input_mode") "email"}}selected{{end}}>Email</option>
+                        <option value="tel" {{if eq (index $meta "input_mode") "tel"}}selected{{end}}>{{t .Locale "Telephone"}}</option>
+                        <option value="url" {{if eq (index $meta "input_mode") "url"}}selected{{end}}>URL</option>
                     </select>
                 </div>
             </div>

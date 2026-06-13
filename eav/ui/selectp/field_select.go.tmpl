@@ -5,12 +5,10 @@
 {{$required := .Required}}
 {{$readonly := .Readonly}}
 {{$options := index $meta "options"}}
-{{$allowEmpty := index $meta "allowEmpty"}}
-{{$multiple := index $meta "multiple"}}
-<select class="form-select" 
-        id="{{$name}}" 
+{{$allowEmpty := index $meta "allow_empty"}}
+<select class="form-select"
+        id="{{$name}}"
         name="{{$name}}"
-        {{if $multiple}}multiple{{end}}
         {{if $required}}required{{end}}
         {{if $readonly}}disabled{{end}}>
     {{if $allowEmpty}}
@@ -34,19 +32,13 @@
 {{$meta := .Meta}}
         <div id="field-options-select" class="field-ui-options d-none">
             <div class="form-check mb-2">
-                <input class="form-check-input plugin-option" type="checkbox" id="opt_select_allowEmpty" 
-                       data-key="allowEmpty" {{if index $meta "allowEmpty"}}checked{{end}}>
-                <label class="form-check-label" for="opt_select_allowEmpty">
+                <input class="form-check-input plugin-option" type="checkbox" id="opt_select_allow_empty"
+                       data-key="allow_empty" {{if index $meta "allow_empty"}}checked{{end}}>
+                <label class="form-check-label" for="opt_select_allow_empty">
                     {{t .Locale "Allow an empty option"}}
                 </label>
             </div>
-            <div class="form-check mb-2">
-                <input class="form-check-input plugin-option" type="checkbox" id="opt_select_multiple" 
-                       data-key="multiple" {{if index $meta "multiple"}}checked{{end}}>
-                <label class="form-check-label" for="opt_select_multiple">
-                    {{t .Locale "Multiple selection"}}
-                </label>
-            </div>
-            <p class="small text-muted">{{t .Locale "Options are configured directly in the JSON below."}}</p>
+            <p class="small text-muted">{{t .Locale "Options are configured directly in the JSON below."}}
+                <code>{"options": ["A", "B"]}</code></p>
         </div>
 {{end}}

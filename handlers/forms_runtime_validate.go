@@ -44,7 +44,7 @@ func evaluateValidateExprs(
 			continue
 		}
 
-		msg, err := runValidateExpr(ctx, user, el, attr, values)
+		msg, err := runValidateExpr(ctx, user, el, attr, attributes, values)
 		if err != nil {
 			return nil, err
 		}
@@ -61,12 +61,10 @@ func runValidateExpr(
 	user *db.User,
 	el db.FormElement,
 	attr *db.EAVAttribute,
+	attributes []db.EAVAttribute,
 	values db.EAVRecordValues,
 ) (string, error) {
-	globals := make(map[string]filo.Value, len(values)+1)
-	for k, v := range values {
-		globals["field:"+k] = goToFilo(v)
-	}
+	globals := fieldGlobals(attributes, values)
 	globals["error"] = filo.VString("")
 
 	eng := newFiloEngine(user, globals)

@@ -41,9 +41,9 @@ func (Plugin) SupportsReadOnly() bool   { return true }
 
 func (Plugin) Defaults() map[string]any {
 	return map[string]any{
-		"includeTime": true,
-		"minDate":     "",
-		"maxDate":     "",
+		"include_time": true,
+		"min":          "",
+		"max":          "",
 	}
 }
 

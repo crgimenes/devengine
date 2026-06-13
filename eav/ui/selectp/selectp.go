@@ -30,6 +30,24 @@ type Choice struct {
 	Label string `json:"label,omitempty"`
 }
 
+// UnmarshalJSON accepts either {"value": "x", "label": "Y"} or a bare
+// string "x", matching the two shapes the field template renders.
+func (c *Choice) UnmarshalJSON(data []byte) error {
+	var s string
+	if err := json.Unmarshal(data, &s); err == nil {
+		c.Value = s
+		c.Label = s
+		return nil
+	}
+	type alias Choice
+	var a alias
+	if err := json.Unmarshal(data, &a); err != nil {
+		return err
+	}
+	*c = Choice(a)
+	return nil
+}
+
 type Options struct {
 	Kind       string   `json:"kind,omitempty"` // "text" (default) or "int"
 	Options    []Choice `json:"options,omitempty"`
@@ -45,9 +63,8 @@ func (Plugin) SupportsReadOnly() bool   { return true }
 
 func (Plugin) Defaults() map[string]any {
 	return map[string]any{
-		"options":    []any{},
-		"allowEmpty": true,
-		"multiple":   false,
+		"options":     []any{},
+		"allow_empty": true,
 	}
 }
 

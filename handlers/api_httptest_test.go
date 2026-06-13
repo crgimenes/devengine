@@ -428,3 +428,76 @@ func TestConcurrentRecordWrites(t *testing.T) {
 	}
 	t.Logf("successes=%d conflicts=%d final rev=%d", successes.Load(), conflicts.Load(), final.Rev)
 }
+
+// A stale rev submitted through the HTML runtime re-renders with the
+// conflict notice, not the generic "Could not save (ref ...)" text. The
+// admin records screen and the JSON API already said "conflict"; the user
+// runtime used to hide it behind a reference id.
+func TestHTMLUpdateStaleRevShowsConflict(t *testing.T) {
+	mux, s := newHTTPTestEnv(t)
+	seedAPIForm(t, s)
+	browser := plantUser(t, "webconf", false)
+
+	form := url.Values{"titulo": {"agenda"}, "quantidade": {"1"}}
+	rr := doPostForm(t, mux, "/form/itens", form, browser)
+	if rr.Code != http.StatusSeeOther {
+		t.Fatalf("create = %d: %.300s", rr.Code, rr.Body.String())
+	}
+
+	et, err := db.Storage.GetEAVEntityTypeByMachineName("item")
+	if err != nil {
+		t.Fatalf("entity: %v", err)
+	}
+	recs, _, err := db.Storage.ListEAVRecordsByEntityTypeID(et.ID, 10, 0)
+	if err != nil || len(recs) == 0 {
+		t.Fatalf("records: %v (%d)", err, len(recs))
+	}
+	ref := recs[0].ReferenceID
+
+	// First update with the current rev succeeds and bumps it.
+	form = url.Values{
+		"titulo": {"agenda 2027"}, "quantidade": {"1"},
+		"rev": {strconv.Itoa(recs[0].Rev)},
+	}
+	rr = doPostForm(t, mux, "/form/itens/r/"+ref, form, browser)
+	if rr.Code != http.StatusSeeOther {
+		t.Fatalf("fresh update = %d: %.300s", rr.Code, rr.Body.String())
+	}
+
+	// Replaying the same stale rev re-renders with the conflict notice.
+	rr = doPostForm(t, mux, "/form/itens/r/"+ref, form, browser)
+	if rr.Code != http.StatusOK {
+		t.Fatalf("stale update = %d, want 200 re-render", rr.Code)
+	}
+	body := rr.Body.String()
+	if !strings.Contains(body, "modified by another user") {
+		t.Fatalf("conflict notice missing from re-render: %.400s", body)
+	}
+	if strings.Contains(body, "(ref ") {
+		t.Fatalf("stale rev fell through to the generic ref-id error: %.400s", body)
+	}
+}
+
+// A partial JSON payload omits fields the HTML form would always post. The
+// validate/computed env must fill the gaps with each kind's zero value —
+// otherwise (>= field:quantidade 0) sees a string and the create 500s.
+func TestAPICreatePartialPayloadRunsNumericValidate(t *testing.T) {
+	mux, s := newHTTPTestEnv(t)
+	seedAPIForm(t, s)
+	token := mintToken(t, s, "apipartial")
+
+	rr := apiReq(t, mux, http.MethodPost, "/api/v1/itens", token, `{"titulo": "so o titulo"}`)
+	if rr.Code != http.StatusCreated {
+		t.Fatalf("partial create = %d, want 201: %.300s", rr.Code, rr.Body.String())
+	}
+	ref, _ := decodeJSON(t, rr)["reference_id"].(string)
+
+	rr = apiReq(t, mux, http.MethodGet, "/api/v1/itens/"+ref, token, "")
+	if rr.Code != http.StatusOK {
+		t.Fatalf("get = %d: %.300s", rr.Code, rr.Body.String())
+	}
+	values, _ := decodeJSON(t, rr)["values"].(map[string]any)
+	if values["quantidade"] != float64(0) {
+		t.Fatalf("quantidade = %v, want 0 (INT zero fill, same as empty HTML input)", values["quantidade"])
+	}
+}

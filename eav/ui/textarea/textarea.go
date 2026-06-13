@@ -37,7 +37,7 @@ func (Plugin) Defaults() map[string]any {
 	return map[string]any{
 		"placeholder": "",
 		"rows":        3,
-		"maxLength":   0,
+		"max_length":  0,
 	}
 }
 

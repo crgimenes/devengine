@@ -201,14 +201,16 @@ func parseAPIAttributes(body map[string]any, elements []db.FormElement, attribut
 			fieldErrors[el.MachineName] = "invalid value"
 			continue
 		}
-		if raw == "" {
-			if attr.IsRequired {
-				fieldErrors[el.MachineName] = "required field"
-			}
+		if raw == "" && attr.IsRequired {
+			fieldErrors[el.MachineName] = "required field"
 			values[attr.MachineName] = ""
 			continue
 		}
 
+		// Empty raw still goes through the plugin: Parse("") yields the
+		// zero of the primitive kind, exactly like an empty HTML input.
+		// Short-circuiting to "" here used to leave a string in INT/REAL
+		// fields and numeric validate_exprs aborted on the type mismatch.
 		v, err := parseElementValue(el, attr, raw)
 		if err != nil {
 			fieldErrors[el.MachineName] = "invalid value"
@@ -344,13 +346,45 @@ func decodeAPIBody(w http.ResponseWriter, r *http.Request) (map[string]any, bool
 	return body, true
 }
 
+// attrDefault returns the attribute's authored default value, typed, and
+// whether one is set.
+func attrDefault(attr *db.EAVAttribute) (any, bool) {
+	switch {
+	case attr.DefaultVBool != nil:
+		return *attr.DefaultVBool, true
+	case attr.DefaultVInt != nil:
+		return *attr.DefaultVInt, true
+	case attr.DefaultVReal != nil:
+		return *attr.DefaultVReal, true
+	case attr.DefaultVText != nil:
+		return *attr.DefaultVText, true
+	case attr.DefaultVDatetime != nil:
+		return *attr.DefaultVDatetime, true
+	}
+	return nil, false
+}
+
 // runAPIPipeline applies the shared computed/validate steps and reports
-// field errors as a 422.
-func (h *Handlers) runAPIPipeline(w http.ResponseWriter, r *http.Request, user *db.User, ctx runtimeFormContext, body map[string]any) (db.EAVRecordValues, bool) {
+// field errors as a 422. applyDefaults makes attributes absent from the
+// body take their authored default — what the HTML form pre-fills on a new
+// record. Updates keep it off: PUT replaces the resource with the payload.
+func (h *Handlers) runAPIPipeline(w http.ResponseWriter, r *http.Request, user *db.User, ctx runtimeFormContext, body map[string]any, applyDefaults bool) (db.EAVRecordValues, bool) {
 	values, fieldErrors := parseAPIAttributes(body, ctx.elements, ctx.attributes)
 	if len(fieldErrors) > 0 {
 		apiError(w, http.StatusUnprocessableEntity, "validation failed", fieldErrors)
 		return nil, false
+	}
+
+	if applyDefaults {
+		for i := range ctx.attributes {
+			attr := &ctx.attributes[i]
+			if _, inBody := body[attr.MachineName]; inBody {
+				continue
+			}
+			if d, has := attrDefault(attr); has {
+				values[attr.MachineName] = d
+			}
+		}
 	}
 
 	values, err := applyComputedExprs(r.Context(), user, ctx.attributes, values)
@@ -403,7 +437,7 @@ func (h *Handlers) APIRecordsCreate(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	values, ok := h.runAPIPipeline(w, r, user, ctx, body)
+	values, ok := h.runAPIPipeline(w, r, user, ctx, body, true)
 	if !ok {
 		return
 	}
@@ -468,7 +502,7 @@ func (h *Handlers) APIRecordsUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	values, ok := h.runAPIPipeline(w, r, user, ctx, body)
+	values, ok := h.runAPIPipeline(w, r, user, ctx, body, false)
 	if !ok {
 		return
 	}

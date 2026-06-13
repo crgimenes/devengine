@@ -41,11 +41,11 @@ func (Plugin) SupportsReadOnly() bool   { return true }
 
 func (Plugin) Defaults() map[string]any {
 	return map[string]any{
-		"min":           nil,
-		"max":           nil,
-		"step":          "any",
-		"decimalPlaces": 2,
-		"placeholder":   "",
+		"min":            nil,
+		"max":            nil,
+		"step":           "any",
+		"decimal_places": 2,
+		"placeholder":    "",
 	}
 }
 

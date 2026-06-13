@@ -37,9 +37,9 @@ func (Plugin) SupportsReadOnly() bool   { return true }
 func (Plugin) Defaults() map[string]any {
 	return map[string]any{
 		"placeholder": "",
-		"maxLength":   0,
+		"max_length":  0,
 		"pattern":     "",
-		"inputMode":   "text",
+		"input_mode":  "text",
 	}
 }
 
