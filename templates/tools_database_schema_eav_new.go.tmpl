@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR" data-bs-theme="dark">
+<html lang="{{$.Locale}}" data-bs-theme="dark">
   <head>
     {{template "head" .}}
   </head>
@@ -30,7 +30,7 @@
                     <div class="d-flex justify-content-between align-items-center mb-4">
                         <h2 class="mb-0">{{t $.Locale "New EAV table"}}</h2>
                         <a href="/tools/database-schema" class="btn btn-secondary">
-                            Cancelar
+                            {{t $.Locale "Cancel"}}
                         </a>
                     </div>
                     
@@ -96,7 +96,7 @@
                                 id="pos_load" 
                                 name="pos_load" 
                                 rows="6"
-                                placeholder="(set campo (str-concat campo &quot; - editado&quot;))"
+                                placeholder="(set field (str-concat field &quot; - edited&quot;))"
                             >{{.FormData.PosLoad}}</textarea>
                             <div class="form-text">
                                 {{t $.Locale "Filo code run after loading records and defaults, before display. A non-empty \"error\" shows the message on screen."}}
@@ -110,7 +110,7 @@
                                 id="pre_save" 
                                 name="pre_save" 
                                 rows="6"
-                                placeholder="(set error &quot;Mensagem de erro&quot;)"
+                                placeholder="(set error &quot;Error message&quot;)"
                             >{{.FormData.PreSave}}</textarea>
                             <div class="form-text">
                                 {{t $.Locale "Filo code run before saving records. A non-empty \"error\" blocks the save."}}

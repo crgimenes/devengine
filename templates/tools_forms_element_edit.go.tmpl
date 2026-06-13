@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR" data-bs-theme="dark">
+<html lang="{{$.Locale}}" data-bs-theme="dark">
   <head>
     {{template "head" .}}
   </head>
@@ -202,7 +202,7 @@
                                       id="validate_expr"
                                       name="validate_expr"
                                       rows="3"
-                                      placeholder='(if (< field:quantidade 1) "Quantidade deve ser ao menos 1" "")'>{{.Element.ValidateExpr}}</textarea>
+                                      placeholder='(if (< field:quantity 1) "Quantity must be at least 1" "")'>{{.Element.ValidateExpr}}</textarea>
                             <div class="form-text">
                                 {{t $.Locale "Runs on save. Return an error string (empty = ok) or a boolean (false = invalid). Fields read as"}} <code>field:&lt;name&gt;</code>.
                             <div class="form-text">{{t $.Locale "Updated automatically by the options above"}}</div>

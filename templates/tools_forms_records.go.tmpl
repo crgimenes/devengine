@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR" data-bs-theme="dark">
+<html lang="{{$.Locale}}" data-bs-theme="dark">
   <head>
     {{template "head" .}}
   </head>
@@ -48,7 +48,7 @@
                             <a href="/tools/forms/{{.Form.ReferenceID}}/records"
                                class="btn btn-outline-secondary">Limpar</a>
                             {{end}}
-                            <button type="submit" class="btn btn-primary">Buscar</button>
+                            <button type="submit" class="btn btn-primary">{{t $.Locale "Search"}}</button>
                         </div>
                     </form>
 

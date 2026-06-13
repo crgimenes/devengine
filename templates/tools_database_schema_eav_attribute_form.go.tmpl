@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR" data-bs-theme="dark">
+<html lang="{{$.Locale}}" data-bs-theme="dark">
   <head>
     {{template "head" .}}
   </head>
@@ -93,12 +93,12 @@
                         <div class="mb-3">
                             <label for="attr_primitive_kind" class="form-label">{{t $.Locale "Type"}} <span class="text-danger">*</span></label>
                             <select class="form-select" id="attr_primitive_kind" name="primitive_kind" required {{if .Attribute}}disabled{{end}}>
-                                <option value="">Selecione um tipo...</option>
-                                <option value="BOOL" {{if .Attribute}}{{if eq .Attribute.PrimitiveKind "BOOL"}}selected{{end}}{{end}}>BOOL - Verdadeiro/Falso</option>
+                                <option value="">{{t $.Locale "Select a type…"}}</option>
+                                <option value="BOOL" {{if .Attribute}}{{if eq .Attribute.PrimitiveKind "BOOL"}}selected{{end}}{{end}}>BOOL - {{t $.Locale "True/False"}}</option>
                                 <option value="INT" {{if .Attribute}}{{if eq .Attribute.PrimitiveKind "INT"}}selected{{end}}{{end}}>INT - {{t $.Locale "Integer number"}}</option>
                                 <option value="REAL" {{if .Attribute}}{{if eq .Attribute.PrimitiveKind "REAL"}}selected{{end}}{{end}}>REAL - {{t $.Locale "Decimal number"}}</option>
-                                <option value="TEXT" {{if .Attribute}}{{if eq .Attribute.PrimitiveKind "TEXT"}}selected{{end}}{{end}}>TEXT - Texto</option>
-                                <option value="DATETIME" {{if .Attribute}}{{if eq .Attribute.PrimitiveKind "DATETIME"}}selected{{end}}{{end}}>DATETIME - Data/Hora</option>
+                                <option value="TEXT" {{if .Attribute}}{{if eq .Attribute.PrimitiveKind "TEXT"}}selected{{end}}{{end}}>TEXT - {{t $.Locale "Text"}}</option>
+                                <option value="DATETIME" {{if .Attribute}}{{if eq .Attribute.PrimitiveKind "DATETIME"}}selected{{end}}{{end}}>DATETIME - {{t $.Locale "Date/Time"}}</option>
                             </select>
                             {{if .Attribute}}
                             <input type="hidden" name="primitive_kind" value="{{.Attribute.PrimitiveKind}}">
@@ -135,7 +135,7 @@
                             <div class="form-check">
                                 <input class="form-check-input" type="checkbox" id="attr_is_required" name="is_required" value="1" {{if .Attribute}}{{if .Attribute.IsRequired}}checked{{end}}{{end}}>
                                 <label class="form-check-label" for="attr_is_required">
-                                    {{t $.Locale "Required field (label)"}}
+                                    {{t $.Locale "Required field"}}
                                 </label>
                             </div>
                         </div>
@@ -173,7 +173,7 @@
                                       id="attr_computed_expr"
                                       name="computed_expr"
                                       rows="3"
-                                      placeholder='(* field:valor field:quantidade)'>{{if .Attribute}}{{.Attribute.ComputedExpr}}{{end}}</textarea>
+                                      placeholder='(* field:price field:quantity)'>{{if .Attribute}}{{.Attribute.ComputedExpr}}{{end}}</textarea>
                             <div class="form-text">
                                 {{t $.Locale "Recomputed on every save, overwriting typed input. Fields read as"}} <code>field:&lt;name&gt;</code>.
                             </div>

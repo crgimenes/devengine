@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR" data-bs-theme="dark">
+<html lang="{{$.Locale}}" data-bs-theme="dark">
   <head>
     {{template "head" .}}
     <style>
@@ -45,7 +45,7 @@
                                 <i class="bi bi-list"></i> Registros
                             </a>
                             <a href="/tools/database-schema" class="btn btn-secondary">
-                                Voltar
+                                {{t $.Locale "Back"}}
                             </a>
                         </div>
                     </div>
@@ -82,7 +82,7 @@
                                 id="pos_load" 
                                 name="pos_load" 
                                 rows="6"
-                                placeholder="(set campo (str-concat campo &quot; - editado&quot;))"
+                                placeholder="(set field (str-concat field &quot; - edited&quot;))"
                             >{{.EntityType.PosLoad}}</textarea>
                             <div class="form-text">
                                 {{t $.Locale "Filo code run after loading records and defaults, before display. A non-empty \"error\" shows the message on screen."}}
@@ -96,7 +96,7 @@
                                 id="pre_save" 
                                 name="pre_save" 
                                 rows="6"
-                                placeholder="(set error &quot;Mensagem de erro&quot;)"
+                                placeholder="(set error &quot;Error message&quot;)"
                             >{{.EntityType.PreSave}}</textarea>
                             <div class="form-text">
                                 {{t $.Locale "Filo code run before saving records. A non-empty \"error\" blocks the save."}}
