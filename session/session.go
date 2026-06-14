@@ -11,11 +11,13 @@ import (
 	"encoding/gob"
 	"net/http"
 	"os"
+	"strings"
 	"sync"
 	"time"
 
 	"github.com/crgimenes/devengine/log"
 
+	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
 )
 
@@ -332,11 +334,25 @@ const (
 
 var insecureCookie bool
 
-// EnableInsecureCookie enables non-Secure cookies (DEV/TEST only). Not for production use.
+// EnableInsecureCookie forces non-Secure cookies regardless of BaseURL
+// (DEV/TEST only). Applications normally need not call this: the engine
+// derives the cookie mode from the configured BaseURL — see cookieSecure.
 func EnableInsecureCookie() { insecureCookie = true }
 
+// cookieSecure reports whether the session and CSRF cookies carry the Secure
+// attribute (and the __Host- name prefix). Secure by default; turned off when
+// EnableInsecureCookie was called, or when the public BaseURL is plain http,
+// which is how local development runs — a browser silently rejects a Secure
+// __Host- cookie over http, so login would never stick.
+func cookieSecure() bool {
+	if insecureCookie {
+		return false
+	}
+	return !strings.HasPrefix(config.Cfg.BaseURL, "http://")
+}
+
 func SetCookie(w http.ResponseWriter, value string, maxAge time.Duration) {
-	secure := !insecureCookie
+	secure := cookieSecure()
 	name := secureSessCookieName
 	if !secure {
 		name = insecureSessCookieName
@@ -349,7 +365,7 @@ func SetCookie(w http.ResponseWriter, value string, maxAge time.Duration) {
 		maxAgeSeconds = -1
 		expires = time.Unix(1, 0)
 	}
-	http.SetCookie(w, &http.Cookie{ // #nosec G124 -- Secure=false only in explicit localhost dev mode (EnableInsecureCookie)
+	http.SetCookie(w, &http.Cookie{ // #nosec G124 -- Secure=false only for an http BaseURL or EnableInsecureCookie (local dev)
 		Name:     name,
 		Value:    value,
 		Path:     "/",
@@ -363,7 +379,7 @@ func SetCookie(w http.ResponseWriter, value string, maxAge time.Duration) {
 
 func GetCookie(r *http.Request) (string, bool) {
 	name := secureSessCookieName
-	if insecureCookie {
+	if !cookieSecure() {
 		name = insecureSessCookieName
 	}
 	c, err := r.Cookie(name)
@@ -384,7 +400,7 @@ const (
 // Double-submit cookie pattern: the same token is also sent back in a hidden form field named "csrf_token".
 func GenerateCSRFToken(w http.ResponseWriter, r *http.Request) string {
 	name := secureCSRFCookieName
-	secure := !insecureCookie
+	secure := cookieSecure()
 	if !secure {
 		name = insecureCSRFCookieName
 	}
@@ -398,7 +414,7 @@ func GenerateCSRFToken(w http.ResponseWriter, r *http.Request) string {
 	_, _ = rand.Read(buf)
 	token := base64.RawURLEncoding.EncodeToString(buf)
 
-	http.SetCookie(w, &http.Cookie{ // #nosec G124 -- Secure=false only in explicit localhost dev mode (EnableInsecureCookie)
+	http.SetCookie(w, &http.Cookie{ // #nosec G124 -- Secure=false only for an http BaseURL or EnableInsecureCookie (local dev)
 		Name:     name,
 		Value:    token,
 		Path:     "/",
@@ -414,7 +430,7 @@ func GenerateCSRFToken(w http.ResponseWriter, r *http.Request) string {
 // ValidateCSRF compares the CSRF cookie with the form field "csrf_token" using constant-time compare.
 func ValidateCSRF(r *http.Request) bool {
 	name := secureCSRFCookieName
-	if insecureCookie {
+	if !cookieSecure() {
 		name = insecureCSRFCookieName
 	}
 	c, err := r.Cookie(name)
