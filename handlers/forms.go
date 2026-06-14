@@ -440,9 +440,11 @@ func (h *Handlers) ToolsFormsElementCreate(w http.ResponseWriter, r *http.Reques
 	var eavAttrID *int64
 	if eavAttrRefID != "" {
 		attr, err := db.Storage.GetEAVAttributeByRefID(eavAttrRefID)
-		if err == nil {
-			eavAttrID = &attr.ID
+		if err != nil || form.EAVEntityTypeID == nil || attr.EntityTypeID != *form.EAVEntityTypeID {
+			h.errorPage(w, r, http.StatusBadRequest, "Attribute does not belong to this form's entity type")
+			return
 		}
+		eavAttrID = &attr.ID
 	}
 
 	isUIOnly := isUIOnlyStr == "1" || isUIOnlyStr == "true"
@@ -483,6 +485,15 @@ func (h *Handlers) ToolsFormsElementDelete(w http.ResponseWriter, r *http.Reques
 		h.notFound(w, r)
 		return
 	}
+	form, err := db.Storage.GetFormByRefID(formRefID)
+	if err != nil {
+		h.notFound(w, r)
+		return
+	}
+	if element.FormID != form.ID {
+		h.errorPage(w, r, http.StatusBadRequest, "Element does not belong to this form")
+		return
+	}
 
 	err = db.Storage.DeleteFormElement(element.ID)
 	if err != nil {
@@ -518,6 +529,15 @@ func (h *Handlers) ToolsFormsElementMoveUp(w http.ResponseWriter, r *http.Reques
 		h.notFound(w, r)
 		return
 	}
+	form, err := db.Storage.GetFormByRefID(formRefID)
+	if err != nil {
+		h.notFound(w, r)
+		return
+	}
+	if element.FormID != form.ID {
+		h.errorPage(w, r, http.StatusBadRequest, "Element does not belong to this form")
+		return
+	}
 
 	err = db.Storage.MoveElementUp(element.ID)
 	if err != nil {
@@ -551,6 +571,15 @@ func (h *Handlers) ToolsFormsElementMoveDown(w http.ResponseWriter, r *http.Requ
 	element, err := db.Storage.GetFormElementByRefID(elementRefID)
 	if err != nil {
 		h.notFound(w, r)
+		return
+	}
+	form, err := db.Storage.GetFormByRefID(formRefID)
+	if err != nil {
+		h.notFound(w, r)
+		return
+	}
+	if element.FormID != form.ID {
+		h.errorPage(w, r, http.StatusBadRequest, "Element does not belong to this form")
 		return
 	}
 
@@ -668,8 +697,6 @@ func (h *Handlers) ToolsFormsElementEdit(w http.ResponseWriter, r *http.Request)
 		h.notFound(w, r)
 		return
 	}
-
-	// Verify element belongs to this form
 	if element.FormID != form.ID {
 		h.errorPage(w, r, http.StatusBadRequest, "Element does not belong to this form")
 		return
@@ -815,6 +842,10 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 		h.notFound(w, r)
 		return
 	}
+	if element.FormID != form.ID {
+		h.errorPage(w, r, http.StatusBadRequest, "Element does not belong to this form")
+		return
+	}
 
 	// Parse form values
 	machineName := r.FormValue("machine_name")
@@ -868,18 +899,22 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 	var parentID *int64
 	if parentRefID != "" {
 		parentEl, err := db.Storage.GetFormElementByRefID(parentRefID)
-		if err == nil && parentEl.FormID == form.ID {
-			parentID = &parentEl.ID
+		if err != nil || parentEl.FormID != form.ID || parentEl.ID == element.ID {
+			h.errorPage(w, r, http.StatusBadRequest, "Invalid parent element")
+			return
 		}
+		parentID = &parentEl.ID
 	}
 
 	// Get EAV attribute ID
 	var eavAttrID *int64
 	if eavAttrRefID != "" {
 		attr, err := db.Storage.GetEAVAttributeByRefID(eavAttrRefID)
-		if err == nil {
-			eavAttrID = &attr.ID
+		if err != nil || form.EAVEntityTypeID == nil || attr.EntityTypeID != *form.EAVEntityTypeID {
+			h.errorPage(w, r, http.StatusBadRequest, "Attribute does not belong to this form's entity type")
+			return
 		}
+		eavAttrID = &attr.ID
 	}
 
 	isUIOnly := isUIOnlyStr == "1" || isUIOnlyStr == "on"

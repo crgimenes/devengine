@@ -329,6 +329,35 @@ CREATE INDEX IF NOT EXISTS idx_eav_values_attr_v_datetime
 CREATE INDEX IF NOT EXISTS idx_eav_values_attr_v_text_nocase
     ON eav_values(attribute_id, v_text COLLATE NOCASE);
 
+-- A value may only connect a record and attribute from the same entity type.
+CREATE TRIGGER IF NOT EXISTS trg_eav_values_entity_insert
+BEFORE INSERT ON eav_values
+FOR EACH ROW
+WHEN NOT EXISTS (
+    SELECT 1
+    FROM eav_records r
+    JOIN eav_attributes a ON a.id = NEW.attribute_id
+    WHERE r.id = NEW.record_id
+      AND r.entity_type_id = a.entity_type_id
+)
+BEGIN
+    SELECT RAISE(ABORT, 'eav_values: record and attribute entity types must match');
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_eav_values_entity_update
+BEFORE UPDATE OF record_id, attribute_id ON eav_values
+FOR EACH ROW
+WHEN NOT EXISTS (
+    SELECT 1
+    FROM eav_records r
+    JOIN eav_attributes a ON a.id = NEW.attribute_id
+    WHERE r.id = NEW.record_id
+      AND r.entity_type_id = a.entity_type_id
+)
+BEGIN
+    SELECT RAISE(ABORT, 'eav_values: record and attribute entity types must match');
+END;
+
 -- ----------------------------------------------------------------------
 -- Triggers for Optimistic Locking
 -- ----------------------------------------------------------------------
@@ -464,6 +493,47 @@ CREATE INDEX IF NOT EXISTS idx_menu_items_parent_order
 
 CREATE INDEX IF NOT EXISTS idx_menu_items_deleted_at
     ON menu_items(deleted_at);
+
+CREATE TRIGGER IF NOT EXISTS trg_menu_items_validate_insert
+BEFORE INSERT ON menu_items
+FOR EACH ROW
+BEGIN
+    SELECT CASE
+        WHEN NEW.parent_id IS NOT NULL AND NEW.parent_id = NEW.id THEN
+            RAISE(ABORT, 'menu_items: item cannot be its own parent')
+        WHEN NEW.parent_id IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM menu_items p
+            WHERE p.id = NEW.parent_id AND p.menu_id = NEW.menu_id
+        ) THEN
+            RAISE(ABORT, 'menu_items: parent must belong to the same menu')
+    END;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_menu_items_validate_update
+BEFORE UPDATE OF menu_id, parent_id ON menu_items
+FOR EACH ROW
+BEGIN
+    SELECT CASE
+        WHEN NEW.parent_id IS NOT NULL AND NEW.parent_id = NEW.id THEN
+            RAISE(ABORT, 'menu_items: item cannot be its own parent')
+        WHEN NEW.parent_id IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM menu_items p
+            WHERE p.id = NEW.parent_id AND p.menu_id = NEW.menu_id
+        ) THEN
+            RAISE(ABORT, 'menu_items: parent must belong to the same menu')
+        WHEN NEW.parent_id IS NOT NULL AND EXISTS (
+            WITH RECURSIVE descendants(id) AS (
+                SELECT id FROM menu_items WHERE parent_id = NEW.id
+                UNION
+                SELECT i.id
+                FROM menu_items i
+                JOIN descendants d ON i.parent_id = d.id
+            )
+            SELECT 1 FROM descendants WHERE id = NEW.parent_id
+        ) THEN
+            RAISE(ABORT, 'menu_items: parent would create a cycle')
+    END;
+END;
 
 -- Trigger for reference_id generation
 CREATE TRIGGER IF NOT EXISTS trg_menu_items_reference_id
@@ -642,6 +712,63 @@ CREATE INDEX IF NOT EXISTS idx_form_elements_parent_order
 
 CREATE INDEX IF NOT EXISTS idx_form_elements_deleted_at
     ON form_elements(deleted_at);
+
+CREATE TRIGGER IF NOT EXISTS trg_form_elements_validate_insert
+BEFORE INSERT ON form_elements
+FOR EACH ROW
+BEGIN
+    SELECT CASE
+        WHEN NEW.parent_id IS NOT NULL AND NEW.parent_id = NEW.id THEN
+            RAISE(ABORT, 'form_elements: element cannot be its own parent')
+        WHEN NEW.parent_id IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM form_elements p
+            WHERE p.id = NEW.parent_id AND p.form_id = NEW.form_id
+        ) THEN
+            RAISE(ABORT, 'form_elements: parent must belong to the same form')
+        WHEN NEW.eav_attribute_id IS NOT NULL AND NOT EXISTS (
+            SELECT 1
+            FROM forms f
+            JOIN eav_attributes a ON a.id = NEW.eav_attribute_id
+            WHERE f.id = NEW.form_id
+              AND f.eav_entity_type_id = a.entity_type_id
+        ) THEN
+            RAISE(ABORT, 'form_elements: attribute must belong to the form entity type')
+    END;
+END;
+
+CREATE TRIGGER IF NOT EXISTS trg_form_elements_validate_update
+BEFORE UPDATE OF form_id, parent_id, eav_attribute_id ON form_elements
+FOR EACH ROW
+BEGIN
+    SELECT CASE
+        WHEN NEW.parent_id IS NOT NULL AND NEW.parent_id = NEW.id THEN
+            RAISE(ABORT, 'form_elements: element cannot be its own parent')
+        WHEN NEW.parent_id IS NOT NULL AND NOT EXISTS (
+            SELECT 1 FROM form_elements p
+            WHERE p.id = NEW.parent_id AND p.form_id = NEW.form_id
+        ) THEN
+            RAISE(ABORT, 'form_elements: parent must belong to the same form')
+        WHEN NEW.eav_attribute_id IS NOT NULL AND NOT EXISTS (
+            SELECT 1
+            FROM forms f
+            JOIN eav_attributes a ON a.id = NEW.eav_attribute_id
+            WHERE f.id = NEW.form_id
+              AND f.eav_entity_type_id = a.entity_type_id
+        ) THEN
+            RAISE(ABORT, 'form_elements: attribute must belong to the form entity type')
+        WHEN NEW.parent_id IS NOT NULL AND EXISTS (
+            WITH RECURSIVE descendants(id) AS (
+                SELECT id FROM form_elements WHERE parent_id = NEW.id
+                UNION
+                SELECT e.id
+                FROM form_elements e
+                JOIN descendants d ON e.parent_id = d.id
+            )
+            SELECT 1 FROM descendants WHERE id = NEW.parent_id
+        ) THEN
+            RAISE(ABORT, 'form_elements: parent would create a cycle')
+    END;
+END;
 
 -- Trigger for reference_id generation
 CREATE TRIGGER IF NOT EXISTS trg_form_elements_reference_id

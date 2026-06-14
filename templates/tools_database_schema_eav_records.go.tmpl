@@ -101,8 +101,7 @@
                                     </a>
                                     <form method="POST" 
                                           action="/tools/database-schema/eav/{{$.EntityType.ReferenceID}}/records/{{.Record.ReferenceID}}/delete" 
-                                          style="display: inline;"
-                                          class="delete-record-form">
+                                          class="delete-record-form form-inline">
                                         <button type="submit" class="btn btn-sm btn-outline-danger">
                                             {{t $.Locale "Delete"}}
                                         </button>

@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -12,6 +13,7 @@ import (
 	"github.com/crgimenes/devengine/auth/basic"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/session"
 )
 
 const usersPageSize = 50
@@ -188,6 +190,20 @@ func (h *Handlers) ToolsUsersUpdate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	updated, err := db.Storage.GetUserByID(target.ID)
+	if err != nil || updated == nil {
+		if err == nil {
+			err = errors.New("updated user not found")
+		}
+		h.serverError(w, r, "GetUserByID", err)
+		return
+	}
+	if !updated.Enabled {
+		session.DeleteUserSessions(updated.ID)
+	} else {
+		session.UpdateUser(*updated)
+	}
+
 	usersEditRedirect(w, r, target.ReferenceID, "message", tr(r, "User updated."))
 }
 
@@ -232,6 +248,7 @@ func (h *Handlers) ToolsUsersResetPassword(w http.ResponseWriter, r *http.Reques
 		h.serverError(w, r, "ToolsUsersResetPassword", err)
 		return
 	}
+	session.DeleteUserSessions(target.ID)
 
 	http.Redirect(w, r,
 		h.cfg.BaseURL+"/tools/users/"+target.ReferenceID+"/edit?new_password="+url.QueryEscape(newPassword),

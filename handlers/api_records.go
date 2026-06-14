@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -20,7 +21,10 @@ import (
 // from the same pipeline the HTML runtime uses. Authentication is a bearer
 // token minted on /me; only the SHA-256 of the token is stored.
 
-const apiListLimit = 50
+const (
+	apiListLimit   = 50
+	maxAPIJSONBody = 1 << 20
+)
 
 // apiJSON writes v as the JSON response body.
 func apiJSON(w http.ResponseWriter, status int, v any) {
@@ -337,9 +341,15 @@ func (h *Handlers) APIRecordsGet(w http.ResponseWriter, r *http.Request) {
 // decodeAPIBody parses the JSON request body into a flat object.
 func decodeAPIBody(w http.ResponseWriter, r *http.Request) (map[string]any, bool) {
 	var body map[string]any
+	r.Body = http.MaxBytesReader(w, r.Body, maxAPIJSONBody)
 	dec := json.NewDecoder(r.Body)
 	err := dec.Decode(&body)
-	if err != nil {
+	if err != nil || body == nil {
+		apiError(w, http.StatusBadRequest, "invalid JSON body", nil)
+		return nil, false
+	}
+	err = dec.Decode(&struct{}{})
+	if !errors.Is(err, io.EOF) {
 		apiError(w, http.StatusBadRequest, "invalid JSON body", nil)
 		return nil, false
 	}

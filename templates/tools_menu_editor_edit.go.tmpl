@@ -97,7 +97,7 @@
                                     </td>
                                     <td>
                                         {{if gt .Depth 0}}
-                                            <span class="menu-item-indent" style="padding-left: {{.Depth}}rem">↳</span>
+                                            <span class="menu-item-indent indent-depth-{{.Depth}}">↳</span>
                                         {{end}}
                                         {{if .Icon}}<i class="bi {{.Icon}}"></i> {{end}}
                                         <a href="/tools/menu-editor/{{$.Menu.ReferenceID}}/items/{{.ReferenceID}}/edit">

@@ -18,13 +18,12 @@
                class="field-video-preview rounded w-100" 
                id="{{$name}}_preview"></video>
         {{else}}
-        <div class="field-video-placeholder text-center text-muted p-4 border rounded bg-body-secondary"
+        <div class="field-video-placeholder text-center text-muted p-4 border rounded bg-body-secondary {{if not $readonly}}cursor-pointer{{end}}"
              {{if not $readonly}}
              role="button"
              data-bs-toggle="modal"
              data-bs-target="#fileManagerModal"
              data-field-name="{{$name}}"
-             style="cursor: pointer;"
              title="{{t .Locale "Click to pick a video"}}"
              {{end}}>
             <svg class="mb-2" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">

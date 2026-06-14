@@ -32,4 +32,6 @@ func (stubProvider) Del(string)                                           {}
 
 type stubUser struct{}
 
-func (stubUser) ToDBUser() db.User { return db.User{ID: 99, Username: "provided"} }
+func (stubUser) ToDBUser() db.User {
+	return db.User{ID: 99, Username: "provided", Enabled: true}
+}

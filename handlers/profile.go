@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"io"
 	"net/http"
 	"os"
@@ -17,7 +18,7 @@ import (
 )
 
 func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
-	u, sid, authed, err := auth.Prelude(w, r,
+	u, _, authed, err := auth.Prelude(w, r,
 		[]string{
 			http.MethodGet,
 			http.MethodPost,
@@ -68,7 +69,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 
 	if file != nil {
 		if h.files.Validate == nil || h.files.DataPath == nil || h.files.SaveMetadata == nil || h.files.NewFilename == nil {
-			h.serverError(w, r, "file utilities not configured", err)
+			h.serverError(w, r, "Profile", errors.New("file utilities not configured"))
 			return
 		}
 
@@ -86,7 +87,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 
 		seeker, ok := file.(io.Seeker)
 		if !ok {
-			h.serverError(w, r, "Profile", err)
+			h.serverError(w, r, "Profile", errors.New("avatar upload is not seekable"))
 			return
 		}
 		_, err = seeker.Seek(0, io.SeekStart)
@@ -106,17 +107,15 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 
 		freshUser, gerr := db.Storage.GetUserByID(u.ID)
 		if gerr != nil {
-			h.serverError(w, r, "Profile", err)
+			h.serverError(w, r, "Profile", gerr)
 			return
 		}
-		if freshUser.ReferenceID == "" {
-			h.serverError(w, r, "Profile", err)
+		if freshUser == nil || freshUser.ReferenceID == "" {
+			h.serverError(w, r, "Profile", errors.New("refreshed user has no reference ID"))
 			return
 		}
 
 		u = freshUser
-		session.Put(sid, *u)
-		session.SyncSessions(sid)
 
 		uploadsDir, err := h.files.DataPath(u)
 		if err != nil {
@@ -149,6 +148,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 
 		fileMeta, err = h.files.SaveMetadata(fileMeta)
 		if err != nil {
+			_ = os.Remove(avatarPath) // #nosec G703 -- avatarPath uses a server-generated filename inside the configured upload directory
 			h.serverError(w, r, "Profile", err)
 			return
 		}
@@ -176,8 +176,7 @@ func (h *Handlers) Profile(w http.ResponseWriter, r *http.Request) {
 	}
 	updatedUser.Locale = locale
 
-	session.Put(sid, *updatedUser)
-	session.SyncSessions(sid)
+	session.UpdateUser(*updatedUser)
 
 	http.Redirect(w, r, h.cfg.BaseURL+"/", http.StatusFound)
 }

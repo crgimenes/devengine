@@ -31,7 +31,7 @@ func SecurityHeaders(next http.Handler) http.Handler {
 		"form-action 'self'",
 		"object-src 'none'",
 		"script-src 'self'",
-		"style-src 'self' 'unsafe-inline'",
+		"style-src 'self'",
 		"img-src 'self' data: https: *.githubusercontent.com github.com *.twimg.com pbs.twimg.com",
 		"frame-ancestors 'none'",
 	}, "; ")

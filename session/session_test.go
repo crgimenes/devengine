@@ -79,21 +79,62 @@ func TestCleanupKeepsLiveSessions(t *testing.T) {
 	}
 }
 
-func TestSyncSessionsPropagatesUser(t *testing.T) {
+func TestUpdateUserPreservesSessionState(t *testing.T) {
 	resetStore(t)
 
 	Put("sid-a", db.User{ID: 9, Username: "before"})
 	Put("sid-b", db.User{ID: 9, Username: "before"})
 	Put("sid-c", db.User{ID: 10, Username: "other"})
 
-	Put("sid-a", db.User{ID: 9, Username: "after"})
-	SyncSessions("sid-a")
+	sessions.Lock()
+	beforeExpiry := sessions.m["sid-b"].ExpiresAt
+	sessions.m["sid-b"] = session{
+		User:         sessions.m["sid-b"].User,
+		ExpiresAt:    beforeExpiry,
+		FlashMessage: "keep",
+	}
+	sessions.Unlock()
+
+	UpdateUser(db.User{ID: 9, Username: "after"})
 
 	if u, _ := Get("sid-b"); u.Username != "after" {
 		t.Fatalf("same-user session not synced: %+v", u)
 	}
 	if u, _ := Get("sid-c"); u.Username != "other" {
 		t.Fatalf("other user's session touched: %+v", u)
+	}
+	sessions.RLock()
+	got := sessions.m["sid-b"]
+	sessions.RUnlock()
+	if got.ExpiresAt != beforeExpiry || got.FlashMessage != "keep" {
+		t.Fatalf("session state changed: %+v", got)
+	}
+}
+
+func TestPutWithTTLAndDeleteUserSessions(t *testing.T) {
+	resetStore(t)
+
+	before := time.Now().Add(90 * time.Minute).Unix()
+	PutWithTTL("sid-a", db.User{ID: 9}, 90*time.Minute)
+	Put("sid-b", db.User{ID: 9})
+	Put("sid-c", db.User{ID: 10})
+
+	sessions.RLock()
+	expiresAt := sessions.m["sid-a"].ExpiresAt
+	sessions.RUnlock()
+	if expiresAt < before-1 || expiresAt > before+1 {
+		t.Fatalf("ExpiresAt = %d, want about %d", expiresAt, before)
+	}
+
+	DeleteUserSessions(9)
+	if _, ok := Get("sid-a"); ok {
+		t.Fatal("first user session still exists")
+	}
+	if _, ok := Get("sid-b"); ok {
+		t.Fatal("second user session still exists")
+	}
+	if _, ok := Get("sid-c"); !ok {
+		t.Fatal("other user's session was deleted")
 	}
 }
 

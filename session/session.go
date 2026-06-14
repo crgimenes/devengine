@@ -240,9 +240,14 @@ func Count() int {
 }
 
 func Put(sid string, u db.User) {
+	PutWithTTL(sid, u, time.Duration(MaxSessionAge)*time.Second)
+}
+
+// PutWithTTL stores a session whose server-side expiry matches the cookie TTL.
+func PutWithTTL(sid string, u db.User, ttl time.Duration) {
 	s := session{
 		User:      u,
-		ExpiresAt: time.Now().Unix() + MaxSessionAge,
+		ExpiresAt: time.Now().Add(ttl).Unix(),
 	}
 	sessions.Lock()
 	sessions.m[sid] = s
@@ -278,23 +283,37 @@ func Cleanup() {
 	sessions.Unlock()
 }
 
-// SyncSessions updates all sessions for the same user as in the given session ID.
+// UpdateUser refreshes the user snapshot in every active session without
+// changing expiry, flash data, or notification channels.
+func UpdateUser(u db.User) {
+	sessions.Lock()
+	for key, sess := range sessions.m {
+		if sess.User.ID == u.ID {
+			sess.User = u
+			sessions.m[key] = sess
+		}
+	}
+	sessions.Unlock()
+}
+
+// SyncSessions refreshes all sessions from the user snapshot stored in sid.
+// Deprecated: call UpdateUser with the freshly loaded database user.
 func SyncSessions(sid string) {
 	sessions.RLock()
-	s, ok := sessions.m[sid]
+	sess, ok := sessions.m[sid]
 	sessions.RUnlock()
 	if !ok {
 		return
 	}
+	UpdateUser(sess.User)
+}
 
+// DeleteUserSessions revokes every session owned by userID.
+func DeleteUserSessions(userID int64) {
 	sessions.Lock()
-	for key, sess := range sessions.m {
-		if key == sid {
-			continue
-		}
-		if sess.User.ID == s.User.ID {
-			sess.User = s.User
-			sessions.m[key] = sess
+	for sid, sess := range sessions.m {
+		if sess.User.ID == userID {
+			delete(sessions.m, sid)
 		}
 	}
 	sessions.Unlock()

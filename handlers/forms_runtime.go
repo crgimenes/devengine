@@ -195,7 +195,7 @@ func (h *Handlers) FormsRuntimeCreate(w http.ResponseWriter, r *http.Request) {
 
 	fieldErrors, sysErr := evaluateValidateExprs(r.Context(), user, ctx.elements, ctx.attributes, parsedValues)
 	if sysErr != nil {
-		h.serverError(w, r, "FormsRuntimeCreate", err)
+		h.serverError(w, r, "FormsRuntimeCreate", sysErr)
 		return
 	}
 	if len(fieldErrors) > 0 {
@@ -344,6 +344,10 @@ func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 		h.notFound(w, r)
 		return
 	}
+	if record.EntityTypeID != ctx.entityType.ID {
+		h.errorPage(w, r, http.StatusBadRequest, "Record does not belong to this form's entity type")
+		return
+	}
 
 	parsedValues, fieldErrors := parseFormAttributesLenient(r, ctx.elements, ctx.attributes)
 
@@ -368,7 +372,7 @@ func (h *Handlers) FormsRuntimeUpdate(w http.ResponseWriter, r *http.Request) {
 
 	fieldErrors, sysErr := evaluateValidateExprs(r.Context(), user, ctx.elements, ctx.attributes, parsedValues)
 	if sysErr != nil {
-		h.serverError(w, r, "FormsRuntimeUpdate", err)
+		h.serverError(w, r, "FormsRuntimeUpdate", sysErr)
 		return
 	}
 	if len(fieldErrors) > 0 {
@@ -540,6 +544,10 @@ func (h *Handlers) formsRuntimeButtonActionLogic(w http.ResponseWriter, r *http.
 		currentRecord, err = db.Storage.GetEAVRecordByRefID(recordRefID)
 		if err != nil {
 			jsonResponse(w, http.StatusNotFound, map[string]string{"error": "Record not found"})
+			return
+		}
+		if entityType == nil || currentRecord.EntityTypeID != entityType.ID {
+			jsonResponse(w, http.StatusBadRequest, map[string]string{"error": "Record does not belong to this form's entity type"})
 			return
 		}
 	}

@@ -13,11 +13,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (primitiveKindSelect && maxLengthContainer) {
         primitiveKindSelect.addEventListener('change', () => {
-            if (primitiveKindSelect.value === 'TEXT') {
-                maxLengthContainer.style.display = 'block';
-            } else {
-                maxLengthContainer.style.display = 'none';
-            }
+            maxLengthContainer.classList.toggle('d-none', primitiveKindSelect.value !== 'TEXT');
         });
     }
 

@@ -17,13 +17,12 @@
                class="field-audio-preview w-100" 
                id="{{$name}}_preview"></audio>
         {{else}}
-        <div class="field-audio-placeholder text-center text-muted p-4 border rounded bg-body-secondary"
+        <div class="field-audio-placeholder text-center text-muted p-4 border rounded bg-body-secondary {{if not $readonly}}cursor-pointer{{end}}"
              {{if not $readonly}}
              role="button"
              data-bs-toggle="modal"
              data-bs-target="#fileManagerModal"
              data-field-name="{{$name}}"
-             style="cursor: pointer;"
              title="{{t .Locale "Click to pick an audio file"}}"
              {{end}}>
             <svg class="mb-2" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">

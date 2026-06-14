@@ -12,7 +12,7 @@
                 hx-swap="innerHTML">▼</button>
     </td>
     <td>
-        <span style="padding-left: {{mul .Depth 20}}px">
+        <span class="indent-depth-{{.Depth}}">
             {{if gt .Depth 0}}<span class="text-muted">↳</span> {{end}}<code>{{.MachineName}}</code>
         </span>
     </td>

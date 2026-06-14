@@ -51,7 +51,7 @@
                                     <td class="text-end">
                                         <a href="/tools/menu-editor/{{.ReferenceID}}/preview" class="btn btn-sm btn-success me-1">Testar</a>
                                         <a href="/tools/menu-editor/{{.ReferenceID}}/edit" class="btn btn-sm btn-outline-primary me-1">{{t $.Locale "Edit"}}</a>
-                                        <form method="post" action="/tools/menu-editor/{{.ReferenceID}}/delete" class="d-inline" onsubmit="return confirm('{{t $.Locale "Delete this menu?"}}')">
+                                        <form method="post" action="/tools/menu-editor/{{.ReferenceID}}/delete" class="d-inline" data-confirm-message="{{t $.Locale "Delete this menu?"}}">
                                             <button type="submit" class="btn btn-sm btn-outline-danger">{{t $.Locale "Delete"}}</button>
                                         </form>
                                     </td>

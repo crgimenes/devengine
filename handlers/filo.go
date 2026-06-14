@@ -118,7 +118,7 @@ func (h *Handlers) runFiloScript(r *http.Request, user *db.User, script, globals
 
 	eng := newFiloEngine(user, globals)
 
-	ctx, cancel := context.WithTimeout(context.Background(), filoEvalConfig().Timeout)
+	ctx, cancel := context.WithTimeout(r.Context(), filoEvalConfig().Timeout)
 	defer cancel()
 
 	start := time.Now()

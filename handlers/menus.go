@@ -429,9 +429,11 @@ func (h *Handlers) ToolsMenusItemCreate(w http.ResponseWriter, r *http.Request) 
 	parentRefID := r.FormValue("parent_id")
 	if parentRefID != "" {
 		parent, err := db.Storage.GetMenuItemByRefID(parentRefID)
-		if err == nil {
-			parentID = &parent.ID
+		if err != nil || parent.MenuID != menu.ID {
+			h.errorPage(w, r, http.StatusBadRequest, "Parent item does not belong to this menu")
+			return
 		}
+		parentID = &parent.ID
 	}
 
 	// Get max z_order + 1 for new item at same level
@@ -489,6 +491,10 @@ func (h *Handlers) ToolsMenusItemEdit(w http.ResponseWriter, r *http.Request) {
 	item, err := db.Storage.GetMenuItemByRefID(itemID)
 	if err != nil {
 		h.notFound(w, r)
+		return
+	}
+	if item.MenuID != menu.ID {
+		h.errorPage(w, r, http.StatusBadRequest, "Item does not belong to this menu")
 		return
 	}
 
@@ -552,9 +558,19 @@ func (h *Handlers) ToolsMenusItemUpdate(w http.ResponseWriter, r *http.Request) 
 	menuID := r.PathValue("id")
 	itemID := r.PathValue("item_id")
 
+	menu, err := db.Storage.GetMenuByRefID(menuID)
+	if err != nil {
+		h.notFound(w, r)
+		return
+	}
+
 	item, err := db.Storage.GetMenuItemByRefID(itemID)
 	if err != nil {
 		h.notFound(w, r)
+		return
+	}
+	if item.MenuID != menu.ID {
+		h.errorPage(w, r, http.StatusBadRequest, "Item does not belong to this menu")
 		return
 	}
 
@@ -572,9 +588,11 @@ func (h *Handlers) ToolsMenusItemUpdate(w http.ResponseWriter, r *http.Request) 
 	if parentIDStr != "" && parentIDStr != "0" {
 		// Need to get parent by reference ID
 		parent, err := db.Storage.GetMenuItemByRefID(parentIDStr)
-		if err == nil {
-			parentID = &parent.ID
+		if err != nil || parent.MenuID != menu.ID || parent.ID == item.ID {
+			h.errorPage(w, r, http.StatusBadRequest, "Invalid parent item")
+			return
 		}
+		parentID = &parent.ID
 	}
 
 	err = db.Storage.UpdateMenuItem(item.ID, parentID, machineName, label, icon, itemType, url, jsCode, filoCode, item.ZOrder)
@@ -607,9 +625,19 @@ func (h *Handlers) ToolsMenusItemDelete(w http.ResponseWriter, r *http.Request) 
 	menuID := r.PathValue("id")
 	itemID := r.PathValue("item_id")
 
+	menu, err := db.Storage.GetMenuByRefID(menuID)
+	if err != nil {
+		h.notFound(w, r)
+		return
+	}
+
 	item, err := db.Storage.GetMenuItemByRefID(itemID)
 	if err != nil {
 		h.notFound(w, r)
+		return
+	}
+	if item.MenuID != menu.ID {
+		h.errorPage(w, r, http.StatusBadRequest, "Item does not belong to this menu")
 		return
 	}
 
@@ -643,9 +671,19 @@ func (h *Handlers) ToolsMenusItemMoveUp(w http.ResponseWriter, r *http.Request) 
 	menuID := r.PathValue("id")
 	itemID := r.PathValue("item_id")
 
+	menu, err := db.Storage.GetMenuByRefID(menuID)
+	if err != nil {
+		h.notFound(w, r)
+		return
+	}
+
 	item, err := db.Storage.GetMenuItemByRefID(itemID)
 	if err != nil {
 		h.notFound(w, r)
+		return
+	}
+	if item.MenuID != menu.ID {
+		h.errorPage(w, r, http.StatusBadRequest, "Item does not belong to this menu")
 		return
 	}
 
@@ -675,9 +713,19 @@ func (h *Handlers) ToolsMenusItemMoveDown(w http.ResponseWriter, r *http.Request
 	menuID := r.PathValue("id")
 	itemID := r.PathValue("item_id")
 
+	menu, err := db.Storage.GetMenuByRefID(menuID)
+	if err != nil {
+		h.notFound(w, r)
+		return
+	}
+
 	item, err := db.Storage.GetMenuItemByRefID(itemID)
 	if err != nil {
 		h.notFound(w, r)
+		return
+	}
+	if item.MenuID != menu.ID {
+		h.errorPage(w, r, http.StatusBadRequest, "Item does not belong to this menu")
 		return
 	}
 

@@ -106,7 +106,7 @@
                             {{end}}
                         </div>
 
-                        <div class="mb-3" id="max_length_container" style="display: {{if .Attribute}}{{if eq .Attribute.PrimitiveKind "TEXT"}}block{{else}}none{{end}}{{else}}none{{end}};">
+                        <div class="mb-3 {{if .Attribute}}{{if ne .Attribute.PrimitiveKind "TEXT"}}d-none{{end}}{{else}}d-none{{end}}" id="max_length_container">
                             <label for="attr_max_length" class="form-label">{{t $.Locale "Maximum length (TEXT)"}}</label>
                             <input type="number" 
                                    class="form-control" 

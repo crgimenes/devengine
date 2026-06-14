@@ -140,7 +140,7 @@ func (h *Handlers) LoginSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sid := utils.NewOpaqueID()
-	session.Put(sid, *u)
+	session.PutWithTTL(sid, *u, h.cfg.SessionDuration)
 	session.SetCookie(w, sid, h.cfg.SessionDuration)
 
 	http.Redirect(w, r, h.cfg.BaseURL+"/", http.StatusFound)
@@ -304,7 +304,7 @@ func (h *Handlers) SignupSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sid := utils.NewOpaqueID()
-	session.Put(sid, *u)
+	session.PutWithTTL(sid, *u, h.cfg.SessionDuration)
 	session.SetCookie(w, sid, h.cfg.SessionDuration)
 
 	http.Redirect(w, r, h.cfg.BaseURL+"/", http.StatusFound)

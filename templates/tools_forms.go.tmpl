@@ -58,7 +58,7 @@
                                     <td class="text-end">
                                         <a href="/form/{{.Form.MachineName}}" class="btn btn-sm btn-success me-1">{{t $.Locale "New"}}</a>
                                         <a href="/tools/forms/{{.Form.ReferenceID}}/edit" class="btn btn-sm btn-outline-primary me-1">{{t $.Locale "Edit"}}</a>
-                                        <form method="post" action="/tools/forms/{{.Form.ReferenceID}}/delete" class="d-inline" onsubmit="return confirm('{{t $.Locale "Delete this form?"}}')">
+                                        <form method="post" action="/tools/forms/{{.Form.ReferenceID}}/delete" class="d-inline" data-confirm-message="{{t $.Locale "Delete this form?"}}">
                                             <button type="submit" class="btn btn-sm btn-outline-danger">{{t $.Locale "Delete"}}</button>
                                         </form>
                                     </td>

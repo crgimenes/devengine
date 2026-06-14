@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -9,6 +10,38 @@ import (
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
 )
+
+func (h *Handlers) loadEAVAttributeForEntity(
+	w http.ResponseWriter,
+	r *http.Request,
+	entityRefID string,
+	attrRefID string,
+) (*db.EAVEntityType, *db.EAVAttribute, bool) {
+	entityType, err := db.Storage.GetEAVEntityTypeByRefID(entityRefID)
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			h.notFound(w, r)
+		} else {
+			h.serverError(w, r, "load EAV entity type", err)
+		}
+		return nil, nil, false
+	}
+
+	attribute, err := db.Storage.GetEAVAttributeByRefID(attrRefID)
+	if err != nil {
+		if errors.Is(err, db.ErrNotFound) {
+			h.notFound(w, r)
+		} else {
+			h.serverError(w, r, "load EAV attribute", err)
+		}
+		return nil, nil, false
+	}
+	if attribute.EntityTypeID != entityType.ID {
+		h.errorPage(w, r, http.StatusBadRequest, "Attribute does not belong to this entity type")
+		return nil, nil, false
+	}
+	return entityType, attribute, true
+}
 
 // ToolsDatabaseSchemaEAVAttributeNew shows the form to create a new attribute
 func (h *Handlers) ToolsDatabaseSchemaEAVAttributeNew(w http.ResponseWriter, r *http.Request) {
@@ -65,16 +98,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeEdit(w http.ResponseWriter, r 
 	entityRefID := r.PathValue("id")
 	attrRefID := r.PathValue("attr_id")
 
-	entityType, err := db.Storage.GetEAVEntityTypeByRefID(entityRefID)
-	if err != nil {
-		h.notFound(w, r)
-		return
-	}
-
-	// External URLs carry reference ids, never internal numeric ids.
-	attribute, err := db.Storage.GetEAVAttributeByRefID(attrRefID)
-	if err != nil {
-		h.notFound(w, r)
+	entityType, attribute, ok := h.loadEAVAttributeForEntity(w, r, entityRefID, attrRefID)
+	if !ok {
 		return
 	}
 
@@ -273,14 +298,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeDelete(w http.ResponseWriter, 
 		return
 	}
 
-	// Fetch attribute by reference_id to get its ID
-	attr, err := db.Storage.GetEAVAttributeByRefID(attrRefID)
-	if err != nil {
-		if err == db.ErrNotFound {
-			h.notFound(w, r)
-			return
-		}
-		h.serverError(w, r, "failed to fetch attribute", err)
+	_, attr, ok := h.loadEAVAttributeForEntity(w, r, entityRefID, attrRefID)
+	if !ok {
 		return
 	}
 
@@ -327,14 +346,8 @@ func (h *Handlers) ToolsDatabaseSchemaEAVAttributeUpdate(w http.ResponseWriter, 
 		return
 	}
 
-	// Fetch attribute to get its internal ID
-	attr, err := db.Storage.GetEAVAttributeByRefID(attrRefID)
-	if err != nil {
-		if err == db.ErrNotFound {
-			h.notFound(w, r)
-			return
-		}
-		h.serverError(w, r, "failed to fetch attribute", err)
+	_, attr, ok := h.loadEAVAttributeForEntity(w, r, entityRefID, attrRefID)
+	if !ok {
 		return
 	}
 

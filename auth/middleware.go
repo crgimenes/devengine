@@ -112,6 +112,12 @@ func Prelude(
 	}
 
 	u := su.ToDBUser()
+	if !u.Enabled {
+		sessions.Del(sid)
+		sessions.SetCookie(w, "", -1)
+		http.Redirect(w, r, config.Cfg.BaseURL+config.Cfg.LoginURL, http.StatusFound)
+		return nil, "", false, nil
+	}
 	return &u, sid, true, nil
 }
 

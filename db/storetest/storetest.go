@@ -426,6 +426,20 @@ func testEAVValues(t *testing.T, s db.Store, et *db.EAVEntityType, attrs map[str
 	}
 
 	vb, vi, vr, vt, vd := true, int64(42), 3.14, "Ana Souza", "2026-06-12T10:00"
+	otherEntity, otherAttrs := seedEntity(t, s, "fornecedor")
+	otherRecord, err := s.CreateEAVRecord(otherEntity.ID)
+	if err != nil {
+		t.Fatalf("CreateEAVRecord other entity: %v", err)
+	}
+	err = s.UpsertEAVValue(otherRecord.ID, attrs["TEXT"].ID, nil, nil, nil, &vt, nil)
+	if err == nil {
+		t.Fatal("cross-entity EAV value must fail")
+	}
+	err = s.UpsertEAVValue(rec.ID, otherAttrs["TEXT"].ID, nil, nil, nil, &vt, nil)
+	if err == nil {
+		t.Fatal("EAV value with a foreign entity attribute must fail")
+	}
+
 	err = s.UpsertEAVValue(rec.ID, attrs["BOOL"].ID, &vb, nil, nil, nil, nil)
 	if err != nil {
 		t.Fatalf("UpsertEAVValue BOOL: %v", err)
@@ -725,6 +739,35 @@ func testFormElements(t *testing.T, s db.Store, form *db.Form, attrs map[string]
 		t.Fatalf("CreateFormElement field B: %v", err)
 	}
 
+	otherEntity, otherAttrs := seedEntity(t, s, "nota")
+	otherForm, err := s.CreateForm("nota_form", "Nota", "", &otherEntity.ID)
+	if err != nil {
+		t.Fatalf("CreateForm other: %v", err)
+	}
+	otherGroup, err := s.CreateFormElement(otherForm.ID, nil, "other_group", "group", "", "",
+		0, 12, "", "", nil, true, false)
+	if err != nil {
+		t.Fatalf("CreateFormElement other group: %v", err)
+	}
+	_, err = s.CreateFormElement(form.ID, &otherGroup.ID, "cross_parent", "field", "", "",
+		0, 12, "text", "", &textAttr.ID, false, false)
+	if err == nil {
+		t.Fatal("form element with a parent from another form must fail")
+	}
+	otherText := otherAttrs["TEXT"]
+	_, err = s.CreateFormElement(form.ID, nil, "cross_attribute", "field", "", "",
+		0, 12, "text", "", &otherText.ID, false, false)
+	if err == nil {
+		t.Fatal("form element with an attribute from another entity must fail")
+	}
+	err = s.UpdateFormElement(group.ID, &fieldA.ID, group.MachineName, group.ElementKind, group.Label, group.HelpText,
+		group.ZOrder, group.ColSpan, group.Alignment, group.UIKind, group.UIMetaJSON, nil,
+		group.IsUIOnly, group.IsReadonly, group.HideLabel, group.HideHelpText,
+		group.ValidateExpr, group.ButtonFiloCode, group.ButtonRunSave, group.ButtonJSCode, group.ButtonStyle, group.ButtonConfirmMsg)
+	if err == nil {
+		t.Fatal("form element parent cycle must fail")
+	}
+
 	elements, err := s.ListFormElements(form.ID)
 	if err != nil || len(elements) != 3 {
 		t.Fatalf("ListFormElements = %d, %v", len(elements), err)
@@ -769,6 +812,10 @@ func testFormElements(t *testing.T, s db.Store, form *db.Form, attrs map[string]
 	elements, _ = s.ListFormElements(form.ID)
 	if len(elements) != 2 {
 		t.Fatalf("element not deleted: %d left", len(elements))
+	}
+	err = s.SoftDeleteForm(otherForm.ID)
+	if err != nil {
+		t.Fatalf("SoftDeleteForm other: %v", err)
 	}
 }
 
@@ -838,6 +885,26 @@ func testMenuItems(t *testing.T, s db.Store, menu *db.Menu) {
 		t.Fatalf("CreateMenuItem child: %v", err)
 	}
 
+	otherMenu, err := s.CreateMenu("secondary", "Secondary", "")
+	if err != nil {
+		t.Fatalf("CreateMenu other: %v", err)
+	}
+	otherParent, err := s.CreateMenuItem(otherMenu.ID, nil, "other_parent", "Other", "", "submenu",
+		"", "", "", 0)
+	if err != nil {
+		t.Fatalf("CreateMenuItem other parent: %v", err)
+	}
+	_, err = s.CreateMenuItem(menu.ID, &otherParent.ID, "cross_parent", "Cross", "", "link",
+		"", "", "", 0)
+	if err == nil {
+		t.Fatal("menu item with a parent from another menu must fail")
+	}
+	err = s.UpdateMenuItem(sub.ID, &child.ID, sub.MachineName, sub.Label, sub.Icon, sub.ItemType,
+		sub.URL, sub.JSCode, sub.FiloCode, sub.ZOrder)
+	if err == nil {
+		t.Fatal("menu item parent cycle must fail")
+	}
+
 	items, err := s.ListMenuItems(menu.ID)
 	if err != nil || len(items) != 3 {
 		t.Fatalf("ListMenuItems = %d, %v", len(items), err)
@@ -881,6 +948,10 @@ func testMenuItems(t *testing.T, s db.Store, menu *db.Menu) {
 	items, _ = s.ListMenuItems(menu.ID)
 	if len(items) != 2 {
 		t.Fatalf("item not deleted: %d left", len(items))
+	}
+	err = s.SoftDeleteMenu(otherMenu.ID)
+	if err != nil {
+		t.Fatalf("SoftDeleteMenu other: %v", err)
 	}
 }
 

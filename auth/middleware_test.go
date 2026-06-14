@@ -110,6 +110,25 @@ func TestPreludeAuthed(t *testing.T) {
 	}
 }
 
+func TestPreludeRejectsDisabledSession(t *testing.T) {
+	cookie := plantSession(t, db.User{ID: 47, Username: "disabled"})
+
+	rr := httptest.NewRecorder()
+	req := httptest.NewRequest(http.MethodGet, "/x", nil)
+	req.AddCookie(cookie)
+
+	_, _, authed, err := auth.Prelude(rr, req, []string{http.MethodGet}, true, false)
+	if err != nil || authed {
+		t.Fatalf("disabled session authenticated: authed=%v, err=%v", authed, err)
+	}
+	if rr.Code != http.StatusFound {
+		t.Fatalf("status = %d, want 302", rr.Code)
+	}
+	if _, ok := session.Get(cookie.Value); ok {
+		t.Fatal("disabled session was not revoked")
+	}
+}
+
 // An expired session must redirect to login like any anonymous request.
 func TestPreludeRejectsExpiredSession(t *testing.T) {
 	old := session.MaxSessionAge

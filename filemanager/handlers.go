@@ -340,7 +340,7 @@ func renderUploadError(w http.ResponseWriter, r *http.Request, u *db.User, messa
 }
 
 func uploadHandler(w http.ResponseWriter, r *http.Request) {
-	u, sid, authed, err := auth.Prelude(w, r,
+	u, _, authed, err := auth.Prelude(w, r,
 		[]string{
 			http.MethodGet,  // show upload form
 			http.MethodPost, // process file upload
@@ -482,14 +482,13 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
-		if freshUser.ReferenceID == "" {
+		if freshUser == nil || freshUser.ReferenceID == "" {
 			log.Printf("user reference_id is empty")
 			http.Error(w, "internal server error", http.StatusInternalServerError)
 			return
 		}
 		u = freshUser
-		session.Put(sid, *u)
-		session.SyncSessions(sid)
+		session.UpdateUser(*u)
 
 		// Get user's data directory
 		uploadsDir, err := DataFilePath(u)

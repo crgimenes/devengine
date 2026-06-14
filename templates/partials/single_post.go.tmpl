@@ -7,25 +7,25 @@
       <div class="d-flex align-items-center gap-2">
         <!-- Avatar -->
         {{if $postAuthor.AvatarURL}}
-          <img src="{{$postAuthor.AvatarURL}}" alt="{{$postAuthor.Username}}" class="rounded-circle" width="32" height="32" style="object-fit: cover; width: 32px; height: 32px; aspect-ratio: 1/1;">
+          <img src="{{$postAuthor.AvatarURL}}" alt="{{$postAuthor.Username}}" class="rounded-circle avatar-sm" width="32" height="32">
         {{else}}
-          <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center" style="width: 32px; height: 32px; font-size: 0.75em;">
+          <div class="rounded-circle bg-secondary d-flex align-items-center justify-content-center avatar-placeholder-sm">
             <span class="text-white fw-bold">{{first $postAuthor.Username}}</span>
           </div>
         {{end}}
         <!-- Author name and timestamp -->
         <div>
-          <div class="fw-bold" style="font-size: 0.95rem; line-height: 1.2;">{{$postAuthor.Username}}</div>
-          <small class="text-body-secondary" style="font-size: 0.8rem;">{{.Post.CreatedAt.Format "2006-01-02 15:04"}}</small>
+          <div class="fw-bold font-sm">{{$postAuthor.Username}}</div>
+          <small class="text-body-secondary font-xs">{{.Post.CreatedAt.Format "2006-01-02 15:04"}}</small>
         </div>
       </div>
       <!-- Action buttons (only visible to post author) -->
       {{if eq .CurrentUser.ID .Post.OwnerUserID}}
         <div class="d-flex gap-2" role="group">
-          <button type="button" class="edit-post-btn btn btn-sm btn-outline-secondary" data-post-id="{{.Post.ExternalID}}" data-post-content="{{.Post.Content}}" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;" title="Editar">
+          <button type="button" class="edit-post-btn btn btn-sm btn-outline-secondary action-btn-square" data-post-id="{{.Post.ExternalID}}" data-post-content="{{.Post.Content}}" title="Editar">
             {{template "icon-pencil" .}}
           </button>
-          <button type="button" class="delete-post-btn btn btn-sm btn-outline-danger" data-post-id="{{.Post.ExternalID}}" style="width: 32px; height: 32px; min-width: 32px; min-height: 32px; padding: 0; display: flex; align-items: center; justify-content: center;" title="Deletar">
+          <button type="button" class="delete-post-btn btn btn-sm btn-outline-danger action-btn-square" data-post-id="{{.Post.ExternalID}}" title="Deletar">
             {{template "icon-trash" .}}
           </button>
         </div>

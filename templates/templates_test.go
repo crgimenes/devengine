@@ -2,12 +2,44 @@ package templates
 
 import (
 	"encoding/json"
+	"io/fs"
 	"maps"
+	"regexp"
 	"strings"
 	"testing"
 
 	"github.com/crgimenes/devengine/eav/ui"
 )
+
+func TestEmbeddedTemplatesRejectInlineCode(t *testing.T) {
+	inlineAttribute := regexp.MustCompile(`(?i)\s(?:style|on[a-z]+)\s*=`)
+	scriptTag := regexp.MustCompile(`(?i)<script(?:\s[^>]*)?>`)
+
+	err := fs.WalkDir(filesystem, ".", func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entry.IsDir() || !strings.HasSuffix(path, ".tmpl") {
+			return nil
+		}
+		content, err := fs.ReadFile(filesystem, path)
+		if err != nil {
+			return err
+		}
+		if match := inlineAttribute.Find(content); match != nil {
+			t.Errorf("%s contains forbidden inline attribute %q", path, match)
+		}
+		for _, tag := range scriptTag.FindAllString(string(content), -1) {
+			if !strings.Contains(strings.ToLower(tag), " src=") {
+				t.Errorf("%s contains inline script tag %q", path, tag)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
 
 func TestGetGroupDefaults(t *testing.T) {
 	tests := []struct {

@@ -123,7 +123,7 @@
                                         <th>{{t $.Locale "Name"}}</th>
                                         <th>{{t $.Locale "Type"}}</th>
                                         <th>Flags</th>
-                                        <th style="width: 150px;">{{t $.Locale "Actions"}}</th>
+                                        <th class="col-actions">{{t $.Locale "Actions"}}</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -156,7 +156,7 @@
                                                        class="btn btn-outline-primary">
                                                         {{t $.Locale "Edit"}}
                                                     </a>
-                                                    <form method="POST" action="/tools/database-schema/eav/{{$.EntityType.ReferenceID}}/attributes/{{.ReferenceID}}/delete" style="display: inline;" class="delete-attribute-form">
+                                                    <form method="POST" action="/tools/database-schema/eav/{{$.EntityType.ReferenceID}}/attributes/{{.ReferenceID}}/delete" class="delete-attribute-form form-inline">
                                                         <button type="submit" class="btn btn-outline-danger btn-sm">
                                                             {{t $.Locale "Delete"}}
                                                         </button>

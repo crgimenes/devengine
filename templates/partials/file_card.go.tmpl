@@ -1,7 +1,7 @@
 {{define "file-card"}}
 <div class="card h-100 shadow-sm rounded-2 overflow-hidden">
   <!-- Square thumbnail placeholder: contain to avoid cutting image/video -->
-  <a href="/files/edit?id={{.Filename}}" class="ratio ratio-1x1 bg-body-secondary d-flex align-items-center justify-content-center text-decoration-none" style="cursor: pointer;">
+  <a href="/files/edit?id={{.Filename}}" class="ratio ratio-1x1 bg-body-secondary d-flex align-items-center justify-content-center text-decoration-none cursor-pointer">
     {{/* Render thumbnail based on media kind (MIME with extension fallback) */}}
     {{- if eq .MediaKind "image" -}}
       <img src="/file/{{.UserRefID}}/{{urlquery .Filename}}" alt="{{if .OriginalFilename}}{{.OriginalFilename}}{{else}}{{.Filename}}{{end}}" class="w-100 h-100 object-fit-contain" loading="lazy">
@@ -26,7 +26,7 @@
     <div class="small text-body-secondary mb-2">{{.Filesize}} bytes • {{.CreatedAt}}</div>
 
     <!-- Short description -->
-    <p class="card-text small {{if .Filedescription}}text-body{{else}}text-body-secondary fst-italic{{end}} text-truncate" style="max-height: 3rem;">
+    <p class="card-text small {{if .Filedescription}}text-body{{else}}text-body-secondary fst-italic{{end}} text-truncate text-truncate-3">
       {{if .Filedescription}}{{.Filedescription}}{{else}}{{t .Locale "no description"}}{{end}}
     </p>
 
@@ -53,4 +53,3 @@
   </div>
 </div>
 {{end}}
-

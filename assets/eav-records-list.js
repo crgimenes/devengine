@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
             // Hide sentinel if no more records
             if (!hasMore) {
-                sentinel.style.display = 'none';
+                sentinel.classList.add('d-none');
                 observer.disconnect();
             }
         } catch (error) {

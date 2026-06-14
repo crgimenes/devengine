@@ -271,6 +271,25 @@ CREATE INDEX idx_eav_values_attr_v_real ON eav_values(attribute_id, v_real);
 CREATE INDEX idx_eav_values_attr_v_datetime ON eav_values(attribute_id, v_datetime);
 CREATE INDEX idx_eav_values_attr_v_text_nocase ON eav_values(attribute_id, LOWER(v_text));
 
+CREATE FUNCTION devengine_validate_eav_value() RETURNS trigger AS $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1
+        FROM eav_records r
+        JOIN eav_attributes a ON a.id = NEW.attribute_id
+        WHERE r.id = NEW.record_id
+          AND r.entity_type_id = a.entity_type_id
+    ) THEN
+        RAISE EXCEPTION 'eav_values: record and attribute entity types must match';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_eav_values_validate
+    BEFORE INSERT OR UPDATE OF record_id, attribute_id ON eav_values
+    FOR EACH ROW EXECUTE FUNCTION devengine_validate_eav_value();
+
 -- Menus / Navigation layer (PostgreSQL dialect).
 
 CREATE TABLE menus (
@@ -335,6 +354,40 @@ CREATE INDEX idx_menu_items_menu_order
 CREATE INDEX idx_menu_items_parent_order
     ON menu_items(parent_id, z_order, id);
 CREATE INDEX idx_menu_items_deleted_at ON menu_items(deleted_at);
+
+CREATE FUNCTION devengine_validate_menu_item() RETURNS trigger AS $$
+BEGIN
+    IF NEW.parent_id IS NULL THEN
+        RETURN NEW;
+    END IF;
+    IF NEW.parent_id = NEW.id THEN
+        RAISE EXCEPTION 'menu_items: item cannot be its own parent';
+    END IF;
+    IF NOT EXISTS (
+        SELECT 1 FROM menu_items p
+        WHERE p.id = NEW.parent_id AND p.menu_id = NEW.menu_id
+    ) THEN
+        RAISE EXCEPTION 'menu_items: parent must belong to the same menu';
+    END IF;
+    IF TG_OP = 'UPDATE' AND EXISTS (
+        WITH RECURSIVE descendants(id) AS (
+            SELECT id FROM menu_items WHERE parent_id = NEW.id
+            UNION
+            SELECT i.id
+            FROM menu_items i
+            JOIN descendants d ON i.parent_id = d.id
+        )
+        SELECT 1 FROM descendants WHERE id = NEW.parent_id
+    ) THEN
+        RAISE EXCEPTION 'menu_items: parent would create a cycle';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_menu_items_validate
+    BEFORE INSERT OR UPDATE OF menu_id, parent_id ON menu_items
+    FOR EACH ROW EXECUTE FUNCTION devengine_validate_menu_item();
 
 CREATE TRIGGER trg_menu_items_reference_id
     BEFORE INSERT ON menu_items
@@ -445,6 +498,49 @@ CREATE INDEX idx_form_elements_form_order
 CREATE INDEX idx_form_elements_parent_order
     ON form_elements(parent_id, z_order, id);
 CREATE INDEX idx_form_elements_deleted_at ON form_elements(deleted_at);
+
+CREATE FUNCTION devengine_validate_form_element() RETURNS trigger AS $$
+BEGIN
+    IF NEW.parent_id IS NOT NULL THEN
+        IF NEW.parent_id = NEW.id THEN
+            RAISE EXCEPTION 'form_elements: element cannot be its own parent';
+        END IF;
+        IF NOT EXISTS (
+            SELECT 1 FROM form_elements p
+            WHERE p.id = NEW.parent_id AND p.form_id = NEW.form_id
+        ) THEN
+            RAISE EXCEPTION 'form_elements: parent must belong to the same form';
+        END IF;
+        IF TG_OP = 'UPDATE' AND EXISTS (
+            WITH RECURSIVE descendants(id) AS (
+                SELECT id FROM form_elements WHERE parent_id = NEW.id
+                UNION
+                SELECT e.id
+                FROM form_elements e
+                JOIN descendants d ON e.parent_id = d.id
+            )
+            SELECT 1 FROM descendants WHERE id = NEW.parent_id
+        ) THEN
+            RAISE EXCEPTION 'form_elements: parent would create a cycle';
+        END IF;
+    END IF;
+
+    IF NEW.eav_attribute_id IS NOT NULL AND NOT EXISTS (
+        SELECT 1
+        FROM forms f
+        JOIN eav_attributes a ON a.id = NEW.eav_attribute_id
+        WHERE f.id = NEW.form_id
+          AND f.eav_entity_type_id = a.entity_type_id
+    ) THEN
+        RAISE EXCEPTION 'form_elements: attribute must belong to the form entity type';
+    END IF;
+    RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER trg_form_elements_validate
+    BEFORE INSERT OR UPDATE OF form_id, parent_id, eav_attribute_id ON form_elements
+    FOR EACH ROW EXECUTE FUNCTION devengine_validate_form_element();
 
 CREATE TRIGGER trg_form_elements_reference_id
     BEFORE INSERT ON form_elements

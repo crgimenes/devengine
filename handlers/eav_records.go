@@ -643,6 +643,10 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordEdit(w http.ResponseWriter, r *ht
 		h.notFound(w, r)
 		return
 	}
+	if record.EntityTypeID != entityType.ID {
+		h.errorPage(w, r, http.StatusBadRequest, "Record does not belong to this entity type")
+		return
+	}
 
 	attributes, err := db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
 	if err != nil {
@@ -771,6 +775,10 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordUpdate(w http.ResponseWriter, r *
 		h.notFound(w, r)
 		return
 	}
+	if record.EntityTypeID != entityType.ID {
+		h.errorPage(w, r, http.StatusBadRequest, "Record does not belong to this entity type")
+		return
+	}
 
 	attributes, err := db.Storage.ListEAVAttributesByEntityTypeID(entityType.ID)
 	if err != nil {
@@ -894,9 +902,19 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordDelete(w http.ResponseWriter, r *
 	entityRefID := r.PathValue("id")
 	recordRefID := r.PathValue("record_id")
 
+	entityType, err := db.Storage.GetEAVEntityTypeByRefID(entityRefID)
+	if err != nil {
+		h.notFound(w, r)
+		return
+	}
+
 	record, err := db.Storage.GetEAVRecordByRefID(recordRefID)
 	if err != nil {
 		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message="+tr(r, "Record not found"), http.StatusSeeOther)
+		return
+	}
+	if record.EntityTypeID != entityType.ID {
+		h.errorPage(w, r, http.StatusBadRequest, "Record does not belong to this entity type")
 		return
 	}
 

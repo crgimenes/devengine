@@ -48,7 +48,7 @@
                     <input type="hidden" name="tab" value="{{.Tab}}">
                     <div class="col-auto">
                         <label class="form-label small text-muted" for="locale">{{t $.Locale "Language being edited"}}</label>
-                        <select class="form-select" id="locale" name="locale" onchange="this.form.submit()">
+                        <select class="form-select" id="locale" name="locale" data-submit-on-change>
                             {{$target := .Target}}
                             {{range .Locales}}
                             <option value="{{.}}" {{if eq . $target}}selected{{end}}>{{.}}</option>
