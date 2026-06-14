@@ -1,8 +1,8 @@
-# 6. Create a menu
+# 4. Create a menu
 
 **Goal:** add a navigation menu so users reach the Products screen by clicking,
 not by typing a URL.
-**Before you start:** you finished [tutorial 5](05-use-the-form.md).
+**Before you start:** you finished [tutorial 3](03-create-a-form.md).
 **Time:** ~4 minutes.
 
 A **menu** is the bar of links across the top of the app. You build the menu,
@@ -50,10 +50,10 @@ know a URL.
 
 ## What you've built
 
-From an empty app, five short steps gave you a working feature: a table, its
-fields, a form over it, real records, and a menu to reach them — no SQL, no
-deploy. The next tutorials add the pieces that make it feel finished: defaults,
-option lists, validation, calculated fields, relationships, and more.
+From an empty app, three short steps gave you a working feature: a table with
+its fields, a form over it with real records, and a menu to reach them — no SQL,
+no deploy. The next tutorials add the pieces that make it feel finished:
+defaults, option lists, validation, calculated fields, relationships, and more.
 
 ## Next
 

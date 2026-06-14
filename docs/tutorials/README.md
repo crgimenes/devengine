@@ -1,8 +1,8 @@
 # devengine tutorials
 
-Short, hands-on lessons that build on each other. Each one is a single small
-task you can finish in a few minutes. Do them in order — every tutorial picks
-up the app you built in the previous one.
+Short, hands-on lessons that build on each other. Each one is a single task you
+can finish in a few minutes. Do them in order — every tutorial picks up the app
+you built in the previous one.
 
 We build one running example throughout: a small **inventory** — products,
 suppliers, and the screens to manage them.
@@ -29,22 +29,20 @@ live in the *runtime* screens (`/form/...`) you'll wire up along the way.
 
 **Build your first feature**
 
-2. [Create your first table](02-create-a-table.md)
-3. [Add fields to the table](03-add-fields.md)
-4. [Create a form for the table](04-create-a-form.md)
-5. [Use the form](05-use-the-form.md) — create, list and edit records
-6. [Create a menu](06-create-a-menu.md) — give users a way in
+2. [Create a table](02-create-a-table.md) — define `Product` and its fields
+3. [Create a form and use it](03-create-a-form.md) — a screen to add, list and edit records
+4. [Create a menu](04-create-a-menu.md) — give users a way in
 
 **Make it real** (coming next)
 
-7. Required fields and default values
-8. A list of options (the select field)
-9. Validate what users type
-10. A calculated field
-11. Relate two tables (reference)
-12. A sub-form (related items)
-13. A search form
-14. An action button
-15. Group fields (cards and tabs)
-16. Expose the form as a REST API
-17. Extras — language, files, backups
+5. Default values
+6. A list of options (the select field)
+7. Validate what users type
+8. A calculated field
+9. Relate two tables (reference)
+10. A sub-form (related items)
+11. A search form
+12. An action button
+13. Group fields (cards and tabs)
+14. Expose the form as a REST API
+15. Extras — language, files, backups

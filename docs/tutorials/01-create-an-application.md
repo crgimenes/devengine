@@ -90,4 +90,4 @@ These tutorials use the English interface. Open the user menu (top right) →
 
 ## Next
 
-→ [2. Create your first table](02-create-a-table.md)
+→ [2. Create a table](02-create-a-table.md)
