@@ -32,7 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     container.innerHTML = `
                         <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-                            Erro ao enviar link. Tente novamente.
+                            Could not send the link. Try again.
                             <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                         </div>
                     `;
@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
             } catch (err) {
                 container.innerHTML = `
                     <div class="alert alert-danger alert-dismissible fade show mt-3" role="alert">
-                        Erro na requisicao. Tente novamente.
+                        Request failed. Try again.
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 `;

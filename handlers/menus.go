@@ -800,7 +800,7 @@ func (h *Handlers) MenuItemAction(w http.ResponseWriter, r *http.Request) {
 	)
 	if err != nil {
 		ref := logRef("MenuItemAction prelude", err)
-		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "erro interno (ref " + ref + ")"})
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "internal error (ref " + ref + ")"})
 		return
 	}
 	if !authed {

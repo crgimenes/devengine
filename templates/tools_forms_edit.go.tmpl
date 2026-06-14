@@ -145,13 +145,13 @@
                         <table class="table table-sm table-hover">
                             <thead>
                                 <tr>
-                                    <th class="w-60px">Ordem</th>
+                                    <th class="w-60px">Order</th>
                                     <th>{{t $.Locale "Name"}}</th>
-                                    <th class="w-90px">Tipo</th>
+                                    <th class="w-90px">Type</th>
                                     <th>Label</th>
-                                    <th class="w-60px" title="Largura em colunas Bootstrap (1-12)">Col</th>
-                                    <th>Pai</th>
-                                    <th>Campo EAV</th>
+                                    <th class="w-60px" title="Width in Bootstrap columns (1-12)">Col</th>
+                                    <th>Parent</th>
+                                    <th>EAV field</th>
                                     <th class="text-end text-nowrap w-160px">{{t $.Locale "Actions"}}</th>
                                 </tr>
                             </thead>
@@ -172,22 +172,22 @@
                         <form method="post" action="/tools/forms/{{.Form.ReferenceID}}/elements/new" id="add-element-form">
                             <div class="row g-2">
                                 <div class="col-md-2">
-                                    <label class="form-label">Tipo</label>
+                                    <label class="form-label">Type</label>
                                     <select class="form-select form-select-sm" name="element_kind" id="element_kind">
-                                        <option value="field">Campo</option>
-                                        <option value="group">Grupo (fieldset)</option>
-                                        <option value="accordion">Accordion</option>
-                                        <option value="card">Card</option>
-                                        <option value="tabs">Tabs</option>
-                                        <option value="carousel">Carousel</option>
+                                        <option value="field">Field</option>
+                                        <option value="group">Group (fieldset)</option>
+                                        <option value="accordion">{{t $.Locale "Accordion"}}</option>
+                                        <option value="card">{{t $.Locale "Card"}}</option>
+                                        <option value="tabs">{{t $.Locale "Tabs"}}</option>
+                                        <option value="carousel">{{t $.Locale "Carousel"}}</option>
                                         <option value="button">{{t $.Locale "Action button"}}</option>
-                                        <option value="divider">Divisor</option>
+                                        <option value="divider">Divider</option>
                                     </select>
                                 </div>
                                 <div class="col-md-4">
-                                    <label class="form-label">Campo EAV (opcional)</label>
+                                    <label class="form-label">EAV field (optional)</label>
                                     <select class="form-select form-select-sm" name="eav_attribute_id" id="eav_attribute_select">
-                                        <option value="" data-label="" data-machine="">-- Apenas UI --</option>
+                                        <option value="" data-label="" data-machine="">-- UI only --</option>
                                         {{range .EAVAttributes}}
                                         <option value="{{.ReferenceID}}" data-label="{{.Label}}" data-machine="{{.MachineName}}">{{.Label}} ({{.MachineName}})</option>
                                         {{end}}

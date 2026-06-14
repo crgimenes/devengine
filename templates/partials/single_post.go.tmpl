@@ -22,10 +22,10 @@
       <!-- Action buttons (only visible to post author) -->
       {{if eq .CurrentUser.ID .Post.OwnerUserID}}
         <div class="d-flex gap-2" role="group">
-          <button type="button" class="edit-post-btn btn btn-sm btn-outline-secondary action-btn-square" data-post-id="{{.Post.ExternalID}}" data-post-content="{{.Post.Content}}" title="Editar">
+          <button type="button" class="edit-post-btn btn btn-sm btn-outline-secondary action-btn-square" data-post-id="{{.Post.ExternalID}}" data-post-content="{{.Post.Content}}" title="Edit">
             {{template "icon-pencil" .}}
           </button>
-          <button type="button" class="delete-post-btn btn btn-sm btn-outline-danger action-btn-square" data-post-id="{{.Post.ExternalID}}" title="Deletar">
+          <button type="button" class="delete-post-btn btn btn-sm btn-outline-danger action-btn-square" data-post-id="{{.Post.ExternalID}}" title="Delete">
             {{template "icon-trash" .}}
           </button>
         </div>

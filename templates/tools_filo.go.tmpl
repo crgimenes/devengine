@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="pt-BR" data-bs-theme="dark">
+<html lang="{{$.Locale}}" data-bs-theme="dark">
   <head>
     {{template "head" .}}
   </head>
@@ -14,11 +14,11 @@
             </div>
             <div class="col-md-9">
                 <div class="card p-4 mb-3">
-                    <h2 class="mb-3">Filo REPL</h2>
+                    <h2 class="mb-3">{{t $.Locale "Filo REPL"}}</h2>
                     <p class="text-muted small mb-3">
-                        Executa scripts Filo com os mesmos builtins do runtime de forms:
+                        Runs Filo scripts with the same builtins as the forms runtime:
                         <code>str-*</code>, <code>log-*</code>, <code>eav-*</code>, <code>file-*</code>,
-                        <code>session-*</code>. Limites: 10 mil steps, 100 niveis de recursao, 5s.
+                        <code>session-*</code>. Limits: 10k steps, 100 recursion levels, 5s.
                     </p>
 
                     <form hx-post="/tools/filo/run"
@@ -32,7 +32,7 @@
                                       placeholder="(str-concat &quot;hello, &quot; field:name)"></textarea>
                         </div>
                         <div class="mb-3">
-                            <label for="globals" class="form-label">Globals (JSON, opcional)</label>
+                            <label for="globals" class="form-label">Globals (JSON, optional)</label>
                             <textarea name="globals" id="globals" rows="4"
                                       class="form-control font-monospace"
                                       placeholder='{"field:name": "Alice", "field:age": 30}'></textarea>
@@ -42,7 +42,7 @@
                             </small>
                         </div>
                         <button type="submit" class="btn btn-primary">
-                            Executar
+                            Execute
                             <span id="busy" class="htmx-indicator spinner-border spinner-border-sm ms-2" role="status"></span>
                         </button>
                     </form>

@@ -30,7 +30,9 @@ import (
 // loadConfig fills config.Cfg from init.filo, falling back to the defaults
 // set here when a key is absent.
 func loadConfig(path string) {
-	config.Cfg.GitTag = "dev"
+	// A per-start tag busts the browser cache for /assets (?v=GitTag) so a
+	// rebuilt CSS/JS is fetched fresh. Real builds inject a version instead.
+	config.Cfg.GitTag = "dev-" + time.Now().UTC().Format("20060102-150405")
 	config.Cfg.Addrs = ":3000"
 	config.Cfg.BaseURL = "http://localhost:3000"
 	config.Cfg.DBFile = "app.db"
@@ -44,7 +46,7 @@ func loadConfig(path string) {
 	F.SetGlobal("SiteTitle", config.Cfg.SiteTitle)
 	F.SetGlobal("Locale", "en-US")
 
-	src, err := os.ReadFile(path)
+	src, err := os.ReadFile(path) // #nosec G304 -- path is a fixed application-owned init.filo location.
 	if err != nil {
 		log.Fatalf("read %s: %v", path, err)
 	}

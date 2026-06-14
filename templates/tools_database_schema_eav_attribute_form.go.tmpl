@@ -27,8 +27,8 @@
                     </h2>
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb mb-0">
-                            <li class="breadcrumb-item"><a href="/tools">Tools</a></li>
-                            <li class="breadcrumb-item"><a href="/tools/database-schema">Database Schema</a></li>
+                            <li class="breadcrumb-item"><a href="/tools">{{t $.Locale "Tools"}}</a></li>
+                            <li class="breadcrumb-item"><a href="/tools/database-schema">{{t $.Locale "Database Schema"}}</a></li>
                             <li class="breadcrumb-item"><a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/edit">{{.EntityType.Name}}</a></li>
                             <li class="breadcrumb-item active">{{if .Attribute}}{{t $.Locale "Edit attribute"}}{{else}}{{t $.Locale "New attribute"}}{{end}}</li>
                         </ol>

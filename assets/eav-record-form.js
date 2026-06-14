@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     intInputs.forEach(input => {
         input.addEventListener('blur', () => {
             if (input.value && !Number.isInteger(parseFloat(input.value))) {
-                input.setCustomValidity('Deve ser um número inteiro');
+                input.setCustomValidity('Must be an integer');
             } else {
                 input.setCustomValidity('');
             }

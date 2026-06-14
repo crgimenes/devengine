@@ -15,14 +15,17 @@ import (
 func TestTranslationsScreenListsKeys(t *testing.T) {
 	mux, _ := newHTTPTestEnv(t)
 	admin := plantUser(t, "admin", true)
+	// Built-in pt-BR is disabled (see i18n/pt_br.go translationsEnabled), so a
+	// throwaway registered locale supplies the key/translation the editor lists.
+	i18n.Register("tt-TT", map[string]string{"Page not found": "Pagina nao encontrada (tt)"})
 
-	rr := doGet(t, mux, "/tools/translations?locale=pt-BR", admin)
+	rr := doGet(t, mux, "/tools/translations?locale=tt-TT", admin)
 	assertRendered(t, rr, "/tools/translations")
 	body := rr.Body.String()
 	if !strings.Contains(body, "Page not found") {
 		t.Fatal("known key missing from the editor")
 	}
-	if !strings.Contains(body, "Página não encontrada") {
+	if !strings.Contains(body, "Pagina nao encontrada (tt)") {
 		t.Fatal("effective translation missing from the editor")
 	}
 }
@@ -57,7 +60,9 @@ func TestTranslationsSaveAppliesLiveAndRestores(t *testing.T) {
 		t.Fatalf("stored translation = %q", overrides[0].Translation)
 	}
 
-	// Empty text restores the built-in translation and clears the row.
+	// Empty text clears the override row. With the built-in pt-BR dictionary
+	// disabled (see i18n/pt_br.go translationsEnabled), pt-BR is no longer a
+	// known locale, so the page falls back to the English key.
 	rr = doPostForm(t, mux, "/tools/translations", url.Values{
 		"locale":      {"pt-BR"},
 		"msg_key":     {"Page not found"},
@@ -68,8 +73,8 @@ func TestTranslationsSaveAppliesLiveAndRestores(t *testing.T) {
 	}
 	rr = getWithHeader(t, mux, "/does-not-exist", nil,
 		map[string]string{"Accept-Language": "pt-BR"})
-	if !strings.Contains(rr.Body.String(), "Página não encontrada") {
-		t.Fatalf("built-in translation not restored: %.300s", rr.Body.String())
+	if !strings.Contains(rr.Body.String(), "Page not found") {
+		t.Fatalf("English key not restored after clearing override: %.300s", rr.Body.String())
 	}
 	overrides, err = s.ListI18nOverrides()
 	if err != nil || len(overrides) != 0 {
@@ -242,10 +247,12 @@ func TestTranslationsExportGo(t *testing.T) {
 		}
 	}
 
-	// merged mode carries built-in translations too.
+	// merged mode carries every effective translation. With the built-in
+	// pt-BR dictionary disabled (see i18n/pt_br.go translationsEnabled), the
+	// override is the only effective entry, so it must still appear here.
 	rr = doGet(t, mux, "/tools/translations/export.go?locale=pt-BR", admin)
-	if !strings.Contains(rr.Body.String(), `"Access denied": "Acesso negado",`) {
-		t.Fatalf("merged export missing built-in entry")
+	if !strings.Contains(rr.Body.String(), `"Page not found": "Cadê a página?",`) {
+		t.Fatalf("merged export missing effective entry")
 	}
 }
 

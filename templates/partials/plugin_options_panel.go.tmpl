@@ -64,7 +64,7 @@
             <select class="form-select form-select-sm plugin-option" id="opt_header_bg" data-key="header_bg">
                 <option value="default" {{if eq (index $meta "header_bg") "default"}}selected{{end}}>{{t .Locale "Default"}}</option>
                 <option value="primary" {{if eq (index $meta "header_bg") "primary"}}selected{{end}}>{{t .Locale "Primary"}}</option>
-                <option value="dark" {{if eq (index $meta "header_bg") "dark"}}selected{{end}}>Escura</option>
+                <option value="dark" {{if eq (index $meta "header_bg") "dark"}}selected{{end}}>Dark</option>
             </select>
         </div>
     </div>
@@ -107,7 +107,7 @@
                 </div>
             </div>
             <div class="col-md-6">
-                <label for="opt_interval" class="form-label">Intervalo (ms, 0 = manual)</label>
+                <label for="opt_interval" class="form-label">Interval (ms, 0 = manual)</label>
                 <input type="number" class="form-control form-control-sm plugin-option" id="opt_interval" 
                        data-key="interval" value="{{index $meta "interval"}}" min="0" step="500">
             </div>

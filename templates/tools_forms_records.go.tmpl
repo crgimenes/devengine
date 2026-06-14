@@ -23,14 +23,14 @@
                 <div class="card p-4">
                     <div class="d-flex justify-content-between align-items-start mb-3 gap-3 flex-wrap">
                         <div>
-                            <h2 class="mb-1">Registros de {{.Form.Label}}</h2>
+                            <h2 class="mb-1">{{t $.Locale "Records"}}: {{.Form.Label}}</h2>
                             <p class="text-muted mb-0">
                                 Entity: <code>{{.EntityType.MachineName}}</code> · Form: <code>{{.Form.MachineName}}</code>
                             </p>
                         </div>
                         <div class="d-flex gap-2">
                             <a href="/form/{{.Form.MachineName}}" class="btn btn-success">
-                                <i class="bi bi-plus-lg"></i> Novo
+                                <i class="bi bi-plus-lg"></i> {{t $.Locale "New"}}
                             </a>
                             <a href="/tools/forms/{{.Form.ReferenceID}}/records/export.csv"
                                class="btn btn-outline-secondary">CSV</a>
@@ -46,7 +46,7 @@
                                    value="{{.Filter}}">
                             {{if .Filter}}
                             <a href="/tools/forms/{{.Form.ReferenceID}}/records"
-                               class="btn btn-outline-secondary">Limpar</a>
+                               class="btn btn-outline-secondary">Clear</a>
                             {{end}}
                             <button type="submit" class="btn btn-primary">{{t $.Locale "Search"}}</button>
                         </div>

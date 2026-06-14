@@ -138,7 +138,7 @@ func (h *Handlers) FormsRuntimeNew(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Prefill from ?prefill=attr=value (may repeat). Used by the subform's
-	// "Novo" link to pre-populate the reference back to the parent record.
+	// The "New" link pre-populates the reference back to the parent record.
 	applyPrefill(values, ctx.attributes, r.URL.Query()["prefill"])
 
 	var posLoadError string
@@ -419,7 +419,7 @@ func (h *Handlers) FormsRuntimeButtonAction(w http.ResponseWriter, r *http.Reque
 	)
 	if err != nil {
 		ref := logRef("FormsRuntimeButtonAction prelude", err)
-		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "erro interno (ref " + ref + ")"})
+		jsonResponse(w, http.StatusInternalServerError, map[string]string{"error": "internal error (ref " + ref + ")"})
 		return
 	}
 	if !authed {

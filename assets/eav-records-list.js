@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // (fewer records than a page means no sentinel), so wire it up first.
     document.querySelectorAll('.delete-record-form').forEach(form => {
         form.addEventListener('submit', event => {
-            if (!confirm('Tem certeza que deseja excluir este registro?')) {
+            if (!confirm('Are you sure you want to delete this record?')) {
                 event.preventDefault();
             }
         });
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
         loading = true;
         sentinel.innerHTML = `
             <div class="spinner-border text-primary" role="status">
-                <span class="visually-hidden">Carregando...</span>
+                <span class="visually-hidden">Loading...</span>
             </div>
         `;
 
@@ -82,7 +82,7 @@ document.addEventListener('DOMContentLoaded', () => {
             console.error('Error loading more records:', error);
             sentinel.innerHTML = `
                 <div class="text-danger">
-                    <i class="bi bi-exclamation-circle"></i> Erro ao carregar registros
+                    <i class="bi bi-exclamation-circle"></i> Could not load records
                 </div>
             `;
         } finally {
@@ -113,8 +113,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Status badge
         const statusBadge = record.Status === 'active'
-            ? '<span class="badge bg-success">Ativo</span>'
-            : '<span class="badge bg-warning">Rascunho</span>';
+            ? '<span class="badge bg-success">Active</span>'
+            : '<span class="badge bg-warning">Draft</span>';
 
         const refIDBadge = `<span class="badge bg-secondary font-monospace">${record.ReferenceID.substring(0, 8)}</span>`;
 
@@ -129,7 +129,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (value === undefined || value === null) {
                 displayValue = '<span class="text-muted">—</span>';
             } else if (typeof value === 'boolean') {
-                displayValue = value ? 'Sim' : 'Não';
+                displayValue = value ? 'Yes' : 'No';
             } else {
                 displayValue = formatDatetime(value);
             }
@@ -152,20 +152,20 @@ document.addEventListener('DOMContentLoaded', () => {
                         ${valuesHTML}
                     </div>
                     <div class="mb-3">
-                        <small class="text-muted d-block">Criado: ${formatDatetime(record.CreatedAt)}</small>
+                        <small class="text-muted d-block">Created: ${formatDatetime(record.CreatedAt)}</small>
                         <small class="text-muted d-block">Rev: ${record.Rev}</small>
                     </div>
                     <div class="btn-group w-100" role="group">
                         <a href="/tools/database-schema/eav/${entityID}/records/${record.ReferenceID}/edit" 
                            class="btn btn-sm btn-outline-primary">
-                            Editar
+                            Edit
                         </a>
                         <form method="POST" 
                               action="/tools/database-schema/eav/${entityID}/records/${record.ReferenceID}/delete" 
                               style="display: inline;"
                               class="delete-record-form">
                             <button type="submit" class="btn btn-sm btn-outline-danger">
-                                Excluir
+                                Delete
                             </button>
                         </form>
                     </div>
@@ -176,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Add delete confirmation to the newly created form
         const deleteForm = col.querySelector('.delete-record-form');
         deleteForm.addEventListener('submit', event => {
-            if (!confirm('Tem certeza que deseja excluir este registro?')) {
+            if (!confirm('Are you sure you want to delete this record?')) {
                 event.preventDefault();
             }
         });

@@ -44,7 +44,7 @@ func loadConfig(path string) {
 	F.SetGlobal("SiteTitle", config.Cfg.SiteTitle)
 	F.SetGlobal("Locale", "en-US")
 
-	src, err := os.ReadFile(path)
+	src, err := os.ReadFile(path) // #nosec G304 -- path is a fixed application-owned init.filo location.
 	if err != nil {
 		log.Fatalf("read %s: %v", path, err)
 	}

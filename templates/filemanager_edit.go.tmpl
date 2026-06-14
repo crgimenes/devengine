@@ -30,7 +30,7 @@
                             <div class="mb-4">
                                 {{/* Preferir metadados do servidor para decidir como prever */}}
                                 {{- if eq .MediaKind "audio" -}}
-                                    {{/* Para audio: apenas a barra de controle, sem caixa quadrada */}}
+                                    {{/* Audio uses only the control bar, without a square preview box. */}}
                                     <audio src="/file/{{.User.ReferenceID}}/{{urlquery .File.Filename}}" class="w-100" controls preload="metadata">
                                         {{t $.Locale "Your browser does not support audio playback."}}
                                     </audio>
@@ -48,8 +48,8 @@
                                     </div>
                                 {{- end }}
                                 <p class="text-muted small mt-3 mb-0"><strong>{{t $.Locale "File"}}:</strong> {{.File.OriginalFilename}}</p>
-                                <p class="text-muted small"><strong>Tipo:</strong> {{.File.Filetype}}</p>
-                                <p class="text-muted small"><strong>Tamanho:</strong> {{.File.Filesize}} bytes</p>
+                                <p class="text-muted small"><strong>Type:</strong> {{.File.Filetype}}</p>
+                                <p class="text-muted small"><strong>Size:</strong> {{.File.Filesize}} bytes</p>
                                 {{if eq .File.Filetype "video/mpeg"}}
                                 <div class="alert alert-warning alert-sm mt-2" role="alert">
                                     <strong>⚠️ {{t $.Locale "Compatibility:"}}</strong> {{t $.Locale "MPEG files may not play on Chrome. Use Safari, Firefox, or convert to MP4."}}
@@ -70,9 +70,9 @@
                                 <small class="form-text text-body-secondary">{{t $.Locale "Maximum 500 characters"}}</small>
                             </div>
 
-                                                        <!-- Categorias (tags) -->
+                                                        <!-- Categories (tags) -->
                                                         <div class="mb-4">
-                                                                <label for="tagInput" class="form-label">Categorias</label>
+                                                                <label for="tagInput" class="form-label">Categories</label>
                                                                 <input id="tagInput" type="text" name="filetag" class="form-control" value="{{.File.Filetag}}" placeholder="{{t $.Locale "Type and press Enter"}}" autocomplete="off" data-ub-tag-separator="," data-ub-tag-max="20">
                                                                 <div class="form-text" id="tagHelp">{{t $.Locale "Press Enter, comma or Tab to create a tag. Accents are allowed; commas are not allowed inside a tag."}}</div>
                                                                 <div class="invalid-feedback">{{t $.Locale "Invalid tags. Use letters (accents ok), numbers, space and . _ - /. Max 32 chars per tag, 20 tags, 512 total."}}</div>
@@ -90,7 +90,7 @@
                 <div class="card mt-3">
                     <div class="card-body">
                         <h2 class="h6 card-title mb-3">{{t $.Locale "Delete file"}}</h2>
-                        <p class="mb-3">Tem certeza que deseja excluir este arquivo?</p>
+                        <p class="mb-3">Are you sure you want to delete this file?</p>
                         <form method="POST" action="/files/delete">
                             <input type="hidden" name="csrf_token" value="{{.Csrf}}">
                             <input type="hidden" name="file_id" value="{{.File.Filename}}">
@@ -115,4 +115,3 @@
 </body>
 </html>
 {{end}}
-

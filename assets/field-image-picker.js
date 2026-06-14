@@ -21,8 +21,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 const acceptHelp = modal.querySelector('[data-filemanager-accept-help]');
                 const fileInput = modal.querySelector('#fileManagerFileInput');
 
-                if (titleEl) titleEl.textContent = 'Selecionar Imagem';
-                if (acceptHelp) acceptHelp.textContent = 'Formatos: JPG, PNG, GIF, WebP, SVG';
+                if (titleEl) titleEl.textContent = 'Select Image';
+                if (acceptHelp) acceptHelp.textContent = 'Formats: JPG, PNG, GIF, WebP, SVG';
                 if (fileInput) fileInput.setAttribute('accept', 'image/*');
 
                 // Load user images
@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const uploadBtn = document.getElementById('fileManagerUploadBtn');
 
             if (!fileInput || !fileInput.files.length) {
-                if (statusEl) statusEl.innerHTML = '<div class="text-warning">Selecione um arquivo</div>';
+                if (statusEl) statusEl.innerHTML = '<div class="text-warning">Select a file</div>';
                 return;
             }
 
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 formData.append('description', description.value);
             }
 
-            if (statusEl) statusEl.innerHTML = '<div class="text-info"><span class="spinner-border spinner-border-sm me-2"></span>Enviando...</div>';
+            if (statusEl) statusEl.innerHTML = '<div class="text-info"><span class="spinner-border spinner-border-sm me-2"></span>Uploading...</div>';
             if (uploadBtn) uploadBtn.disabled = true;
 
             fetch('/files/upload', {
@@ -102,18 +102,18 @@ document.addEventListener('DOMContentLoaded', function () {
                 .then(response => {
                     if (response.ok || response.redirected) {
                         // Upload successful - reload images
-                        if (statusEl) statusEl.innerHTML = '<div class="text-success">Upload concluído!</div>';
+                        if (statusEl) statusEl.innerHTML = '<div class="text-success">Upload complete!</div>';
                         if (fileInput) fileInput.value = '';
                         if (description) description.value = '';
                         // Reload images after a short delay
                         setTimeout(loadUserImages, 500);
                     } else {
-                        throw new Error('Upload falhou');
+                        throw new Error('Upload failed');
                     }
                 })
                 .catch(err => {
                     console.error('Upload error:', err);
-                    if (statusEl) statusEl.innerHTML = '<div class="text-danger">Erro ao enviar arquivo</div>';
+                    if (statusEl) statusEl.innerHTML = '<div class="text-danger">Could not upload file</div>';
                 })
                 .finally(() => {
                     if (uploadBtn) uploadBtn.disabled = false;
@@ -136,7 +136,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!append) {
             imageOffset = 0;
             hasMoreImages = true;
-            listEl.innerHTML = '<div class="text-center text-body-secondary py-4"><small>Carregando...</small></div>';
+            listEl.innerHTML = '<div class="text-center text-body-secondary py-4"><small>Loading...</small></div>';
         }
 
         if (!hasMoreImages) return;
@@ -159,14 +159,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 imageOffset += files.length;
 
                 if (images.length === 0 && !append) {
-                    listEl.innerHTML = '<div class="text-center text-body-secondary py-4"><small>Nenhuma imagem encontrada</small></div>';
+                    listEl.innerHTML = '<div class="text-center text-body-secondary py-4"><small>No images found</small></div>';
                     return;
                 }
 
                 let html = '';
                 images.forEach(function (file) {
                     const url = file.file_url || '';
-                    const name = file.display_name || file.filename || 'Imagem';
+                    const name = file.display_name || file.filename || 'Image';
                     const desc = file.description || '';
                     const size = formatFileSize(file.filesize || 0);
                     const date = file.created_at ? file.created_at.split('T')[0] : '';
@@ -201,13 +201,13 @@ document.addEventListener('DOMContentLoaded', function () {
 
                 // Add loading indicator if there are more
                 if (hasMoreImages) {
-                    listEl.insertAdjacentHTML('beforeend', '<div class="loading-more text-center py-2"><small class="text-muted">Role para carregar mais...</small></div>');
+                    listEl.insertAdjacentHTML('beforeend', '<div class="loading-more text-center py-2"><small class="text-muted">Scroll to load more...</small></div>');
                 }
             })
             .catch(err => {
                 console.error('Error loading images:', err);
                 if (!append) {
-                    listEl.innerHTML = '<div class="text-center text-danger py-4"><small>Erro ao carregar imagens</small></div>';
+                    listEl.innerHTML = '<div class="text-center text-danger py-4"><small>Could not load images</small></div>';
                 }
             })
             .finally(() => {
@@ -256,7 +256,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const input = document.getElementById(fieldName);
         const previewWrapper = document.getElementById(fieldName + '_preview_wrapper');
         const removeBtn = document.querySelector(`.field-image-remove-btn[data-field-name="${fieldName}"]`);
-        const altText = alt || 'Imagem';
+        const altText = alt || 'Image';
 
         if (input) {
             input.value = url;
@@ -272,7 +272,7 @@ document.addEventListener('DOMContentLoaded', function () {
                             <path d="M6.002 5.5a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0z"/>
                             <path d="M2.002 1a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V3a2 2 0 0 0-2-2h-12zm12 1a1 1 0 0 1 1 1v6.5l-3.777-1.947a.5.5 0 0 0-.577.093l-3.71 3.71-2.66-1.772a.5.5 0 0 0-.63.062L1.002 12V3a1 1 0 0 1 1-1h12z"/>
                         </svg>
-                        <div class="small">Nenhuma imagem selecionada</div>
+                        <div class="small">No image selected</div>
                     </div>
                 `;
             }

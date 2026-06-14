@@ -41,6 +41,50 @@ func TestEmbeddedTemplatesRejectInlineCode(t *testing.T) {
 	}
 }
 
+func TestEmbeddedTemplatesContainNoLegacyPortugueseUI(t *testing.T) {
+	markers := []string{
+		"registros de ",
+		" - editar",
+		" - novo",
+		"criado:",
+		"selecione...",
+		"excluir este item?",
+		"json livre interpretado",
+		"somente leitura",
+		"valor de retorno",
+		" registro(s)",
+		" colunas",
+		">linhas<",
+		">registros<",
+		"campo de busca",
+		"categorias (tags)",
+	}
+
+	err := fs.WalkDir(filesystem, ".", func(path string, entry fs.DirEntry, walkErr error) error {
+		if walkErr != nil {
+			return walkErr
+		}
+		if entry.IsDir() || !strings.HasSuffix(path, ".tmpl") {
+			return nil
+		}
+
+		content, err := fs.ReadFile(filesystem, path)
+		if err != nil {
+			return err
+		}
+		lower := strings.ToLower(string(content))
+		for _, marker := range markers {
+			if strings.Contains(lower, marker) {
+				t.Errorf("%s contains legacy Portuguese UI text %q", path, marker)
+			}
+		}
+		return nil
+	})
+	if err != nil {
+		t.Fatal(err)
+	}
+}
+
 func TestGetGroupDefaults(t *testing.T) {
 	tests := []struct {
 		name        string

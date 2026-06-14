@@ -12,7 +12,7 @@
         <div class="d-flex flex-column flex-md-row align-items-start align-items-md-center justify-content-between gap-3 mb-4">
           <div>
             <h1 class="h3 mb-0">{{t $.Locale "My files"}}</h1>
-            <small class="text-body-secondary">Gerencie e organize seus arquivos</small>
+            <small class="text-body-secondary">Manage and organize your files</small>
           </div>
           <div class="ms-md-auto d-flex flex-column align-items-start align-items-md-end gap-2">
             <a href="/files/upload" class="btn btn-primary d-inline-flex align-items-center gap-2">
@@ -27,13 +27,13 @@
         </div>
 
         <!-- Filters and controls bar -->
-        <section aria-label="Controles de listagem" class="card mb-4 border-0 bg-body-tertiary">
+        <section aria-label="Listing controls" class="card mb-4 border-0 bg-body-tertiary">
           <div class="card-body py-3">
             <form class="row g-2 align-items-end"
                   hx-get="/files/list"
                   hx-target="#file-list"
                   hx-trigger="submit">
-              <!-- Campo de busca -->
+              <!-- Search field -->
               <div class="col-12 col-md-9">
                 <label for="search" class="form-label small text-body-secondary mb-1">{{t $.Locale "Search"}}</label>
                 <input
@@ -52,7 +52,7 @@
 
               <!-- Sorting -->
               <div class="col-12 col-md-3">
-                <label for="sort" class="form-label small text-body-secondary mb-1">Ordenar por</label>
+                <label for="sort" class="form-label small text-body-secondary mb-1">Sort by</label>
     <select id="sort" name="sort" class="form-select"
       hx-get="/files/list" hx-target="#file-list" hx-trigger="change" hx-include="closest form">
                   <option value="date_desc" selected>{{t $.Locale "Upload date (newest first)"}}</option>
@@ -64,7 +64,7 @@
         </section>
 
         <!-- File list grid -->
-        <section aria-label="Lista de arquivos">
+        <section aria-label="File list">
           <div id="file-list" class="row row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 g-3">
             {{template "filemanager_list" .}}
           </div>
@@ -81,4 +81,3 @@
     <script defer src="/assets/video-autoplay.min.js?v={{ .Config.GitTag }}"></script>
   </body>
 </html>
-

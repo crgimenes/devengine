@@ -10,7 +10,7 @@
     <main class="container-fluid py-3">
         {{if .Error}}
             <div class="alert alert-danger alert-dismissible fade show mb-4" role="alert">
-                <strong>Erro:</strong> {{.Error}}
+                <strong>Error:</strong> {{.Error}}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         {{end}}
@@ -22,7 +22,7 @@
         {{end}}
         {{if .PosLoadError}}
             <div class="alert alert-warning alert-dismissible fade show mb-4" role="alert">
-                <strong>Aviso:</strong> {{.PosLoadError}}
+                <strong>Warning:</strong> {{.PosLoadError}}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         {{end}}
@@ -35,9 +35,9 @@
                         {{.Form.Label}}
                         {{if .Form.EAVEntityTypeID}}
                             {{if .Record}}
-                                <small class="text-muted"> - Editar</small>
+                                <small class="text-muted"> - Edit</small>
                             {{else}}
-                                <small class="text-muted"> - Novo</small>
+                                <small class="text-muted"> - New</small>
                             {{end}}
                         {{end}}
                     </h2>
@@ -61,9 +61,9 @@
                             <div class="mb-3">
                                 <span class="badge bg-secondary font-monospace">{{.Record.ReferenceID}}</span>
                                 {{if eq .Record.Status "active"}}
-                                    <span class="badge bg-success">Ativo</span>
+                                    <span class="badge bg-success">Active</span>
                                 {{else}}
-                                    <span class="badge bg-warning">Rascunho</span>
+                                    <span class="badge bg-warning">Draft</span>
                                 {{end}}
                             </div>
                             {{end}}

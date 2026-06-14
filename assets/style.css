@@ -587,3 +587,16 @@ table td[data-align="right"] {
 body.overflow-hidden {
     overflow: hidden;
 }
+
+/* htmx request indicators. The htmx-config meta sets includeIndicatorStyles
+   to false (CSP: no injected <style>), so the rule that hides indicators
+   until a request is in flight lives here instead. Without it a
+   .spinner-border marked .htmx-indicator would spin forever. */
+.htmx-indicator {
+    opacity: 0;
+    transition: opacity 200ms ease-in;
+}
+.htmx-request .htmx-indicator,
+.htmx-request.htmx-indicator {
+    opacity: 1;
+}

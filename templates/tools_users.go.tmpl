@@ -59,7 +59,7 @@
                                         {{if .Sysop}}<span class="badge bg-warning text-dark">sysop</span>{{else}}<span class="text-muted">—</span>{{end}}
                                     </td>
                                     <td class="text-center">
-                                        {{if .Enabled}}<span class="badge bg-success">ativo</span>{{else}}<span class="badge bg-secondary">inativo</span>{{end}}
+                                        {{if .Enabled}}<span class="badge bg-success">active</span>{{else}}<span class="badge bg-secondary">inactive</span>{{end}}
                                     </td>
                                     <td class="text-end">
                                         <a href="/tools/users/{{.ReferenceID}}/edit" class="btn btn-sm btn-outline-primary">{{t $.Locale "Edit"}}</a>
@@ -74,7 +74,7 @@
                     <nav>
                         <ul class="pagination justify-content-center mt-3 mb-0">
                             <li class="page-item {{if not .HasPrev}}disabled{{end}}">
-                                {{if .HasPrev}}<a class="page-link" href="?page={{.PrevPage}}">Anterior</a>{{else}}<span class="page-link">Anterior</span>{{end}}
+                                {{if .HasPrev}}<a class="page-link" href="?page={{.PrevPage}}">Previous</a>{{else}}<span class="page-link">Previous</span>{{end}}
                             </li>
                             <li class="page-item disabled">
                                 <span class="page-link">{{.Page}} / {{.Pages}}</span>

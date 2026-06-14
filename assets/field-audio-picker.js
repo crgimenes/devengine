@@ -20,8 +20,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 const acceptHelp = modal.querySelector('[data-filemanager-accept-help]');
                 const fileInput = modal.querySelector('#fileManagerFileInput');
 
-                if (titleEl) titleEl.textContent = 'Selecionar Áudio';
-                if (acceptHelp) acceptHelp.textContent = 'Formatos: MP3, WAV, OGG, M4A';
+                if (titleEl) titleEl.textContent = 'Select Audio';
+                if (acceptHelp) acceptHelp.textContent = 'Formats: MP3, WAV, OGG, M4A';
                 if (fileInput) fileInput.setAttribute('accept', 'audio/*');
 
                 // Load user audios
@@ -53,7 +53,7 @@ document.addEventListener('DOMContentLoaded', function () {
             // Check if we are in audio mode by checking the title
             const modal = document.getElementById('fileManagerModal');
             const titleEl = modal ? modal.querySelector('[data-filemanager-title]') : null;
-            if (titleEl && titleEl.textContent === 'Selecionar Áudio') {
+            if (titleEl && titleEl.textContent === 'Select Audio') {
                 const url = fileCard.dataset.fileUrl;
                 if (url) {
                     setAudioValue(activeAudioFieldName, url);
@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 const uploadBtn = document.getElementById('fileManagerUploadBtn');
 
                 if (!fileInput || !fileInput.files.length) {
-                    if (statusEl) statusEl.innerHTML = '<div class="text-warning">Selecione um arquivo</div>';
+                    if (statusEl) statusEl.innerHTML = '<div class="text-warning">Select a file</div>';
                     return;
                 }
 
@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     formData.append('description', description.value);
                 }
 
-                if (statusEl) statusEl.innerHTML = '<div class="text-info"><span class="spinner-border spinner-border-sm me-2"></span>Enviando...</div>';
+                if (statusEl) statusEl.innerHTML = '<div class="text-info"><span class="spinner-border spinner-border-sm me-2"></span>Uploading...</div>';
                 if (uploadBtn) uploadBtn.disabled = true;
 
                 fetch('/files/upload', {
@@ -102,19 +102,19 @@ document.addEventListener('DOMContentLoaded', function () {
                     .then(response => {
                         if (response.ok || response.redirected) {
                             // Upload successful
-                            if (statusEl) statusEl.innerHTML = '<div class="text-success">Upload concluído!</div>';
+                            if (statusEl) statusEl.innerHTML = '<div class="text-success">Upload complete!</div>';
                             if (fileInput) fileInput.value = '';
                             if (description) description.value = '';
 
                             // Reload audios after a short delay
                             setTimeout(loadUserAudios, 500);
                         } else {
-                            throw new Error('Upload falhou');
+                            throw new Error('Upload failed');
                         }
                     })
                     .catch(err => {
                         console.error('Upload error:', err);
-                        if (statusEl) statusEl.innerHTML = '<div class="text-danger">Erro ao enviar arquivo</div>';
+                        if (statusEl) statusEl.innerHTML = '<div class="text-danger">Could not upload file</div>';
                     })
                     .finally(() => {
                         if (uploadBtn) uploadBtn.disabled = false;
@@ -159,14 +159,14 @@ document.addEventListener('DOMContentLoaded', function () {
         // Ensure we are in the correct context/modal usage
         const modal = document.getElementById('fileManagerModal');
         const titleEl = modal ? modal.querySelector('[data-filemanager-title]') : null;
-        if (titleEl && titleEl.textContent !== 'Selecionar Áudio') return;
+        if (titleEl && titleEl.textContent !== 'Select Audio') return;
 
         if (!listEl || isLoadingAudios) return;
 
         if (!append) {
             audioOffset = 0;
             hasMoreAudios = true;
-            listEl.innerHTML = '<div class="text-center text-body-secondary py-4"><small>Carregando...</small></div>';
+            listEl.innerHTML = '<div class="text-center text-body-secondary py-4"><small>Loading...</small></div>';
         }
 
         if (!hasMoreAudios) return;
@@ -195,7 +195,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     // Only show empty message if we strictly have no audios after filter
                     // If we got files but filtered all out, we might want to automatically fetch next page,
                     // but for simplicity mirroring image picker, we just show "No audios found" if first page yields none.
-                    listEl.innerHTML = '<div class="text-center text-body-secondary py-4"><small>Nenhum áudio encontrado</small></div>';
+                    listEl.innerHTML = '<div class="text-center text-body-secondary py-4"><small>No audio files found</small></div>';
                     return;
                 }
 
@@ -237,13 +237,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 if (hasMoreAudios) {
-                    listEl.insertAdjacentHTML('beforeend', '<div class="loading-more text-center py-2"><small class="text-muted">Role para carregar mais...</small></div>');
+                    listEl.insertAdjacentHTML('beforeend', '<div class="loading-more text-center py-2"><small class="text-muted">Scroll to load more...</small></div>');
                 }
             })
             .catch(err => {
                 console.error('Error loading audios:', err);
                 if (!append) {
-                    listEl.innerHTML = '<div class="text-center text-danger py-4"><small>Erro ao carregar áudios</small></div>';
+                    listEl.innerHTML = '<div class="text-center text-danger py-4"><small>Could not load audio files</small></div>';
                 }
             })
             .finally(() => {
@@ -333,13 +333,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 previewWrapper.innerHTML = `
                     <div class="field-audio-placeholder text-center text-muted p-4 border rounded bg-body-secondary"
                          role="button" data-bs-toggle="modal" data-bs-target="#fileManagerModal"
-                         data-field-name="${fieldName}" style="cursor: pointer;" title="Clique para selecionar um áudio">
+                         data-field-name="${fieldName}" style="cursor: pointer;" title="Click to select an audio file">
                         <svg class="mb-2" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M6 13c0 1.105-1.12 2-2.5 2S1 14.105 1 13c0-1.104 1.12-2 2.5-2s2.5.896 2.5 2zm9-2c0 1.105-1.12 2-2.5 2s-2.5-.895-2.5-2 1.12-2 2.5-2 2.5.895 2.5 2z"/>
                             <path fill-rule="evenodd" d="M14 11V2h1v9h-1zM6 3v10H5V3h1z"/>
                             <path d="M5 2.905a1 1 0 0 1 .9-.995l8-.8a1 1 0 0 1 1.1.995V3L5 4V2.905z"/>
                         </svg>
-                        <div class="small">Nenhum áudio selecionado</div>
+                        <div class="small">No audio selected</div>
                     </div>
                 `;
             }

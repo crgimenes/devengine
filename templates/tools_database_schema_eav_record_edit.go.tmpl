@@ -16,7 +16,7 @@
         {{end}}
         {{if .PosLoadError}}
             <div class="alert alert-info alert-dismissible fade show mb-4" role="alert">
-                <strong>Aviso:</strong> {{.PosLoadError}}
+                <strong>Warning:</strong> {{.PosLoadError}}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
             </div>
         {{end}}
@@ -33,8 +33,8 @@
                     </h2>
                     <nav aria-label="breadcrumb">
                         <ol class="breadcrumb mb-0">
-                            <li class="breadcrumb-item"><a href="/tools">Tools</a></li>
-                            <li class="breadcrumb-item"><a href="/tools/database-schema">Database Schema</a></li>
+                            <li class="breadcrumb-item"><a href="/tools">{{t $.Locale "Tools"}}</a></li>
+                            <li class="breadcrumb-item"><a href="/tools/database-schema">{{t $.Locale "Database Schema"}}</a></li>
                             <li class="breadcrumb-item"><a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/edit">{{.EntityType.Name}}</a></li>
                             <li class="breadcrumb-item"><a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/records">{{t $.Locale "Records"}}</a></li>
                             <li class="breadcrumb-item active">{{if .Record}}{{t $.Locale "Edit"}}{{else}}{{t $.Locale "New"}}{{end}}</li>
@@ -54,9 +54,9 @@
                             <div class="mb-3">
                                 <span class="badge bg-secondary font-monospace">{{.Record.ReferenceID}}</span>
                                 {{if eq .Record.Status "active"}}
-                                    <span class="badge bg-success">Ativo</span>
+                                    <span class="badge bg-success">Active</span>
                                 {{else}}
-                                    <span class="badge bg-warning">Rascunho</span>
+                                    <span class="badge bg-warning">Draft</span>
                                 {{end}}
                                 <small class="text-muted ms-2">Rev: {{.Record.Rev}}</small>
                             </div>

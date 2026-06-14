@@ -30,13 +30,18 @@ func getWithHeader(t *testing.T, mux *http.ServeMux, path string, c *http.Cookie
 
 // Accept-Language must pick the page language when the user has no saved
 // preference; without a header the app default (en-US in tests) applies.
+//
+// The built-in pt-BR dictionary is disabled (see i18n/pt_br.go
+// translationsEnabled), so a throwaway registered locale stands in for it and
+// keeps real coverage of the Accept-Language resolver.
 func TestRequestLocaleFollowsAcceptLanguage(t *testing.T) {
 	mux, _ := newHTTPTestEnv(t)
+	i18n.Register("tt-TT", map[string]string{"Page not found": "Pagina nao encontrada (tt)"})
 
 	rr := getWithHeader(t, mux, "/does-not-exist", nil,
-		map[string]string{"Accept-Language": "pt-BR,pt;q=0.9"})
-	if !strings.Contains(rr.Body.String(), "Página não encontrada") {
-		t.Fatalf("pt-BR header ignored: %.300s", rr.Body.String())
+		map[string]string{"Accept-Language": "tt-TT,tt;q=0.9"})
+	if !strings.Contains(rr.Body.String(), "Pagina nao encontrada (tt)") {
+		t.Fatalf("tt-TT header ignored: %.300s", rr.Body.String())
 	}
 
 	rr = getWithHeader(t, mux, "/does-not-exist", nil, nil)
@@ -45,15 +50,18 @@ func TestRequestLocaleFollowsAcceptLanguage(t *testing.T) {
 	}
 }
 
-// A saved user preference beats the browser header.
+// A saved user preference beats the browser header. The built-in pt-BR
+// dictionary is disabled (see i18n/pt_br.go translationsEnabled), so a
+// throwaway registered locale stands in as the saved preference.
 func TestSavedLocaleBeatsAcceptLanguage(t *testing.T) {
 	mux, s := newHTTPTestEnv(t)
+	i18n.Register("tt-TT", map[string]string{"Page not found": "Pagina nao encontrada (tt)"})
 
 	u, err := s.CreateUser("ana", "ana@example.com", "x", false)
 	if err != nil {
 		t.Fatalf("CreateUser: %v", err)
 	}
-	err = s.UpdateUserLocale(u.ID, "pt-BR")
+	err = s.UpdateUserLocale(u.ID, "tt-TT")
 	if err != nil {
 		t.Fatalf("UpdateUserLocale: %v", err)
 	}
@@ -67,8 +75,8 @@ func TestSavedLocaleBeatsAcceptLanguage(t *testing.T) {
 
 	rr := getWithHeader(t, mux, "/form/no-such-form", cookie,
 		map[string]string{"Accept-Language": "en-US"})
-	if !strings.Contains(rr.Body.String(), "Página não encontrada") {
-		t.Fatalf("saved pt-BR preference ignored: %.300s", rr.Body.String())
+	if !strings.Contains(rr.Body.String(), "Pagina nao encontrada (tt)") {
+		t.Fatalf("saved tt-TT preference ignored: %.300s", rr.Body.String())
 	}
 }
 
@@ -76,13 +84,16 @@ func TestSavedLocaleBeatsAcceptLanguage(t *testing.T) {
 // very next page already speaks the chosen language.
 func TestProfileSavesLocalePreference(t *testing.T) {
 	mux, _ := newHTTPTestEnv(t)
+	// Built-in pt-BR is disabled (see i18n/pt_br.go translationsEnabled), and
+	// /me rejects unknown locales, so register a throwaway one to save.
+	i18n.Register("tt-TT", map[string]string{"Page not found": "Pagina nao encontrada (tt)"})
 	user := plantUser(t, "carol", false)
 
 	var body bytes.Buffer
 	mw := multipart.NewWriter(&body)
 	_ = mw.WriteField("username", "carol")
 	_ = mw.WriteField("email", "carol@example.com")
-	_ = mw.WriteField("locale", "pt-BR")
+	_ = mw.WriteField("locale", "tt-TT")
 	err := mw.Close()
 	if err != nil {
 		t.Fatalf("close multipart: %v", err)
@@ -101,21 +112,24 @@ func TestProfileSavesLocalePreference(t *testing.T) {
 	if err != nil || saved == nil {
 		t.Fatalf("GetUserByUsername: %v", err)
 	}
-	if saved.Locale != "pt-BR" {
-		t.Fatalf("locale = %q, want pt-BR", saved.Locale)
+	if saved.Locale != "tt-TT" {
+		t.Fatalf("locale = %q, want tt-TT", saved.Locale)
 	}
 
 	// Session refreshed: an English browser header no longer wins.
 	rr = getWithHeader(t, mux, "/form/no-such-form", user,
 		map[string]string{"Accept-Language": "en-US"})
-	if !strings.Contains(rr.Body.String(), "Página não encontrada") {
+	if !strings.Contains(rr.Body.String(), "Pagina nao encontrada (tt)") {
 		t.Fatalf("session not speaking saved locale: %.300s", rr.Body.String())
 	}
 }
 
-// The /me page offers the locale select with the registered languages.
+// The /me page offers the locale select with the registered languages. The
+// built-in pt-BR is disabled (see i18n/pt_br.go translationsEnabled), so a
+// throwaway registered locale stands in as the second selectable language.
 func TestProfileShowsLocaleSelect(t *testing.T) {
 	mux, _ := newHTTPTestEnv(t)
+	i18n.Register("tt-TT", map[string]string{"Page not found": "Pagina nao encontrada (tt)"})
 	user := plantUser(t, "dave", false)
 
 	rr := doGet(t, mux, "/me", user)
@@ -124,7 +138,7 @@ func TestProfileShowsLocaleSelect(t *testing.T) {
 	if !strings.Contains(body, `name="locale"`) {
 		t.Fatal("locale select missing from /me")
 	}
-	for _, want := range []string{"en-US", "pt-BR"} {
+	for _, want := range []string{"en-US", "tt-TT"} {
 		if !strings.Contains(body, `value="`+want+`"`) {
 			t.Fatalf("locale option %s missing", want)
 		}
@@ -135,6 +149,9 @@ func TestProfileShowsLocaleSelect(t *testing.T) {
 // fresh application is usable without a custom home template.
 func TestDashboardListsForms(t *testing.T) {
 	mux, s := newHTTPTestEnv(t)
+	// Built-in pt-BR is disabled (see i18n/pt_br.go translationsEnabled), so a
+	// throwaway registered locale exercises the chrome translation path.
+	i18n.Register("tt-TT", map[string]string{"Forms": "Formularios (tt)"})
 	user := plantUser(t, "ana", false)
 	form := seedTaskForm(t, s, "seed")
 	t.Cleanup(func() { i18n.DeleteContent("en-US", form.ReferenceID, "label") })
@@ -151,9 +168,9 @@ func TestDashboardListsForms(t *testing.T) {
 
 	// The page chrome follows the request locale (guards the Locale field
 	// on the dashboard data struct).
-	rr = getWithHeader(t, mux, "/", user, map[string]string{"Accept-Language": "pt-BR"})
-	if !strings.Contains(rr.Body.String(), "Formulários") {
-		t.Fatal("dashboard chrome not translated to pt-BR")
+	rr = getWithHeader(t, mux, "/", user, map[string]string{"Accept-Language": "tt-TT"})
+	if !strings.Contains(rr.Body.String(), "Formularios (tt)") {
+		t.Fatal("dashboard chrome not translated to tt-TT")
 	}
 
 	// Content translation applies to the card label.

@@ -21,8 +21,8 @@ document.addEventListener('DOMContentLoaded', function () {
                 const acceptHelp = modal.querySelector('[data-filemanager-accept-help]');
                 const fileInput = modal.querySelector('#fileManagerFileInput');
 
-                if (titleEl) titleEl.textContent = 'Selecionar Vídeo';
-                if (acceptHelp) acceptHelp.textContent = 'Formatos: MP4, WebM, OGG';
+                if (titleEl) titleEl.textContent = 'Select Video';
+                if (acceptHelp) acceptHelp.textContent = 'Formats: MP4, WebM, OGG';
                 if (fileInput) fileInput.setAttribute('accept', 'video/*');
 
                 // Load user videos
@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const uploadBtn = document.getElementById('fileManagerUploadBtn');
 
             if (!fileInput || !fileInput.files.length) {
-                if (statusEl) statusEl.innerHTML = '<div class="text-warning">Selecione um arquivo</div>';
+                if (statusEl) statusEl.innerHTML = '<div class="text-warning">Select a file</div>';
                 return;
             }
 
@@ -93,7 +93,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 formData.append('description', description.value);
             }
 
-            if (statusEl) statusEl.innerHTML = '<div class="text-info"><span class="spinner-border spinner-border-sm me-2"></span>Enviando...</div>';
+            if (statusEl) statusEl.innerHTML = '<div class="text-info"><span class="spinner-border spinner-border-sm me-2"></span>Uploading...</div>';
             if (uploadBtn) uploadBtn.disabled = true;
 
             fetch('/files/upload', {
@@ -103,18 +103,18 @@ document.addEventListener('DOMContentLoaded', function () {
             })
                 .then(response => {
                     if (response.ok || response.redirected) {
-                        if (statusEl) statusEl.innerHTML = '<div class="text-success">Upload concluído!</div>';
+                        if (statusEl) statusEl.innerHTML = '<div class="text-success">Upload complete!</div>';
                         if (fileInput) fileInput.value = '';
                         if (description) description.value = '';
                         // Reload videos after a short delay
                         setTimeout(loadUserVideos, 500);
                     } else {
-                        throw new Error('Upload falhou');
+                        throw new Error('Upload failed');
                     }
                 })
                 .catch(err => {
                     console.error('Upload error:', err);
-                    if (statusEl) statusEl.innerHTML = '<div class="text-danger">Erro ao enviar arquivo</div>';
+                    if (statusEl) statusEl.innerHTML = '<div class="text-danger">Could not upload file</div>';
                 })
                 .finally(() => {
                     if (uploadBtn) uploadBtn.disabled = false;
@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (!append) {
             videoOffset = 0;
             hasMoreVideos = true;
-            listEl.innerHTML = '<div class="text-center text-body-secondary py-4"><small>Carregando...</small></div>';
+            listEl.innerHTML = '<div class="text-center text-body-secondary py-4"><small>Loading...</small></div>';
         }
 
         if (!hasMoreVideos) return;
@@ -160,14 +160,14 @@ document.addEventListener('DOMContentLoaded', function () {
                 videoOffset += files.length;
 
                 if (videos.length === 0 && !append) {
-                    listEl.innerHTML = '<div class="text-center text-body-secondary py-4"><small>Nenhum vídeo encontrado</small></div>';
+                    listEl.innerHTML = '<div class="text-center text-body-secondary py-4"><small>No videos found</small></div>';
                     return;
                 }
 
                 let html = '';
                 videos.forEach(function (file) {
                     const url = file.file_url || '';
-                    const name = file.display_name || file.filename || 'Vídeo';
+                    const name = file.display_name || file.filename || 'Video';
                     const desc = file.description || '';
                     const size = formatFileSize(file.filesize || 0);
                     const date = file.created_at ? file.created_at.split('T')[0] : '';
@@ -201,13 +201,13 @@ document.addEventListener('DOMContentLoaded', function () {
                 }
 
                 if (hasMoreVideos) {
-                    listEl.insertAdjacentHTML('beforeend', '<div class="loading-more text-center py-2"><small class="text-muted">Role para carregar mais...</small></div>');
+                    listEl.insertAdjacentHTML('beforeend', '<div class="loading-more text-center py-2"><small class="text-muted">Scroll to load more...</small></div>');
                 }
             })
             .catch(err => {
                 console.error('Error loading videos:', err);
                 if (!append) {
-                    listEl.innerHTML = '<div class="text-center text-danger py-4"><small>Erro ao carregar vídeos</small></div>';
+                    listEl.innerHTML = '<div class="text-center text-danger py-4"><small>Could not load videos</small></div>';
                 }
             })
             .finally(() => {
@@ -306,7 +306,7 @@ document.addEventListener('DOMContentLoaded', function () {
                         <svg class="mb-2" width="48" height="48" fill="currentColor" viewBox="0 0 16 16">
                             <path d="M0 1a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H1a1 1 0 0 1-1-1V1zm4 0v6h8V1H4zm8 8H4v6h8V9zM1 1v2h2V1H1zm2 3H1v2h2V4zM1 7v2h2V7H1zm2 3H1v2h2v-2zm-2 3v2h2v-2H1zM15 1h-2v2h2V1zm-2 3v2h2V4h-2zm2 3h-2v2h2V7zm-2 3v2h2v-2h-2zm2 3h-2v2h2v-2z"/>
                         </svg>
-                        <div class="small">Nenhum vídeo selecionado</div>
+                        <div class="small">No video selected</div>
                     </div>
                 `;
             }

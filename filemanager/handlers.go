@@ -562,7 +562,7 @@ func uploadHandler(w http.ResponseWriter, r *http.Request) {
 		log.Printf("file saved: id=%d filename=%s", fileMeta.ID, fileMeta.Filename)
 
 		// Redirect to file manager with success message
-		http.Redirect(w, r, config.Cfg.BaseURL+"/files?message=Arquivo+enviado+com+sucesso", http.StatusFound)
+		http.Redirect(w, r, config.Cfg.BaseURL+"/files?message="+url.QueryEscape(tr(r, "File uploaded successfully")), http.StatusFound)
 	}
 }
 
@@ -681,7 +681,7 @@ func editHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		http.Redirect(w, r, config.Cfg.BaseURL+"/files?message=Arquivo+atualizado+com+sucesso", http.StatusFound)
+		http.Redirect(w, r, config.Cfg.BaseURL+"/files?message="+url.QueryEscape(tr(r, "File updated successfully")), http.StatusFound)
 	}
 }
 
@@ -744,7 +744,7 @@ func deleteHandler(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 
-		http.Redirect(w, r, config.Cfg.BaseURL+"/files?message="+url.QueryEscape("Arquivo excluido com sucesso"), http.StatusFound)
+		http.Redirect(w, r, config.Cfg.BaseURL+"/files?message="+url.QueryEscape(tr(r, "File deleted successfully")), http.StatusFound)
 		return
 	}
 

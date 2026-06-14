@@ -8,6 +8,7 @@ import (
 	"github.com/crgimenes/devengine/auth"
 	"github.com/crgimenes/devengine/config"
 	"github.com/crgimenes/devengine/db"
+	"github.com/crgimenes/devengine/i18n"
 	"github.com/crgimenes/devengine/session"
 	"github.com/crgimenes/devengine/utils"
 )
@@ -170,12 +171,16 @@ func TestLogoutClearsSession(t *testing.T) {
 }
 
 func TestRequestLocale(t *testing.T) {
+	// A throwaway registered locale exercises the resolver mechanism while the
+	// built-in pt-BR dictionary is disabled (see i18n/pt_br.go translationsEnabled).
+	i18n.Register("tt-TT", map[string]string{"Page not found": "Pagina nao encontrada (tt)"})
+
 	// Saved preference (known locale) beats the browser header.
-	cookie := plantSession(t, db.User{ID: 45, Locale: "pt-BR"})
+	cookie := plantSession(t, db.User{ID: 45, Locale: "tt-TT"})
 	req := httptest.NewRequest(http.MethodGet, "/x", nil)
 	req.AddCookie(cookie)
 	req.Header.Set("Accept-Language", "en-US")
-	if loc := auth.RequestLocale(req); loc != "pt-BR" {
+	if loc := auth.RequestLocale(req); loc != "tt-TT" {
 		t.Fatalf("saved pref ignored: %q", loc)
 	}
 
@@ -183,15 +188,15 @@ func TestRequestLocale(t *testing.T) {
 	cookie = plantSession(t, db.User{ID: 46, Locale: "xx-XX"})
 	req = httptest.NewRequest(http.MethodGet, "/x", nil)
 	req.AddCookie(cookie)
-	req.Header.Set("Accept-Language", "pt-BR,pt;q=0.9")
-	if loc := auth.RequestLocale(req); loc != "pt-BR" {
+	req.Header.Set("Accept-Language", "tt-TT,tt;q=0.9")
+	if loc := auth.RequestLocale(req); loc != "tt-TT" {
 		t.Fatalf("unknown pref did not fall back to header: %q", loc)
 	}
 
 	// No session: header wins.
 	req = httptest.NewRequest(http.MethodGet, "/x", nil)
-	req.Header.Set("Accept-Language", "pt-BR")
-	if loc := auth.RequestLocale(req); loc != "pt-BR" {
+	req.Header.Set("Accept-Language", "tt-TT")
+	if loc := auth.RequestLocale(req); loc != "tt-TT" {
 		t.Fatalf("header ignored: %q", loc)
 	}
 

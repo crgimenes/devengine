@@ -2,8 +2,15 @@ package i18n
 
 import "testing"
 
+// A throwaway second locale exercises the translation mechanism now that the
+// built-in pt-BR dictionary is disabled (see pt_br.go translationsEnabled).
+// Registered only in the test binary, it never leaks into the engine.
+func init() {
+	Register("tt-TT", map[string]string{"Page not found": "Pagina nao encontrada (tt)"})
+}
+
 // resetLocale restores the default after tests that switch it; dictionaries
-// are additive so the built-in pt-BR stays registered.
+// are additive so a registered locale stays registered.
 func resetLocale(t *testing.T) {
 	t.Cleanup(func() { SetLocale(DefaultLocale) })
 }
@@ -18,19 +25,19 @@ func TestDefaultLocalePassesThrough(t *testing.T) {
 	}
 }
 
-func TestPtBRTranslates(t *testing.T) {
+func TestRegisteredLocaleTranslates(t *testing.T) {
 	resetLocale(t)
-	SetLocale("pt-BR")
+	SetLocale("tt-TT")
 
 	got := T("Page not found")
-	if got != "Página não encontrada" {
+	if got != "Pagina nao encontrada (tt)" {
 		t.Fatalf("T = %q", got)
 	}
 }
 
 func TestMissingEntryFallsBackToEnglish(t *testing.T) {
 	resetLocale(t)
-	SetLocale("pt-BR")
+	SetLocale("tt-TT")
 
 	got := T("Untranslated engine string")
 	if got != "Untranslated engine string" {
@@ -50,26 +57,29 @@ func TestUnknownLocaleBehavesAsEnglish(t *testing.T) {
 
 func TestFormatArgsApplyAfterTranslation(t *testing.T) {
 	resetLocale(t)
-	SetLocale("pt-BR")
+	// Use a throwaway locale so the test exercises the format-after-translate
+	// mechanism regardless of which built-in dictionaries are enabled.
+	Register("xx-XX", map[string]string{"Could not update (ref %s)": "Falhou (ref %s)"})
+	SetLocale("xx-XX")
 
 	got := T("Could not update (ref %s)", "ab12")
-	if got != "Erro ao atualizar (ref ab12)" {
+	if got != "Falhou (ref ab12)" {
 		t.Fatalf("T = %q", got)
 	}
 }
 
 func TestRegisterMergesAndOverrides(t *testing.T) {
 	resetLocale(t)
-	Register("pt-BR", map[string]string{"App only string": "String só do app"})
-	SetLocale("pt-BR")
+	Register("yy-YY", map[string]string{"First": "Primeiro"})
+	Register("yy-YY", map[string]string{"Second": "Segundo"}) // additive merge
+	SetLocale("yy-YY")
 
-	got := T("App only string")
-	if got != "String só do app" {
-		t.Fatalf("T = %q", got)
+	// Both entries resolve: the second Register merges, it does not replace.
+	if T("First") != "Primeiro" {
+		t.Fatal("first entry lost after a second Register (merge not additive)")
 	}
-	// Engine entries keep working after the merge.
-	if T("Invalid credentials.") != "Credenciais inválidas." {
-		t.Fatal("engine entry lost after Register")
+	if T("Second") != "Segundo" {
+		t.Fatalf("T(Second) = %q", T("Second"))
 	}
 }
 
@@ -86,13 +96,13 @@ func TestMatchHeader(t *testing.T) {
 	resetLocale(t)
 
 	cases := []struct{ header, want string }{
-		{"pt-BR", "pt-BR"},
-		{"pt-br", "pt-BR"},
-		{"pt", "pt-BR"},
-		{"pt-PT", "pt-BR"}, // language prefix match
+		{"tt-TT", "tt-TT"},
+		{"tt-tt", "tt-TT"},
+		{"tt", "tt-TT"},
+		{"tt-XX", "tt-TT"}, // language prefix match
 		{"en-US,en;q=0.9", "en-US"},
 		{"en-GB,en;q=0.9", "en-US"},
-		{"fr-FR,pt-BR;q=0.8", "pt-BR"}, // first known wins, in header order
+		{"fr-FR,tt-TT;q=0.8", "tt-TT"}, // first known wins, in header order
 		{"ja-JP", ""},
 		{"*", ""},
 		{"", ""},
@@ -110,10 +120,10 @@ func TestLocalesAndKnown(t *testing.T) {
 
 	locs := Locales()
 	if len(locs) < 2 {
-		t.Fatalf("Locales = %v, want at least en-US and pt-BR", locs)
+		t.Fatalf("Locales = %v, want at least en-US and the test locale", locs)
 	}
-	if !Known("en-US") || !Known("pt-BR") {
-		t.Fatal("built-in locales not known")
+	if !Known("en-US") || !Known("tt-TT") {
+		t.Fatal("expected locales not known")
 	}
 	if Known("ja-JP") {
 		t.Fatal("unknown locale reported as known")

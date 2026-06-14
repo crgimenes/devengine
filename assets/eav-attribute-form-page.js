@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 defaultValueInput.type = 'text';
                 if (!hasExistingValue) defaultValueInput.value = '';
                 defaultValueInput.disabled = true;
-                defaultValueInput.placeholder = 'Selecione um tipo primeiro';
+                defaultValueInput.placeholder = 'Select a type first';
                 return;
             }
 
@@ -48,7 +48,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     defaultValueInput.min = '0';
                     defaultValueInput.max = '1';
                     if (!hasExistingValue) defaultValueInput.value = '0';
-                    defaultValueInput.placeholder = '0 (false) ou 1 (true)';
+                    defaultValueInput.placeholder = '0 (false) or 1 (true)';
                     break;
                 case 'INT':
                     defaultValueInput.type = 'text';
@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     defaultValueInput.removeAttribute('step');
                     defaultValueInput.removeAttribute('min');
                     defaultValueInput.removeAttribute('max');
-                    defaultValueInput.placeholder = 'String vazia';
+                    defaultValueInput.placeholder = 'Empty string';
                     break;
                 case 'DATETIME':
                     // Plain text so the special default "now" can be typed.
@@ -83,14 +83,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     defaultValueInput.removeAttribute('step');
                     defaultValueInput.removeAttribute('min');
                     defaultValueInput.removeAttribute('max');
-                    defaultValueInput.placeholder = 'now ou 2026-01-01T12:00 (vazio = NULL)';
+                    defaultValueInput.placeholder = 'now or 2026-01-01T12:00 (empty = NULL)';
                     defaultValueInput.required = false;
                     break;
                 default:
                     defaultValueInput.type = 'text';
                     if (!hasExistingValue) defaultValueInput.value = '';
                     defaultValueInput.disabled = true;
-                    defaultValueInput.placeholder = 'Selecione um tipo primeiro';
+                    defaultValueInput.placeholder = 'Select a type first';
             }
         }
     }

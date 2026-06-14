@@ -1,9 +1,17 @@
 package i18n
 
-// Brazilian Portuguese dictionary for the engine's own UI strings. Shipped
-// built in because the engine and its first applications serve PT-BR users;
-// applications extend it via Register.
+// Brazilian Portuguese dictionary for the engine's own UI strings.
+//
+// TEMPORARILY DISABLED: the UI is being consolidated to a single language
+// (English, which is the translation key), so the partial pt-BR coverage no
+// longer produces a confusing mix. Flip translationsEnabled back to true to
+// restore translations once the dictionary is complete. See devengine_qa.md.
+var translationsEnabled = false
+
 func init() {
+	if !translationsEnabled {
+		return
+	}
 	Register("pt-BR", map[string]string{ // #nosec G101 -- UI translation strings, not credentials; some keys mention "password"
 		// error pages
 		"Page not found": "Página não encontrada",
@@ -504,5 +512,30 @@ func init() {
 		// Filo REPL
 		"Invalid globals JSON: %s": "Globals JSON inválido: %s",
 		"Empty script.":            "Script vazio.",
+
+		// completeness: missing keys + hardcoded-English leaks (admin tools)
+		"Form used to open and create items (machine name)": "Formulário usado para abrir e criar itens (nome de máquina)",
+		"Generate a new password for %s?":                   "Gerar uma nova senha para %s?",
+		"Go to login":                                       "Ir para o login",
+		"Include time":                                      "Incluir hora",
+		"Input mode":                                        "Modo de entrada",
+		"Save the record first to manage related items.":    "Salve o registro primeiro para gerenciar os itens relacionados.",
+		"Sign in with your account to continue.":            "Entre com sua conta para continuar.",
+		"Telephone":                                         "Telefone",
+		"User avatar":                                       "Avatar do usuário",
+		"Welcome to %s":                                     "Bem-vindo a %s",
+		"defaults to the related table name":                "padrão: o nome da tabela relacionada",
+		"Database Schema":                                   "Esquema do Banco",
+		"Filo REPL":                                         "Filo REPL",
+		"Menu Editor":                                       "Editor de Menu",
+		"Accordion":                                         "Acordeão",
+		"Card":                                              "Card",
+		"Tabs":                                              "Abas",
+		"Carousel":                                          "Carrossel",
+		"Relational":                                        "Relacional",
+		"Unique":                                            "Único",
+		"Indexed":                                           "Indexado",
+		"Preview":                                           "Pré-visualizar",
+		"Flags":                                             "Flags",
 	})
 }

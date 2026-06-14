@@ -921,7 +921,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordDelete(w http.ResponseWriter, r *
 	err = db.Storage.SoftDeleteEAVRecord(record.ID)
 	if err != nil {
 		ref := logRef("ToolsDatabaseSchemaEAVRecordDelete", err)
-		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message=Erro ao excluir (ref "+ref+")", http.StatusSeeOther)
+		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message="+tr(r, "Could not delete record (ref %s)", ref), http.StatusSeeOther)
 		return
 	}
 

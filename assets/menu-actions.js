@@ -73,7 +73,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     })
                     .catch(function (err) {
                         // Show error in Bootstrap alert by reloading with error param
-                        const redirectUrl = window.location.pathname + '?error=' + encodeURIComponent('Erro de conexão: ' + err.message);
+                        const redirectUrl = window.location.pathname + '?error=' + encodeURIComponent('Connection error: ' + err.message);
                         window.location.href = redirectUrl;
                     });
             } else {

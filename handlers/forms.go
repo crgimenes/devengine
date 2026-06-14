@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"net/http"
+	"net/url"
 	"sort"
 	"strconv"
 	"strings"
@@ -873,7 +874,8 @@ func (h *Handlers) ToolsFormsElementUpdate(w http.ResponseWriter, r *http.Reques
 
 	// Validate required fields
 	if machineName == "" {
-		http.Redirect(w, r, "/tools/forms/"+formRefID+"/elements/"+elementRefID+"/edit?message=Nome é obrigatório", http.StatusSeeOther)
+		message := url.QueryEscape(tr(r, "Machine name is required"))
+		http.Redirect(w, r, "/tools/forms/"+formRefID+"/elements/"+elementRefID+"/edit?message="+message, http.StatusSeeOther)
 		return
 	}
 

@@ -36,7 +36,7 @@
         name="{{$name}}"
         {{if $required}}required{{end}}
         {{if $readonly}}disabled{{end}}>
-    <option value="">Selecione...</option>
+    <option value="">{{t .Locale "Select…"}}</option>
     <option value="true" {{if eq $value true}}selected{{end}}>{{t .Locale "Yes"}}</option>
     <option value="false" {{if eq $value false}}selected{{end}}>{{t .Locale "No"}}</option>
 </select>

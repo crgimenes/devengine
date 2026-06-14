@@ -22,7 +22,7 @@
             <div class="col-md-9">
                 <div class="card p-4">
                     <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h2 class="mb-0">Menu Editor</h2>
+                        <h2 class="mb-0">{{t $.Locale "Menu Editor"}}</h2>
                         <a href="/tools/menu-editor/new" class="btn btn-primary">
                             <i class="bi bi-plus-lg"></i> {{t $.Locale "New menu"}}
                         </a>
@@ -35,7 +35,7 @@
                             <thead>
                                 <tr>
                                     <th>{{t $.Locale "Name"}}</th>
-                                    <th>Identificador</th>
+                                    <th>Identifier</th>
                                     <th>{{t $.Locale "Description"}}</th>
                                     <th class="text-end">{{t $.Locale "Actions"}}</th>
                                 </tr>
@@ -49,7 +49,7 @@
                                     <td><code>{{.MachineName}}</code></td>
                                     <td>{{.Description}}</td>
                                     <td class="text-end">
-                                        <a href="/tools/menu-editor/{{.ReferenceID}}/preview" class="btn btn-sm btn-success me-1">Testar</a>
+                                        <a href="/tools/menu-editor/{{.ReferenceID}}/preview" class="btn btn-sm btn-success me-1">Try it</a>
                                         <a href="/tools/menu-editor/{{.ReferenceID}}/edit" class="btn btn-sm btn-outline-primary me-1">{{t $.Locale "Edit"}}</a>
                                         <form method="post" action="/tools/menu-editor/{{.ReferenceID}}/delete" class="d-inline" data-confirm-message="{{t $.Locale "Delete this menu?"}}">
                                             <button type="submit" class="btn btn-sm btn-outline-danger">{{t $.Locale "Delete"}}</button>

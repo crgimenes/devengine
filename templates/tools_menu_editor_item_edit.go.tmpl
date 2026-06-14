@@ -69,7 +69,7 @@
                                     {{end}}
                                     {{end}}
                                 </select>
-                                <div class="form-text">Coloca este item como filho de outro item</div>
+                                <div class="form-text">Nests this item under another item</div>
                             </div>
                         </div>
 
@@ -79,15 +79,15 @@
                                 <select class="form-select" id="item_type" name="item_type">
                                     <option value="link" {{if eq .Item.ItemType "link"}}selected{{end}}>Link</option>
                                     <option value="submenu" {{if eq .Item.ItemType "submenu"}}selected{{end}}>Submenu</option>
-                                    <option value="separator" {{if eq .Item.ItemType "separator"}}selected{{end}}>Separador</option>
+                                    <option value="separator" {{if eq .Item.ItemType "separator"}}selected{{end}}>Separator</option>
                                 </select>
-                                <div class="form-text">Define o comportamento do item</div>
+                                <div class="form-text">Defines what the item does</div>
                             </div>
 
                             <div class="col-md-6 mb-3">
                                 <label for="url" class="form-label">{{t $.Locale "Link (URL)"}}</label>
                                 <input type="text" class="form-control" id="url" name="url" 
-                                       value="{{.Item.URL}}" placeholder="/exemplo ou https://...">
+                                       value="{{.Item.URL}}" placeholder="/example or https://...">
                                 <div class="form-text">{{t $.Locale "URL for direct navigation"}}</div>
                             </div>
                         </div>
@@ -102,7 +102,7 @@
                         <div class="mb-3">
                             <label for="filo_code" class="form-label">{{t $.Locale "Filo code"}}</label>
                             <textarea class="form-control font-monospace" id="filo_code" name="filo_code" rows="4"
-                                      placeholder="(let () (print &quot;Executado no servidor&quot;))">{{.Item.FiloCode}}</textarea>
+                                      placeholder="(let () (print &quot;Executed on the server&quot;))">{{.Item.FiloCode}}</textarea>
                             <div class="form-text">{{t $.Locale "Filo code run on the server when the item is clicked"}}</div>
                         </div>
 

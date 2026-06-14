@@ -55,7 +55,7 @@ document.addEventListener('DOMContentLoaded', function () {
                     })
                     .catch(function (err) {
                         // Show error in Bootstrap alert by reloading with error param
-                        const redirectUrl = window.location.pathname + '?error=' + encodeURIComponent('Erro: ' + err.message);
+                        const redirectUrl = window.location.pathname + '?error=' + encodeURIComponent('Error: ' + err.message);
                         window.location.href = redirectUrl;
                     });
             }

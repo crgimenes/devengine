@@ -26,8 +26,8 @@
                         <h2 class="mb-1">{{.EntityType.Name}} - {{t $.Locale "Records"}}</h2>
                         <nav aria-label="breadcrumb">
                             <ol class="breadcrumb mb-0">
-                                <li class="breadcrumb-item"><a href="/tools">Tools</a></li>
-                                <li class="breadcrumb-item"><a href="/tools/database-schema">Database Schema</a></li>
+                                <li class="breadcrumb-item"><a href="/tools">{{t $.Locale "Tools"}}</a></li>
+                                <li class="breadcrumb-item"><a href="/tools/database-schema">{{t $.Locale "Database Schema"}}</a></li>
                                 <li class="breadcrumb-item"><a href="/tools/database-schema/eav/{{.EntityType.ReferenceID}}/edit">{{.EntityType.Name}}</a></li>
                                 <li class="breadcrumb-item active">{{t $.Locale "Records"}}</li>
                             </ol>
@@ -45,7 +45,7 @@
 
                 <!-- Total count -->
                 <div class="mb-3">
-                    <p class="text-muted mb-0">Total: <strong>{{.Total}}</strong> registro(s)</p>
+                    <p class="text-muted mb-0">Total: <strong>{{.Total}}</strong> record(s)</p>
                 </div>
 
                 <!-- Card Grid -->
@@ -63,9 +63,9 @@
                                 <!-- Status badge -->
                                 <div class="mb-2">
                                     {{if eq .Record.Status "active"}}
-                                        <span class="badge bg-success">Ativo</span>
+                                        <span class="badge bg-success">Active</span>
                                     {{else}}
-                                        <span class="badge bg-warning">Rascunho</span>
+                                        <span class="badge bg-warning">Draft</span>
                                     {{end}}
                                     <span class="badge bg-secondary font-monospace">{{slice .Record.ReferenceID 0 8}}</span>
                                 </div>
@@ -89,7 +89,7 @@
 
                                 <!-- Metadata -->
                                 <div class="mb-3">
-                                    <small class="text-muted d-block">Criado: {{fmtDatetime .Record.CreatedAt}}</small>
+                                    <small class="text-muted d-block">Created: {{fmtDatetime .Record.CreatedAt}}</small>
                                     <small class="text-muted d-block">Rev: {{.Record.Rev}}</small>
                                 </div>
 

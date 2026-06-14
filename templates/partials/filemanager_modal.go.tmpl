@@ -3,19 +3,19 @@
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-header">
-        <h5 class="modal-title" data-filemanager-title>Selecionar Arquivo</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fechar"></button>
+        <h5 class="modal-title" data-filemanager-title>Select file</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <div class="modal-body">
         <div class="mb-4">
-          <label class="form-label" data-filemanager-list-label>Seus arquivos</label>
+          <label class="form-label" data-filemanager-list-label>Your files</label>
           <div id="fileManagerList" class="border rounded scroll-container-sm">
             <div class="text-center text-body-secondary py-4"><small>{{t $.Locale "Loading..."}}</small></div>
           </div>
         </div>
 
         <div class="mb-4 text-center">
-          <small class="text-body-secondary">ou</small>
+          <small class="text-body-secondary">or</small>
         </div>
 
         <div class="mb-3">
@@ -23,12 +23,12 @@
           <form id="fileManagerUploadForm" enctype="multipart/form-data" class="needs-validation" novalidate>
             <div class="mb-3">
               <input class="form-control" type="file" id="fileManagerFileInput" name="file" required>
-              <small class="form-text text-body-secondary" data-filemanager-accept-help>Formatos permitidos</small>
+              <small class="form-text text-body-secondary" data-filemanager-accept-help>Allowed formats</small>
             </div>
 
             <div class="mb-3">
               <label class="form-label" for="fileManagerDescription">{{t $.Locale "Description (optional)"}}</label>
-              <textarea class="form-control" id="fileManagerDescription" name="description" rows="2" maxlength="500" placeholder="Descreva o arquivo..."></textarea>
+              <textarea class="form-control" id="fileManagerDescription" name="description" rows="2" maxlength="500" placeholder="Describe the file..."></textarea>
               <small class="form-text text-body-secondary">{{t $.Locale "Maximum 500 characters"}}</small>
             </div>
 
@@ -39,14 +39,14 @@
         </div>
 
         <div class="mb-3 text-center">
-          <small class="text-body-secondary">ou</small>
+          <small class="text-body-secondary">or</small>
         </div>
 
         <div class="mb-0">
-          <label class="form-label" for="fileManagerUrlInput" data-filemanager-url-label>Inserir URL Direta</label>
+          <label class="form-label" for="fileManagerUrlInput" data-filemanager-url-label>Insert direct URL</label>
           <div class="input-group">
-            <input type="url" class="form-control" id="fileManagerUrlInput" placeholder="https://exemplo.com/arquivo" aria-label="URL do arquivo">
-            <button class="btn btn-outline-secondary" type="button" id="fileManagerInsertUrlBtn">Inserir</button>
+            <input type="url" class="form-control" id="fileManagerUrlInput" placeholder="https://example.com/file" aria-label="File URL">
+            <button class="btn btn-outline-secondary" type="button" id="fileManagerInsertUrlBtn">Insert</button>
           </div>
         </div>
       </div>

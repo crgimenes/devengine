@@ -74,9 +74,9 @@
                         <table class="table table-hover table-sm">
                             <thead>
                                 <tr>
-                                    <th class="col-order">Ordem</th>
+                                    <th class="col-order">Order</th>
                                     <th>Label</th>
-                                    <th>Machine Name</th>
+                                    <th>{{t $.Locale "Machine name"}}</th>
                                     <th>{{t $.Locale "Parent item"}}</th>
                                     <th>{{t $.Locale "Icon"}}</th>
                                     <th class="text-end">{{t $.Locale "Actions"}}</th>
@@ -88,10 +88,10 @@
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             <form method="post" action="/tools/menu-editor/{{$.Menu.ReferenceID}}/items/{{.ReferenceID}}/up" class="d-inline">
-                                                <button type="submit" class="btn btn-outline-secondary btn-sm py-0" title="Mover para cima">↑</button>
+                                                <button type="submit" class="btn btn-outline-secondary btn-sm py-0" title="Move up">↑</button>
                                             </form>
                                             <form method="post" action="/tools/menu-editor/{{$.Menu.ReferenceID}}/items/{{.ReferenceID}}/down" class="d-inline">
-                                                <button type="submit" class="btn btn-outline-secondary btn-sm py-0" title="Mover para baixo">↓</button>
+                                                <button type="submit" class="btn btn-outline-secondary btn-sm py-0" title="Move down">↓</button>
                                             </form>
                                         </div>
                                     </td>
@@ -113,7 +113,7 @@
                                         <a href="/tools/menu-editor/{{$.Menu.ReferenceID}}/items/{{.ReferenceID}}/edit" class="btn btn-sm btn-outline-primary">{{t $.Locale "Edit"}}</a>
                                         <form method="post" action="/tools/menu-editor/{{$.Menu.ReferenceID}}/items/{{.ReferenceID}}/delete" class="d-inline" 
                                               hx-post="/tools/menu-editor/{{$.Menu.ReferenceID}}/items/{{.ReferenceID}}/delete"
-                                              hx-confirm="Excluir este item?">
+                                              hx-confirm="{{t $.Locale "Delete this item?"}}">
                                             <button type="submit" class="btn btn-sm btn-outline-danger">{{t $.Locale "Delete"}}</button>
                                         </form>
                                     </td>
@@ -142,7 +142,7 @@
                             <div class="col-md-3">
                                 <label for="new_machine_name" class="form-label form-label-sm">{{t $.Locale "Machine name"}}</label>
                                 <input type="text" class="form-control form-control-sm" id="new_machine_name" 
-                                       name="machine_name" required pattern="[a-z][a-z0-9_]*" placeholder="inicio">
+                                       name="machine_name" required pattern="[a-z][a-z0-9_]*" placeholder="home">
                             </div>
                             <div class="col-md-2">
                                 <label for="new_icon" class="form-label form-label-sm">{{t $.Locale "Icon"}}</label>

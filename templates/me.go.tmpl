@@ -47,7 +47,7 @@
                                 <label for="email" class="form-label">Email</label>
                                 <input type="email" class="form-control" id="email" name="email"
                                     value="{{.User.Email}}" autocomplete="email">
-                                <small class="form-text text-muted">Opcional. Usado para receber convites e notificacoes.</small>
+                                <small class="form-text text-muted">Optional. Used to receive invites and notifications.</small>
                             </div>
 
                             <div class="mb-3">
@@ -74,7 +74,7 @@
                                     placeholder="{{t $.Locale "Pick a username"}}"
                                     autofocus>
                                 <small class="form-text text-muted">
-                                    O nome de usuario deve ser unico e unico em todo o sistema
+                                    The username must be unique across the system
                                 </small>
                             </div>
 
@@ -113,9 +113,9 @@
                         <p class="mb-1"><small><strong>Email:</strong> {{.User.Email}}</small></p>
                         <p class="mb-1"><small><strong>Status:</strong> 
                             {{if .User.Enabled}}
-                                <span class="badge bg-success">Ativa</span>
+                                <span class="badge bg-success">Active</span>
                             {{else}}
-                                <span class="badge bg-warning">Incompleta</span>
+                                <span class="badge bg-warning">Incomplete</span>
                             {{end}}
                         </small></p>
                     </div>

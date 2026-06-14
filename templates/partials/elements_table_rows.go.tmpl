@@ -2,11 +2,11 @@
 {{range .Elements}}
 <tr>
     <td class="text-nowrap">
-        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" title="Mover para cima"
+        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" title="Move up"
                 hx-post="/tools/forms/{{$.Form.ReferenceID}}/elements/{{.ReferenceID}}/up"
                 hx-target="#elements-tbody"
                 hx-swap="innerHTML">▲</button>
-        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" title="Mover para baixo"
+        <button type="button" class="btn btn-sm btn-outline-secondary py-0 px-1" title="Move down"
                 hx-post="/tools/forms/{{$.Form.ReferenceID}}/elements/{{.ReferenceID}}/down"
                 hx-target="#elements-tbody"
                 hx-swap="innerHTML">▼</button>
@@ -18,7 +18,7 @@
     </td>
     <td>
         {{if eq .ElementKind "group"}}
-            <span class="badge bg-primary">grupo</span>
+            <span class="badge bg-primary">group</span>
         {{else if eq .ElementKind "accordion"}}
             <span class="badge bg-primary">accordion</span>
         {{else if eq .ElementKind "card"}}
@@ -28,13 +28,13 @@
         {{else if eq .ElementKind "carousel"}}
             <span class="badge bg-primary">carousel</span>
         {{else if eq .ElementKind "divider"}}
-            <span class="badge bg-dark">divisor</span>
+            <span class="badge bg-dark">divider</span>
         {{else}}
-            <span class="badge bg-info">campo</span>
+            <span class="badge bg-info">field</span>
         {{end}}
     </td>
     <td>{{.Label}}</td>
-    <td><span class="badge bg-dark" title="{{.ColSpan}} colunas">{{.ColSpan}}</span></td>
+    <td><span class="badge bg-dark" title="{{.ColSpan}} columns">{{.ColSpan}}</span></td>
     <td>
         {{if .ParentLabel}}
             <small class="text-muted">{{.ParentLabel}}</small>

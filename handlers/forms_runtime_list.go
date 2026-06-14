@@ -165,7 +165,7 @@ func resolveReferenceDisplays(form *db.Form, attributes []db.EAVAttribute, rows 
 
 // FormsRuntimeList renders the end-user listing of a form's records with the
 // ordered, cursor-based infinite scroll. Each row links to the runtime editor
-// and a "Novo" button points at the create view.
+// and a "New" button points at the create view.
 func (h *Handlers) FormsRuntimeList(w http.ResponseWriter, r *http.Request) {
 	user, _, authed, err := auth.Prelude(w, r,
 		[]string{http.MethodGet},

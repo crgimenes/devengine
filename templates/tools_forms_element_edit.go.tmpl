@@ -62,20 +62,20 @@
                         
                         <div class="row mb-4">
                             <div class="col-md-4">
-                                <label for="element_kind" class="form-label">Tipo de Elemento</label>
+                                <label for="element_kind" class="form-label">Element type</label>
                                 <select class="form-select" id="element_kind" name="element_kind">
-                                    <option value="field" {{if eq .Element.ElementKind "field"}}selected{{end}}>Campo</option>
-                                    <option value="group" {{if eq .Element.ElementKind "group"}}selected{{end}}>Grupo (fieldset)</option>
-                                    <option value="accordion" {{if eq .Element.ElementKind "accordion"}}selected{{end}}>Accordion</option>
-                                    <option value="card" {{if eq .Element.ElementKind "card"}}selected{{end}}>Card</option>
-                                    <option value="tabs" {{if eq .Element.ElementKind "tabs"}}selected{{end}}>Tabs</option>
-                                    <option value="carousel" {{if eq .Element.ElementKind "carousel"}}selected{{end}}>Carousel</option>
+                                    <option value="field" {{if eq .Element.ElementKind "field"}}selected{{end}}>Field</option>
+                                    <option value="group" {{if eq .Element.ElementKind "group"}}selected{{end}}>Group (fieldset)</option>
+                                    <option value="accordion" {{if eq .Element.ElementKind "accordion"}}selected{{end}}>{{t $.Locale "Accordion"}}</option>
+                                    <option value="card" {{if eq .Element.ElementKind "card"}}selected{{end}}>{{t $.Locale "Card"}}</option>
+                                    <option value="tabs" {{if eq .Element.ElementKind "tabs"}}selected{{end}}>{{t $.Locale "Tabs"}}</option>
+                                    <option value="carousel" {{if eq .Element.ElementKind "carousel"}}selected{{end}}>{{t $.Locale "Carousel"}}</option>
                                     <option value="button" {{if eq .Element.ElementKind "button"}}selected{{end}}>{{t $.Locale "Action button"}}</option>
-                                    <option value="divider" {{if eq .Element.ElementKind "divider"}}selected{{end}}>Divisor</option>
+                                    <option value="divider" {{if eq .Element.ElementKind "divider"}}selected{{end}}>Divider</option>
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label for="ui_kind" class="form-label">Plugin de UI</label>
+                                <label for="ui_kind" class="form-label">UI plugin</label>
                                 <select class="form-select" id="ui_kind" name="ui_kind">
                                     <option value="" {{if eq .Element.UIKind ""}}selected{{end}}>-- {{t $.Locale "Default"}} --</option>
                                     {{$current := .Element.UIKind}}
@@ -85,9 +85,9 @@
                                 </select>
                             </div>
                             <div class="col-md-4">
-                                <label for="eav_attribute_id" class="form-label">Atributo EAV</label>
+                                <label for="eav_attribute_id" class="form-label">EAV attribute</label>
                                 <select class="form-select" id="eav_attribute_id" name="eav_attribute_id">
-                                    <option value="">-- Apenas UI --</option>
+                                    <option value="">-- UI only --</option>
                                     {{range .EAVAttributes}}
                                     <option value="{{.ReferenceID}}" {{if $.Element.EAVAttributeID}}{{if eq .ID (deref $.Element.EAVAttributeID)}}selected{{end}}{{end}}>
                                         {{.Label}} ({{.MachineName}})
@@ -98,10 +98,10 @@
                         </div>
 
                         <!-- Layout -->
-                        <h5 class="mb-3 border-bottom pb-2">Layout e Hierarquia</h5>
+                        <h5 class="mb-3 border-bottom pb-2">Layout and hierarchy</h5>
                         <div class="row mb-4">
                             <div class="col-md-3">
-                                <label for="parent_id" class="form-label">Grupo Pai</label>
+                                <label for="parent_id" class="form-label">Parent group</label>
                                 <select class="form-select" id="parent_id" name="parent_id">
                                     <option value="">-- {{t $.Locale "Form root"}} --</option>
                                     {{range .GroupElements}}
@@ -110,13 +110,13 @@
                                     </option>
                                     {{end}}
                                 </select>
-                                <div class="form-text">Coloque este elemento dentro de um grupo</div>
+                                <div class="form-text">Place this element inside a group</div>
                             </div>
                             <div class="col-md-2">
                                 <label for="z_order" class="form-label">{{t $.Locale "Order"}}</label>
                                 <input type="number" class="form-control" id="z_order" name="z_order" 
                                        value="{{.Element.ZOrder}}" min="0">
-                                <div class="form-text">Menor = primeiro</div>
+                                <div class="form-text">Lower = first</div>
                             </div>
                             <div class="col-md-3">
                                 <label for="col_span" class="form-label">{{t $.Locale "Width (columns)"}}</label>
@@ -127,14 +127,14 @@
                                     </option>
                                     {{end}}
                                 </select>
-                                <div class="form-text">Sistema de 12 colunas</div>
+                                <div class="form-text">12-column system</div>
                             </div>
                             <div class="col-md-4">
                                 <label for="alignment" class="form-label">{{t $.Locale "Horizontal alignment"}}</label>
                                 <select class="form-select" id="alignment" name="alignment">
-                                    <option value="left" {{if eq .Element.Alignment "left"}}selected{{end}}>Esquerda</option>
-                                    <option value="center" {{if eq .Element.Alignment "center"}}selected{{end}}>Centralizado</option>
-                                    <option value="right" {{if eq .Element.Alignment "right"}}selected{{end}}>Direita</option>
+                                    <option value="left" {{if eq .Element.Alignment "left"}}selected{{end}}>Left</option>
+                                    <option value="center" {{if eq .Element.Alignment "center"}}selected{{end}}>Center</option>
+                                    <option value="right" {{if eq .Element.Alignment "right"}}selected{{end}}>Right</option>
                                 </select>
                                 <div class="form-text">{{t $.Locale "Position when narrower than 12 columns"}}</div>
                             </div>
@@ -155,7 +155,7 @@
                                     <input class="form-check-input" type="checkbox" id="is_readonly" name="is_readonly"
                                            {{if .Element.IsReadonly}}checked{{end}}>
                                     <label class="form-check-label" for="is_readonly">
-                                        Somente Leitura
+                                        {{t $.Locale "Read only"}}
                                     </label>
                                 </div>
                             </div>
@@ -190,10 +190,10 @@
                         <!-- UI Meta JSON -->
                         <h5 class="mb-3 border-bottom pb-2">{{t $.Locale "Advanced settings (JSON)"}}</h5>
                         <div class="mb-4">
-                            <label for="ui_meta_json" class="form-label">Metadados do Plugin</label>
+                            <label for="ui_meta_json" class="form-label">Plugin metadata</label>
                             <textarea class="form-control font-monospace" id="ui_meta_json" name="ui_meta_json" 
-                                      rows="4" placeholder='{"placeholder": "Digite aqui...", "maxLength": 100}'>{{.Element.UIMetaJSON}}</textarea>
-                            <div class="form-text">JSON livre interpretado pelo plugin (ex.: reference: {"entity": "cliente", "display": "nome"}).</div>
+                                      rows="4" placeholder='{"placeholder": "Type here...", "maxLength": 100}'>{{.Element.UIMetaJSON}}</textarea>
+                            <div class="form-text">Free-form JSON interpreted by the plugin (for example, reference: {"entity": "customer", "display": "name"}).</div>
                         </div>
 
                         <div class="mb-3">
@@ -214,14 +214,14 @@
                             
                             <div class="row mb-3">
                                 <div class="col-md-6">
-                                    <label for="button_style" class="form-label">Estilo</label>
+                                    <label for="button_style" class="form-label">Style</label>
                                     <select class="form-select" id="button_style" name="button_style">
-                                        <option value="primary" {{if eq .Element.ButtonStyle "primary"}}selected{{end}}>Primary (Azul)</option>
-                                        <option value="secondary" {{if eq .Element.ButtonStyle "secondary"}}selected{{end}}>Secondary (Cinza)</option>
-                                        <option value="success" {{if eq .Element.ButtonStyle "success"}}selected{{end}}>Success (Verde)</option>
-                                        <option value="danger" {{if eq .Element.ButtonStyle "danger"}}selected{{end}}>Danger (Vermelho)</option>
-                                        <option value="warning" {{if eq .Element.ButtonStyle "warning"}}selected{{end}}>Warning (Amarelo)</option>
-                                        <option value="info" {{if eq .Element.ButtonStyle "info"}}selected{{end}}>Info (Ciano)</option>
+                                        <option value="primary" {{if eq .Element.ButtonStyle "primary"}}selected{{end}}>Primary (blue)</option>
+                                        <option value="secondary" {{if eq .Element.ButtonStyle "secondary"}}selected{{end}}>Secondary (gray)</option>
+                                        <option value="success" {{if eq .Element.ButtonStyle "success"}}selected{{end}}>Success (green)</option>
+                                        <option value="danger" {{if eq .Element.ButtonStyle "danger"}}selected{{end}}>Danger (red)</option>
+                                        <option value="warning" {{if eq .Element.ButtonStyle "warning"}}selected{{end}}>Warning (yellow)</option>
+                                        <option value="info" {{if eq .Element.ButtonStyle "info"}}selected{{end}}>Info (cyan)</option>
                                         <option value="outline-primary" {{if eq .Element.ButtonStyle "outline-primary"}}selected{{end}}>Outline Primary</option>
                                         <option value="outline-secondary" {{if eq .Element.ButtonStyle "outline-secondary"}}selected{{end}}>Outline Secondary</option>
                                     </select>
@@ -253,11 +253,11 @@
                             </div>
                             
                             <div class="mb-3">
-                                <label for="button_js_code" class="form-label">JavaScript (cliente)</label>
+                                <label for="button_js_code" class="form-label">JavaScript (client)</label>
                                 <textarea class="form-control font-monospace" id="button_js_code" name="button_js_code" 
                                           rows="4" placeholder="// formData holds the form data
 // return false to cancel the action">{{.Element.ButtonJSCode}}</textarea>
-                                <div class="form-text">Executado no navegador antes de enviar ao servidor. Retorne false para cancelar.</div>
+                                <div class="form-text">Runs in the browser before submitting to the server. Return false to cancel.</div>
                             </div>
                         </div>
 
