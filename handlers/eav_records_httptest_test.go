@@ -88,7 +88,7 @@ func recordValues(t *testing.T, s db.Store, ent adminEntity) (*db.EAVRecord, map
 	out := make(map[string]any, len(vals))
 	for _, v := range vals {
 		name := byAttrID[v.AttributeID]
-		out[name] = unwrapValue(kinds[name], v)
+		out[name] = db.UnwrapEAVValue(kinds[name], v)
 	}
 	return &rec, out
 }

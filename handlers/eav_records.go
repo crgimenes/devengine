@@ -541,9 +541,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 	}
 
 	refID := utils.NewOpaqueID()
-	var recordID int64
-	var recordRefID string
-	err = tx.QueryRow(`INSERT INTO eav_records (reference_id, entity_type_id, status, rev) VALUES (?, ?, 'draft', 1) RETURNING id, reference_id`, refID, entityType.ID).Scan(&recordID, &recordRefID)
+	recordID, err := tx.InsertEAVRecordWithRef(refID, entityType.ID, "draft")
 	if err != nil {
 		http.Redirect(w, r, "/tools/database-schema/eav/"+entityRefID+"/records?message="+tr(r, "Could not create the record"), http.StatusSeeOther)
 		return
@@ -581,18 +579,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 			}
 		}
 
-		err = tx.Exec(`
-			INSERT INTO eav_values (record_id, attribute_id, v_bool, v_int, v_real, v_text, v_datetime)
-			VALUES (?, ?, ?, ?, ?, ?, ?)
-			ON CONFLICT(record_id, attribute_id) DO UPDATE SET
-				v_bool = excluded.v_bool,
-				v_int = excluded.v_int,
-				v_real = excluded.v_real,
-				v_text = excluded.v_text,
-				v_datetime = excluded.v_datetime,
-				updated_at = datetime('now')
-		`, recordID, attr.ID, vBool, vInt, vReal, vText, vDatetime)
-		if err != nil {
+		if err := tx.UpsertEAVValue(recordID, attr.ID, vBool, vInt, vReal, vText, vDatetime); err != nil {
 			ref := logRef("ToolsDatabaseSchemaEAVRecordCreate", err)
 			redirectBack(tr(r, "Could not save the value (ref %s)", ref))
 			return
@@ -600,7 +587,7 @@ func (h *Handlers) ToolsDatabaseSchemaEAVRecordCreate(w http.ResponseWriter, r *
 	}
 
 	// Activation must bump rev to satisfy the trigger constraint.
-	err = tx.Exec(`UPDATE eav_records SET status = 'active', rev = rev + 1 WHERE id = ?`, recordID)
+	err = tx.ActivateEAVRecord(recordID)
 	if err != nil {
 		ref := logRef("ToolsDatabaseSchemaEAVRecordCreate", err)
 		redirectBack(tr(r, "Could not activate the record (ref %s)", ref))

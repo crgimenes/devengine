@@ -141,7 +141,7 @@ func choicesFor(entity, displayAttr string) []templates.ReferenceChoice {
 		if display != nil {
 			values, err := db.Storage.GetEAVValuesByRecordID(rec.ID)
 			if err == nil {
-				label = formatDisplay(display.PrimitiveKind, values, display.ID, rec.ReferenceID)
+				label = db.FormatEAVValue(display.PrimitiveKind, values, display.ID, rec.ReferenceID)
 			}
 		}
 		out = append(out, templates.ReferenceChoice{
@@ -150,38 +150,4 @@ func choicesFor(entity, displayAttr string) []templates.ReferenceChoice {
 		})
 	}
 	return out
-}
-
-func formatDisplay(kind string, values []db.EAVValue, attrID int64, fallback string) string {
-	for _, v := range values {
-		if v.AttributeID != attrID {
-			continue
-		}
-		switch kind {
-		case "TEXT":
-			if v.VText != nil {
-				return *v.VText
-			}
-		case "INT":
-			if v.VInt != nil {
-				return fmt.Sprintf("%d", *v.VInt)
-			}
-		case "REAL":
-			if v.VReal != nil {
-				return fmt.Sprintf("%g", *v.VReal)
-			}
-		case "BOOL":
-			if v.VBool != nil {
-				if *v.VBool {
-					return "true"
-				}
-				return "false"
-			}
-		case "DATETIME":
-			if v.VDatetime != nil {
-				return *v.VDatetime
-			}
-		}
-	}
-	return fallback
 }

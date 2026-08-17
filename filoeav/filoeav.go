@@ -41,7 +41,8 @@ type Storage interface {
 	GetEAVRecordByRefID(refID string) (*db.EAVRecord, error)
 	GetEAVValuesByRecordID(recordID int64) ([]db.EAVValue, error)
 	ListEAVAttributesByEntityTypeID(entityTypeID int64) ([]db.EAVAttribute, error)
-	QueryRow(query string, args ...any) *db.Row
+	CountEAVRecords(entityTypeID int64) (int, error)
+	CountEAVRecordsWhere(entityTypeID, attributeID int64, primitiveKind string, value any) (int, error)
 	Execer // eav-set-value fallback when no transaction is given
 }
 
@@ -228,10 +229,7 @@ func (c *Context) count(_ context.Context, args []filo.Value) (filo.Value, error
 		return filo.VNum(0), nil
 	}
 
-	var n int64
-	const q = `SELECT COUNT(*) FROM eav_records
-		WHERE entity_type_id = ? AND deleted_at IS NULL`
-	err = c.storage.QueryRow(q, et.ID).Scan(&n)
+	n, err := c.storage.CountEAVRecords(et.ID)
 	if err != nil {
 		return filo.Value{}, err
 	}
@@ -259,19 +257,12 @@ func (c *Context) countWhere(_ context.Context, args []filo.Value) (filo.Value, 
 		return filo.VNum(0), nil
 	}
 
-	col, param, err := matchValueColumn(attr.PrimitiveKind, args[2])
+	_, param, err := matchValueColumn(attr.PrimitiveKind, args[2])
 	if err != nil {
 		return filo.Value{}, fmt.Errorf("eav-count-where: %w", err)
 	}
 
-	q := `SELECT COUNT(*) FROM eav_records r
-		JOIN eav_values v ON v.record_id = r.id
-		WHERE r.entity_type_id = ?
-		AND v.attribute_id = ?
-		AND r.deleted_at IS NULL
-		AND v.` + col + ` = ?`
-	var n int64
-	err = c.storage.QueryRow(q, et.ID, attr.ID, param).Scan(&n)
+	n, err := c.storage.CountEAVRecordsWhere(et.ID, attr.ID, attr.PrimitiveKind, param)
 	if err != nil {
 		return filo.Value{}, err
 	}
@@ -327,26 +318,7 @@ func (c *Context) getValue(_ context.Context, args []filo.Value) (filo.Value, er
 }
 
 func (c *Context) resolveAttr(entityName, attrName string) (*db.EAVEntityType, *db.EAVAttribute, error) {
-	et, err := c.storage.GetEAVEntityTypeByMachineName(entityName)
-	if err != nil {
-		if errors.Is(err, db.ErrNotFound) {
-			return nil, nil, nil
-		}
-		return nil, nil, err
-	}
-	if et == nil {
-		return nil, nil, nil
-	}
-	attrs, err := c.storage.ListEAVAttributesByEntityTypeID(et.ID)
-	if err != nil {
-		return et, nil, err
-	}
-	for i := range attrs {
-		if attrs[i].MachineName == attrName {
-			return et, &attrs[i], nil
-		}
-	}
-	return et, nil, nil
+	return db.LookupEAVEntityTypeAndAttribute(c.storage, entityName, attrName)
 }
 
 // matchValueColumn returns the v_* column name and a Go-typed value that
