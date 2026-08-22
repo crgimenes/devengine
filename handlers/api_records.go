@@ -420,8 +420,7 @@ func (h *Handlers) runAPIPipeline(w http.ResponseWriter, r *http.Request, user *
 // apiSaveError maps save failures: authored pre_save messages pass verbatim
 // as 422, unique violations as 409, the rest hides behind a log ref.
 func apiSaveError(w http.ResponseWriter, scope string, err error) {
-	var userErr db.UserError
-	if errors.As(err, &userErr) {
+	if userErr, ok := errors.AsType[db.UserError](err); ok {
 		apiError(w, http.StatusUnprocessableEntity, userErr.Error(), nil)
 		return
 	}

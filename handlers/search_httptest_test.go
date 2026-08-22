@@ -315,7 +315,7 @@ func TestMenuItemCreateOpensItemEditor(t *testing.T) {
 
 	// Re-GET only the path: the ?message= part carries spaces that
 	// httptest.NewRequest rejects (browsers tolerate them).
-	path := strings.SplitN(strings.TrimPrefix(loc, "http://localhost:3210"), "?", 2)[0]
+	path, _, _ := strings.Cut(strings.TrimPrefix(loc, "http://localhost:3210"), "?")
 	rr = doGet(t, mux, path, admin)
 	assertRendered(t, rr, path)
 	if !strings.Contains(rr.Body.String(), "docs") {

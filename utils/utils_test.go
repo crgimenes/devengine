@@ -83,8 +83,7 @@ func TestTagErrorMessage(t *testing.T) {
 	if err.Error() != "bad tag" {
 		t.Fatalf("Error() = %q", err.Error())
 	}
-	var te TagError
-	if !errors.As(err, &te) {
+	if _, ok := errors.AsType[TagError](err); !ok {
 		t.Fatal("errors.As failed")
 	}
 }

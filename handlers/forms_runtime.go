@@ -942,8 +942,7 @@ func runPreSave(tx db.Tx, entityType *db.EAVEntityType, values db.EAVRecordValue
 // revision becomes an actionable conflict notice; anything else is logged
 // under a reference id and replaced by a generic text.
 func saveErrorMessage(r *http.Request, scope string, err error) string {
-	var userErr db.UserError
-	if errors.As(err, &userErr) {
+	if userErr, ok := errors.AsType[db.UserError](err); ok {
 		return string(userErr)
 	}
 	if errors.Is(err, db.ErrConflict) {

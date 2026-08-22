@@ -1,6 +1,6 @@
 module github.com/crgimenes/devengine
 
-go 1.26
+go 1.27
 
 require (
 	github.com/crgimenes/filo v0.0.9
