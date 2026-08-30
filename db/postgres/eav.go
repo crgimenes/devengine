@@ -1232,3 +1232,75 @@ func (s *Postgres) GetEAVValuesByRecordID(recordID int64) ([]db.EAVValue, error)
 	}
 	return list, rows.Err()
 }
+
+// CountEAVRecords returns the total number of non-deleted records for an entity type.
+func (s *Postgres) CountEAVRecords(entityTypeID int64) (int, error) {
+	const q = `SELECT COUNT(*) FROM eav_records WHERE entity_type_id = $1 AND deleted_at IS NULL`
+	var n int
+	err := s.QueryRow(q, entityTypeID).Scan(&n)
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
+// CountEAVRecordsWhere counts non-deleted records whose attribute value matches.
+// The primitiveKind determines which v_* column is queried.
+func (s *Postgres) CountEAVRecordsWhere(entityTypeID, attributeID int64, primitiveKind string, value any) (int, error) {
+	var q string
+	switch primitiveKind {
+	case "BOOL":
+		q = `SELECT COUNT(*) FROM eav_records r
+			JOIN eav_values v ON v.record_id = r.id
+			WHERE r.entity_type_id = $1 AND v.attribute_id = $2 AND r.deleted_at IS NULL AND v.v_bool = $3`
+	case "INT":
+		q = `SELECT COUNT(*) FROM eav_records r
+			JOIN eav_values v ON v.record_id = r.id
+			WHERE r.entity_type_id = $1 AND v.attribute_id = $2 AND r.deleted_at IS NULL AND v.v_int = $3`
+	case "REAL":
+		q = `SELECT COUNT(*) FROM eav_records r
+			JOIN eav_values v ON v.record_id = r.id
+			WHERE r.entity_type_id = $1 AND v.attribute_id = $2 AND r.deleted_at IS NULL AND v.v_real = $3`
+	case "TEXT":
+		q = `SELECT COUNT(*) FROM eav_records r
+			JOIN eav_values v ON v.record_id = r.id
+			WHERE r.entity_type_id = $1 AND v.attribute_id = $2 AND r.deleted_at IS NULL AND v.v_text = $3`
+	case "DATETIME":
+		q = `SELECT COUNT(*) FROM eav_records r
+			JOIN eav_values v ON v.record_id = r.id
+			WHERE r.entity_type_id = $1 AND v.attribute_id = $2 AND r.deleted_at IS NULL AND v.v_datetime = $3`
+	default:
+		return 0, fmt.Errorf("%w: unsupported primitive_kind %q", db.ErrInvalidValue, primitiveKind)
+	}
+	var n int
+	err := s.QueryRow(q, entityTypeID, attributeID, value).Scan(&n)
+	if err != nil {
+		return 0, err
+	}
+	return n, nil
+}
+
+// ListEAVRecordsByAttributeValue returns non-deleted records (up to 200) whose
+// TEXT attribute value matches the given string, ordered by created_at DESC.
+func (s *Postgres) ListEAVRecordsByAttributeValue(entityTypeID, attributeID int64, value string) ([]db.EAVRecord, error) {
+	const q = `SELECT r.id, r.reference_id, r.entity_type_id, r.status, r.rev, r.created_at, r.updated_at
+		FROM eav_records r
+		JOIN eav_values v ON v.record_id = r.id
+		WHERE r.entity_type_id = $1 AND v.attribute_id = $2 AND v.v_text = $3 AND r.deleted_at IS NULL
+		ORDER BY r.created_at DESC
+		LIMIT 200`
+	rows, err := s.Query(q, entityTypeID, attributeID, value)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []db.EAVRecord
+	for rows.Next() {
+		var r db.EAVRecord
+		if err := rows.Scan(&r.ID, &r.ReferenceID, &r.EntityTypeID, &r.Status, &r.Rev, &r.CreatedAt, &r.UpdatedAt); err != nil {
+			return nil, err
+		}
+		out = append(out, r)
+	}
+	return out, rows.Err()
+}

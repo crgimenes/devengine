@@ -208,7 +208,7 @@ func (h *Handlers) fetchRecordRows(
 			if a == nil {
 				continue
 			}
-			valMap[a.MachineName] = unwrapValue(a.PrimitiveKind, v)
+			valMap[a.MachineName] = db.UnwrapEAVValue(a.PrimitiveKind, v)
 		}
 		rows[i] = RecordRow{Record: rec, Values: valMap}
 	}
@@ -239,34 +239,6 @@ func loadFormAndEntity(r *http.Request, w http.ResponseWriter) (*db.Form, *db.EA
 		return form, nil, err
 	}
 	return form, et, nil
-}
-
-// unwrapValue picks the right typed column based on the attribute's primitive
-// kind and returns a Go value the template can render directly.
-func unwrapValue(primitive string, v db.EAVValue) any {
-	switch primitive {
-	case "BOOL":
-		if v.VBool != nil {
-			return *v.VBool
-		}
-	case "INT":
-		if v.VInt != nil {
-			return *v.VInt
-		}
-	case "REAL":
-		if v.VReal != nil {
-			return *v.VReal
-		}
-	case "TEXT":
-		if v.VText != nil {
-			return *v.VText
-		}
-	case "DATETIME":
-		if v.VDatetime != nil {
-			return *v.VDatetime
-		}
-	}
-	return nil
 }
 
 func formatValue(v any) string {

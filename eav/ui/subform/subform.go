@@ -21,7 +21,6 @@ package subform
 import (
 	"embed"
 	"encoding/json"
-	"strconv"
 
 	"github.com/crgimenes/devengine/db"
 	"github.com/crgimenes/devengine/eav/ui"
@@ -104,61 +103,21 @@ func recordsFor(targetEntity, targetAttr, parentRef, displayAttr string) []templ
 		return nil
 	}
 
-	const q = `SELECT r.id, r.reference_id
-        FROM eav_records r
-        JOIN eav_values v ON v.record_id = r.id
-        WHERE r.entity_type_id = ?
-        AND v.attribute_id = ?
-        AND v.v_text = ?
-        AND r.deleted_at IS NULL
-        ORDER BY r.created_at DESC
-        LIMIT 200`
-
-	rows, err := db.Storage.Query(q, et.ID, ptrAttrID, parentRef)
+	records, err := db.Storage.ListEAVRecordsByAttributeValue(et.ID, ptrAttrID, parentRef)
 	if err != nil {
 		return nil
 	}
-	defer rows.Close()
 
 	var out []templates.SubformRecord
-	for rows.Next() {
-		var id int64
-		var ref string
-		err := rows.Scan(&id, &ref)
-		if err != nil {
-			continue
-		}
-		label := ref
+	for _, rec := range records {
+		label := rec.ReferenceID
 		if displayID != 0 {
-			vals, err := db.Storage.GetEAVValuesByRecordID(id)
+			vals, err := db.Storage.GetEAVValuesByRecordID(rec.ID)
 			if err == nil {
-				label = formatDisplay(displayKind, vals, displayID, ref)
+				label = db.FormatEAVValue(displayKind, vals, displayID, rec.ReferenceID)
 			}
 		}
-		out = append(out, templates.SubformRecord{ReferenceID: ref, Label: label})
+		out = append(out, templates.SubformRecord{ReferenceID: rec.ReferenceID, Label: label})
 	}
 	return out
-}
-
-func formatDisplay(kind string, values []db.EAVValue, attrID int64, fallback string) string {
-	for _, v := range values {
-		if v.AttributeID != attrID {
-			continue
-		}
-		switch kind {
-		case "TEXT":
-			if v.VText != nil {
-				return *v.VText
-			}
-		case "INT":
-			if v.VInt != nil {
-				return strconv.FormatInt(*v.VInt, 10)
-			}
-		case "DATETIME":
-			if v.VDatetime != nil {
-				return *v.VDatetime
-			}
-		}
-	}
-	return fallback
 }

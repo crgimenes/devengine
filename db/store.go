@@ -37,7 +37,10 @@ type Tx interface {
 	QueryRow(query string, args ...any) *Row
 
 	InsertEAVRecord(entityTypeID int64) (int64, string, error)
+	InsertEAVRecordWithRef(refID string, entityTypeID int64, status string) (int64, error)
 	BumpEAVRecordRev(recordID int64) error
+	UpsertEAVValue(recordID, attributeID int64, vBool *bool, vInt *int64, vReal *float64, vText, vDatetime *string) error
+	ActivateEAVRecord(recordID int64) error
 	SaveRecordValues(recordID int64, attributes []EAVAttribute, values EAVRecordValues) error
 }
 
@@ -166,6 +169,10 @@ type EAVStore interface {
 	DeleteEAVValue(recordID, attributeID int64) error
 	GetEAVValuesByRecordID(recordID int64) ([]EAVValue, error)
 	GetEAVValuesForRecordIDs(ids []int64) (map[int64][]EAVValue, error)
+
+	CountEAVRecords(entityTypeID int64) (int, error)
+	CountEAVRecordsWhere(entityTypeID, attributeID int64, primitiveKind string, value any) (int, error)
+	ListEAVRecordsByAttributeValue(entityTypeID, attributeID int64, value string) ([]EAVRecord, error)
 }
 
 // FormStore manages form definitions and their elements.
