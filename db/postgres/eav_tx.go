@@ -151,3 +151,38 @@ func (t *Transaction) SaveRecordValues(recordID int64, attributes []db.EAVAttrib
 	}
 	return nil
 }
+
+// InsertEAVRecordWithRef creates a record with the given reference_id and
+// status inside the transaction and returns the new record's database id.
+func (t *Transaction) InsertEAVRecordWithRef(refID string, entityTypeID int64, status string) (int64, error) {
+	const q = `INSERT INTO eav_records (reference_id, entity_type_id, status, rev)
+		VALUES ($1, $2, $3, 1)
+		RETURNING id`
+	var id int64
+	err := t.QueryRow(q, refID, entityTypeID, status).Scan(&id)
+	if err != nil {
+		return 0, err
+	}
+	return id, nil
+}
+
+// UpsertEAVValue inserts or replaces a value for a (record, attribute) pair
+// inside the transaction.
+func (t *Transaction) UpsertEAVValue(recordID, attributeID int64, vBool *bool, vInt *int64, vReal *float64, vText, vDatetime *string) error {
+	const q = `INSERT INTO eav_values (record_id, attribute_id, v_bool, v_int, v_real, v_text, v_datetime)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		ON CONFLICT (record_id, attribute_id) DO UPDATE SET
+			v_bool = excluded.v_bool,
+			v_int = excluded.v_int,
+			v_real = excluded.v_real,
+			v_text = excluded.v_text,
+			v_datetime = excluded.v_datetime,
+			updated_at = now()`
+	return t.Exec(q, recordID, attributeID, vBool, vInt, vReal, vText, vDatetime)
+}
+
+// ActivateEAVRecord sets status to 'active' and bumps rev inside the
+// transaction.
+func (t *Transaction) ActivateEAVRecord(recordID int64) error {
+	return t.Exec(`UPDATE eav_records SET status = 'active', rev = rev + 1 WHERE id = $1`, recordID)
+}

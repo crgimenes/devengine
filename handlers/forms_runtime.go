@@ -256,7 +256,7 @@ func recordValuesMap(eavValues []db.EAVValue, attributes []db.EAVAttribute) map[
 		if attr == nil {
 			continue
 		}
-		v := unwrapValue(attr.PrimitiveKind, val)
+		v := db.UnwrapEAVValue(attr.PrimitiveKind, val)
 		if v != nil {
 			values[attr.MachineName] = v
 		}

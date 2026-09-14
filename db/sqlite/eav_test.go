@@ -1221,3 +1221,349 @@ func TestEAVFullFlow(t *testing.T) {
 		t.Error("expected no records after soft delete")
 	}
 }
+
+// ====================================================================
+// New aggregation / lookup / tx helper tests
+// ====================================================================
+
+func TestSQLite_CountEAVRecords(t *testing.T) {
+	t.Parallel()
+
+	s := initTestDBWithEAVMigrations(t)
+	defer s.Close()
+
+	et, err := s.CreateEAVEntityType("Test", "test", "", "", "")
+	if err != nil {
+		t.Fatalf("CreateEAVEntityType() error: %v", err)
+	}
+
+	for range 3 {
+		_, err := s.CreateEAVRecord(et.ID)
+		if err != nil {
+			t.Fatalf("CreateEAVRecord() error: %v", err)
+		}
+	}
+
+	n, err := s.CountEAVRecords(et.ID)
+	if err != nil {
+		t.Fatalf("CountEAVRecords() error: %v", err)
+	}
+	if n != 3 {
+		t.Errorf("expected 3, got %d", n)
+	}
+}
+
+func TestSQLite_CountEAVRecords_ExcludesSoftDeleted(t *testing.T) {
+	t.Parallel()
+
+	s := initTestDBWithEAVMigrations(t)
+	defer s.Close()
+
+	et, err := s.CreateEAVEntityType("Test", "test", "", "", "")
+	if err != nil {
+		t.Fatalf("CreateEAVEntityType() error: %v", err)
+	}
+
+	rec, err := s.CreateEAVRecord(et.ID)
+	if err != nil {
+		t.Fatalf("CreateEAVRecord() error: %v", err)
+	}
+
+	_, err = s.CreateEAVRecord(et.ID)
+	if err != nil {
+		t.Fatalf("CreateEAVRecord() error: %v", err)
+	}
+
+	if err := s.SoftDeleteEAVRecord(rec.ID); err != nil {
+		t.Fatalf("SoftDeleteEAVRecord() error: %v", err)
+	}
+
+	n, err := s.CountEAVRecords(et.ID)
+	if err != nil {
+		t.Fatalf("CountEAVRecords() error: %v", err)
+	}
+	if n != 1 {
+		t.Errorf("expected 1 (after soft delete), got %d", n)
+	}
+}
+
+func TestSQLite_CountEAVRecordsWhere_Text(t *testing.T) {
+	t.Parallel()
+
+	s := initTestDBWithEAVMigrations(t)
+	defer s.Close()
+
+	et, err := s.CreateEAVEntityType("Test", "test", "", "", "")
+	if err != nil {
+		t.Fatalf("CreateEAVEntityType() error: %v", err)
+	}
+
+	attr, err := s.CreateEAVAttribute(et.ID, "color", "Color", "", "TEXT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatalf("CreateEAVAttribute() error: %v", err)
+	}
+
+	rec1, err := s.CreateEAVRecord(et.ID)
+	if err != nil {
+		t.Fatalf("CreateEAVRecord() error: %v", err)
+	}
+	rec2, err := s.CreateEAVRecord(et.ID)
+	if err != nil {
+		t.Fatalf("CreateEAVRecord() error: %v", err)
+	}
+
+	red := "red"
+	blue := "blue"
+	if err := s.UpsertEAVValue(rec1.ID, attr.ID, nil, nil, nil, &red, nil); err != nil {
+		t.Fatalf("UpsertEAVValue(red) error: %v", err)
+	}
+	if err := s.UpsertEAVValue(rec2.ID, attr.ID, nil, nil, nil, &blue, nil); err != nil {
+		t.Fatalf("UpsertEAVValue(blue) error: %v", err)
+	}
+
+	n, err := s.CountEAVRecordsWhere(et.ID, attr.ID, "TEXT", "red")
+	if err != nil {
+		t.Fatalf("CountEAVRecordsWhere() error: %v", err)
+	}
+	if n != 1 {
+		t.Errorf("expected 1 record with 'red', got %d", n)
+	}
+}
+
+func TestSQLite_CountEAVRecordsWhere_InvalidKind(t *testing.T) {
+	t.Parallel()
+
+	s := initTestDBWithEAVMigrations(t)
+	defer s.Close()
+
+	_, err := s.CountEAVRecordsWhere(1, 1, "INVALID", nil)
+	if err == nil {
+		t.Fatal("expected error for invalid primitive kind")
+	}
+}
+
+func TestSQLite_ListEAVRecordsByAttributeValue(t *testing.T) {
+	t.Parallel()
+
+	s := initTestDBWithEAVMigrations(t)
+	defer s.Close()
+
+	et, err := s.CreateEAVEntityType("Test", "test", "", "", "")
+	if err != nil {
+		t.Fatalf("CreateEAVEntityType() error: %v", err)
+	}
+
+	attr, err := s.CreateEAVAttribute(et.ID, "status", "Status", "", "TEXT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatalf("CreateEAVAttribute() error: %v", err)
+	}
+
+	// Create 2 records with "active", 1 with "inactive"
+	for i := 0; i < 2; i++ {
+		rec, err := s.CreateEAVRecord(et.ID)
+		if err != nil {
+			t.Fatalf("CreateEAVRecord() error: %v", err)
+		}
+		v := "active"
+		if err := s.UpsertEAVValue(rec.ID, attr.ID, nil, nil, nil, &v, nil); err != nil {
+			t.Fatalf("UpsertEAVValue() error: %v", err)
+		}
+	}
+
+	rec, err := s.CreateEAVRecord(et.ID)
+	if err != nil {
+		t.Fatalf("CreateEAVRecord() error: %v", err)
+	}
+	v := "inactive"
+	if err := s.UpsertEAVValue(rec.ID, attr.ID, nil, nil, nil, &v, nil); err != nil {
+		t.Fatalf("UpsertEAVValue() error: %v", err)
+	}
+
+	results, err := s.ListEAVRecordsByAttributeValue(et.ID, attr.ID, "active")
+	if err != nil {
+		t.Fatalf("ListEAVRecordsByAttributeValue() error: %v", err)
+	}
+	if len(results) != 2 {
+		t.Errorf("expected 2 records with 'active', got %d", len(results))
+	}
+}
+
+func TestSQLite_ListEAVRecordsByAttributeValue_ExcludesSoftDeleted(t *testing.T) {
+	t.Parallel()
+
+	s := initTestDBWithEAVMigrations(t)
+	defer s.Close()
+
+	et, err := s.CreateEAVEntityType("Test", "test", "", "", "")
+	if err != nil {
+		t.Fatalf("CreateEAVEntityType() error: %v", err)
+	}
+
+	attr, err := s.CreateEAVAttribute(et.ID, "status", "Status", "", "TEXT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatalf("CreateEAVAttribute() error: %v", err)
+	}
+
+	rec1, err := s.CreateEAVRecord(et.ID)
+	if err != nil {
+		t.Fatalf("CreateEAVRecord() error: %v", err)
+	}
+	v := "active"
+	if err := s.UpsertEAVValue(rec1.ID, attr.ID, nil, nil, nil, &v, nil); err != nil {
+		t.Fatalf("UpsertEAVValue() error: %v", err)
+	}
+
+	rec2, err := s.CreateEAVRecord(et.ID)
+	if err != nil {
+		t.Fatalf("CreateEAVRecord() error: %v", err)
+	}
+	if err := s.UpsertEAVValue(rec2.ID, attr.ID, nil, nil, nil, &v, nil); err != nil {
+		t.Fatalf("UpsertEAVValue() error: %v", err)
+	}
+
+	// Soft delete rec1
+	if err := s.SoftDeleteEAVRecord(rec1.ID); err != nil {
+		t.Fatalf("SoftDeleteEAVRecord() error: %v", err)
+	}
+
+	results, err := s.ListEAVRecordsByAttributeValue(et.ID, attr.ID, "active")
+	if err != nil {
+		t.Fatalf("ListEAVRecordsByAttributeValue() error: %v", err)
+	}
+	if len(results) != 1 {
+		t.Errorf("expected 1 record (excluding soft-deleted), got %d", len(results))
+	}
+}
+
+func TestTransaction_InsertEAVRecordWithRef(t *testing.T) {
+	t.Parallel()
+
+	s := initTestDBWithEAVMigrations(t)
+	defer s.Close()
+
+	et, err := s.CreateEAVEntityType("Test", "test", "", "", "")
+	if err != nil {
+		t.Fatalf("CreateEAVEntityType() error: %v", err)
+	}
+
+	tx, err := s.BeginTransaction()
+	if err != nil {
+		t.Fatalf("BeginTransaction() error: %v", err)
+	}
+	defer tx.Rollback()
+
+	recordID, err := tx.InsertEAVRecordWithRef("my-ref", et.ID, "draft")
+	if err != nil {
+		t.Fatalf("InsertEAVRecordWithRef() error: %v", err)
+	}
+
+	if recordID == 0 {
+		t.Error("expected non-zero record ID")
+	}
+
+	// Verify via direct query within the same tx
+	var status string
+	var rev int
+	var refID string
+	err = tx.QueryRow(`SELECT status, rev, reference_id FROM eav_records WHERE id = ?`, recordID).Scan(&status, &rev, &refID)
+	if err != nil {
+		t.Fatalf("query within tx failed: %v", err)
+	}
+	if status != "draft" {
+		t.Errorf("expected status 'draft', got %q", status)
+	}
+	if rev != 1 {
+		t.Errorf("expected rev 1, got %d", rev)
+	}
+	if refID != "my-ref" {
+		t.Errorf("expected refID 'my-ref', got %q", refID)
+	}
+}
+
+func TestTransaction_UpsertEAVValue(t *testing.T) {
+	t.Parallel()
+
+	s := initTestDBWithEAVMigrations(t)
+	defer s.Close()
+
+	et, err := s.CreateEAVEntityType("Test", "test", "", "", "")
+	if err != nil {
+		t.Fatalf("CreateEAVEntityType() error: %v", err)
+	}
+
+	attr, err := s.CreateEAVAttribute(et.ID, "score", "Score", "", "INT", false, false, false, nil, false, "", nil, nil, nil, nil, nil)
+	if err != nil {
+		t.Fatalf("CreateEAVAttribute() error: %v", err)
+	}
+
+	rec, err := s.CreateEAVRecord(et.ID)
+	if err != nil {
+		t.Fatalf("CreateEAVRecord() error: %v", err)
+	}
+
+	tx, err := s.BeginTransaction()
+	if err != nil {
+		t.Fatalf("BeginTransaction() error: %v", err)
+	}
+	defer tx.Rollback()
+
+	vInt := int64(100)
+	if err := tx.UpsertEAVValue(rec.ID, attr.ID, nil, &vInt, nil, nil, nil); err != nil {
+		t.Fatalf("UpsertEAVValue() error: %v", err)
+	}
+
+	// Overwrite
+	vInt2 := int64(200)
+	if err := tx.UpsertEAVValue(rec.ID, attr.ID, nil, &vInt2, nil, nil, nil); err != nil {
+		t.Fatalf("UpsertEAVValue() overwrite error: %v", err)
+	}
+
+	var got int64
+	err = tx.QueryRow(`SELECT v_int FROM eav_values WHERE record_id = ? AND attribute_id = ?`, rec.ID, attr.ID).Scan(&got)
+	if err != nil {
+		t.Fatalf("query within tx failed: %v", err)
+	}
+	if got != 200 {
+		t.Errorf("expected v_int 200 (overwritten), got %d", got)
+	}
+}
+
+func TestTransaction_ActivateEAVRecord(t *testing.T) {
+	t.Parallel()
+
+	s := initTestDBWithEAVMigrations(t)
+	defer s.Close()
+
+	et, err := s.CreateEAVEntityType("Test", "test", "", "", "")
+	if err != nil {
+		t.Fatalf("CreateEAVEntityType() error: %v", err)
+	}
+
+	rec, err := s.CreateEAVRecord(et.ID)
+	if err != nil {
+		t.Fatalf("CreateEAVRecord() error: %v", err)
+	}
+
+	tx, err := s.BeginTransaction()
+	if err != nil {
+		t.Fatalf("BeginTransaction() error: %v", err)
+	}
+	defer tx.Rollback()
+
+	if err := tx.ActivateEAVRecord(rec.ID); err != nil {
+		t.Fatalf("ActivateEAVRecord() error: %v", err)
+	}
+
+	var status string
+	var rev int
+	err = tx.QueryRow(`SELECT status, rev FROM eav_records WHERE id = ?`, rec.ID).Scan(&status, &rev)
+	if err != nil {
+		t.Fatalf("query within tx failed: %v", err)
+	}
+	if status != "active" {
+		t.Errorf("expected status 'active', got %q", status)
+	}
+	if rev != 2 {
+		t.Errorf("expected rev 2, got %d", rev)
+	}
+}
