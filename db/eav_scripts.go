@@ -49,7 +49,7 @@ func filoDefaultConfig() filo.EvalConfig {
 //
 // Returns:
 //   - modifiedValues: Values after script execution (may be modified by script)
-//   - userError: User-facing error message if script set "error" variable
+//   - userError: User-facing error message if script set "user_error" variable
 //   - err: System error if script execution failed
 func ExecutePreSaveScript(
 	entityType *EAVEntityType,
@@ -73,7 +73,7 @@ func ExecutePreSaveScript(
 //
 // Returns:
 //   - modifiedValues: Values after script execution (may be modified by script)
-//   - userError: User-facing error message if script set "error" variable
+//   - userError: User-facing error message if script set "user_error" variable
 //   - err: System error if script execution failed
 func ExecutePreSaveScriptWithSetup(
 	entityType *EAVEntityType,
@@ -98,7 +98,7 @@ func ExecutePreSaveScriptWithSetup(
 //
 // Returns:
 //   - modifiedValues: Values after script execution (may be modified by script)
-//   - userError: User-facing error message if script set "error" variable
+//   - userError: User-facing error message if script set "user_error" variable
 //   - err: System error if script execution failed
 func ExecutePosLoadScript(
 	entityType *EAVEntityType,
@@ -126,8 +126,10 @@ func executeFiloScript(script string, values EAVRecordValues, scriptName string,
 		globals["field:"+k] = goValueToFiloValue(v)
 	}
 
-	// Inject empty error variable
-	globals["error"] = filo.VString("")
+	// The sentinel carries a validation failure back to the host. It is not
+	// named "error": that is a filo builtin, and a builtin shadows a global of
+	// the same name, so (set error ...) fails to compile.
+	globals["user_error"] = filo.VString("")
 
 	// Register log builtins (always available for debugging)
 	filolog.RegisterLogBuiltins(eng, filolog.NewContext(globals))
@@ -143,8 +145,7 @@ func executeFiloScript(script string, values EAVRecordValues, scriptName string,
 		return nil, "", fmt.Errorf("%s script execution failed: %w", scriptName, execErr)
 	}
 
-	// Check if error variable was set
-	if errVal, ok := newGlobals["error"]; ok {
+	if errVal, ok := newGlobals["user_error"]; ok {
 		if errVal.Kind == filo.KString && errVal.Str != "" {
 			return nil, errVal.Str, nil
 		}
@@ -158,8 +159,7 @@ func executeFiloScript(script string, values EAVRecordValues, scriptName string,
 
 	// Then, apply any modifications from the script (including new variables)
 	for kRaw, newVal := range newGlobals {
-		// Skip the built-in "error" variable
-		if kRaw == "error" {
+		if kRaw == "user_error" {
 			continue
 		}
 

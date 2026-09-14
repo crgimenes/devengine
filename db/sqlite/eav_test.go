@@ -215,7 +215,7 @@ func TestEAVUpdateEntityType(t *testing.T) {
 	}
 
 	// Update entity type
-	updated, err := s.UpdateEAVEntityType(created.ID, "New Name", "New description", "(set error \"test\")", "")
+	updated, err := s.UpdateEAVEntityType(created.ID, "New Name", "New description", "(set user_error \"test\")", "")
 	if err != nil {
 		t.Fatalf("UpdateEAVEntityType() error: %v", err)
 	}
@@ -227,8 +227,8 @@ func TestEAVUpdateEntityType(t *testing.T) {
 	if updated.Description != "New description" {
 		t.Errorf("expected Description = 'New description', got %q", updated.Description)
 	}
-	if updated.PreSave != "(set error \"test\")" {
-		t.Errorf("expected PosSave = '(set error \"test\")', got %q", updated.PreSave)
+	if updated.PreSave != "(set user_error \"test\")" {
+		t.Errorf("expected PosSave = '(set user_error \"test\")', got %q", updated.PreSave)
 	}
 
 	// machine_name should not change
@@ -244,8 +244,8 @@ func TestEAVUpdateEntityType(t *testing.T) {
 	if fetched.Name != "New Name" {
 		t.Errorf("fetched Name = %q, expected 'New Name'", fetched.Name)
 	}
-	if fetched.PreSave != "(set error \"test\")" {
-		t.Errorf("fetched PosSave = %q, expected '(set error \"test\")'", fetched.PreSave)
+	if fetched.PreSave != "(set user_error \"test\")" {
+		t.Errorf("fetched PosSave = %q, expected '(set user_error \"test\")'", fetched.PreSave)
 	}
 }
 
@@ -1359,7 +1359,7 @@ func TestSQLite_ListEAVRecordsByAttributeValue(t *testing.T) {
 	}
 
 	// Create 2 records with "active", 1 with "inactive"
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		rec, err := s.CreateEAVRecord(et.ID)
 		if err != nil {
 			t.Fatalf("CreateEAVRecord() error: %v", err)

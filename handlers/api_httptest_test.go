@@ -23,7 +23,7 @@ import (
 func seedAPIForm(t *testing.T, s db.Store) *db.Form {
 	t.Helper()
 	et, err := s.CreateEAVEntityType("Item", "item",
-		"", `(if (= field:titulo "bloqueado") (set error "este titulo nao pode"))`, "")
+		"", `(if (= field:titulo "bloqueado") (set user_error "este titulo nao pode"))`, "")
 	if err != nil {
 		t.Fatalf("CreateEAVEntityType: %v", err)
 	}

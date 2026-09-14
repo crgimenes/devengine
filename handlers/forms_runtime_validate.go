@@ -65,7 +65,7 @@ func runValidateExpr(
 	values db.EAVRecordValues,
 ) (string, error) {
 	globals := fieldGlobals(attributes, values)
-	globals["error"] = filo.VString("")
+	globals["user_error"] = filo.VString("")
 
 	eng := newFiloEngine(user, globals)
 
@@ -77,7 +77,7 @@ func runValidateExpr(
 		return "", fmt.Errorf("validate_expr (%s): %w", attr.MachineName, execErr)
 	}
 
-	if e, ok := newGlobals["error"]; ok && e.Kind == filo.KString && e.Str != "" {
+	if e, ok := newGlobals["user_error"]; ok && e.Kind == filo.KString && e.Str != "" {
 		return e.Str, nil
 	}
 

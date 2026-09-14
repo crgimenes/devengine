@@ -141,7 +141,7 @@ func (h *Handlers) runFiloScript(r *http.Request, user *db.User, script, globals
 		return out
 	}
 
-	if e, ok := newGlobals["error"]; ok && e.Kind == filo.KString && e.Str != "" {
+	if e, ok := newGlobals["user_error"]; ok && e.Kind == filo.KString && e.Str != "" {
 		out.UserError = e.Str
 	}
 

@@ -86,7 +86,7 @@ func TestFormsRuntimeButtonRunSaveCreates(t *testing.T) {
 func TestFormsRuntimeButtonFiloErrorBlocks(t *testing.T) {
 	mux, s := newHTTPTestEnv(t)
 	form := seedTaskForm(t, s, "Comprar leite")
-	addButton(t, s, form, "negar", `(set error "not allowed")`, true)
+	addButton(t, s, form, "negar", `(set user_error "not allowed")`, true)
 	user := plantUser(t, "user", false)
 
 	rr := doPostForm(t, mux, "/form/"+form.MachineName+"/action/negar",
@@ -181,7 +181,7 @@ func stockOf(t *testing.T, s db.Store, produtoRef string) int64 {
 }
 
 const stockFilo = `(if (< (eav-get-value "produto" field:produto "estoque") field:quantidade)
-    (set error "estoque insuficiente")
+    (set user_error "estoque insuficiente")
     (eav-set-value "produto" field:produto "estoque"
         (- (eav-get-value "produto" field:produto "estoque") field:quantidade)))`
 
@@ -235,7 +235,7 @@ func TestButtonEAVWriteRollsBackOnError(t *testing.T) {
 	form, produtoRef := seedStockScenario(t, s)
 	addButton(t, s, form, "confirmar",
 		`(eav-set-value "produto" field:produto "estoque" 0)
-		 (set error "abort after write")`, true)
+		 (set user_error "abort after write")`, true)
 	user := plantUser(t, "user", false)
 
 	rr := doPostForm(t, mux, "/form/"+form.MachineName+"/action/confirmar",

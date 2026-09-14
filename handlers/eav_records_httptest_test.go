@@ -212,7 +212,7 @@ func TestAdminRecordCreateUniqueViolation(t *testing.T) {
 
 func TestAdminRecordPreSaveBlocks(t *testing.T) {
 	mux, s := newHTTPTestEnv(t)
-	ent := seedAdminEntity(t, s, `(set error "blocked by script")`)
+	ent := seedAdminEntity(t, s, `(set user_error "blocked by script")`)
 	admin := plantUser(t, "admin", true)
 
 	rr := doPostForm(t, mux, adminRecordsBase(ent)+"/new", fullRecordForm(), admin)

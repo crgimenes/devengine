@@ -76,7 +76,7 @@ func TestRunFiloScriptInvalidGlobalsJSON(t *testing.T) {
 func TestRunFiloScriptErrorGlobalSurfaces(t *testing.T) {
 	h, user := setupFiloTest(t)
 
-	got := h.runFiloScript(httptest.NewRequest("POST", "/tools/filo/run", nil), user, `(set error "manual rejection")`, "")
+	got := h.runFiloScript(httptest.NewRequest("POST", "/tools/filo/run", nil), user, `(set user_error "manual rejection")`, "")
 	if got.UserError != "manual rejection" {
 		t.Fatalf("UserError = %q", got.UserError)
 	}

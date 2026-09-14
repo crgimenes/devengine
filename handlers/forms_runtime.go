@@ -673,7 +673,7 @@ func buttonFiloGlobals(form *db.Form, user *db.User, currentRecord *db.EAVRecord
 	}
 
 	// Control variables the script may set to influence the response.
-	globals["error"] = filo.VString("")
+	globals["user_error"] = filo.VString("")
 	globals["message"] = filo.VString("")
 	globals["redirect_to"] = filo.VString("")
 
@@ -717,7 +717,7 @@ func applyButtonGlobals(newGlobals map[string]filo.Value, attributes []db.EAVAtt
 	}
 
 	for kRaw, val := range newGlobals {
-		if kRaw == "error" && val.Kind == filo.KString && val.Str != "" {
+		if kRaw == "user_error" && val.Kind == filo.KString && val.Str != "" {
 			response["error"] = val.Str
 		}
 		if kRaw == "message" && val.Kind == filo.KString && val.Str != "" {

@@ -1,6 +1,7 @@
 package db
 
 import (
+	"errors"
 	"testing"
 )
 
@@ -149,7 +150,7 @@ func TestFormatEAVValue_SkipsNonMatchingAttributeIDs(t *testing.T) {
 	t.Parallel()
 	v := "target"
 	values := []EAVValue{
-		{AttributeID: 1, VText: strPtr("other")},
+		{AttributeID: 1, VText: new("other")},
 		{AttributeID: 2, VText: &v},
 	}
 	got := FormatEAVValue("TEXT", values, 2, "-")
@@ -158,4 +159,119 @@ func TestFormatEAVValue_SkipsNonMatchingAttributeIDs(t *testing.T) {
 	}
 }
 
-func strPtr(s string) *string { return &s }
+type lookupStub struct {
+	et      *EAVEntityType
+	etErr   error
+	attrs   []EAVAttribute
+	attrErr error
+}
+
+func (s lookupStub) GetEAVEntityTypeByMachineName(string) (*EAVEntityType, error) {
+	return s.et, s.etErr
+}
+
+func (s lookupStub) ListEAVAttributesByEntityTypeID(int64) ([]EAVAttribute, error) {
+	return s.attrs, s.attrErr
+}
+
+func TestEAVValueColumn(t *testing.T) {
+	t.Parallel()
+	for kind, want := range map[string]string{
+		"BOOL":     "v_bool",
+		"INT":      "v_int",
+		"REAL":     "v_real",
+		"TEXT":     "v_text",
+		"DATETIME": "v_datetime",
+	} {
+		got, err := EAVValueColumn(kind)
+		if err != nil {
+			t.Errorf("EAVValueColumn(%q) error: %v", kind, err)
+		}
+		if got != want {
+			t.Errorf("EAVValueColumn(%q) = %q, want %q", kind, got, want)
+		}
+	}
+}
+
+func TestEAVValueColumn_UnknownKind(t *testing.T) {
+	t.Parallel()
+	_, err := EAVValueColumn("JSON")
+	if !errors.Is(err, ErrInvalidValue) {
+		t.Fatalf("error = %v, want ErrInvalidValue", err)
+	}
+}
+
+func TestLookupEAVEntityTypeAndAttribute(t *testing.T) {
+	t.Parallel()
+	s := lookupStub{
+		et: &EAVEntityType{ID: 7, MachineName: "product"},
+		attrs: []EAVAttribute{
+			{ID: 1, MachineName: "sku", PrimitiveKind: "TEXT"},
+			{ID: 2, MachineName: "price", PrimitiveKind: "REAL"},
+		},
+	}
+	et, attr, err := LookupEAVEntityTypeAndAttribute(s, "product", "price")
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	if et == nil || et.ID != 7 {
+		t.Fatalf("entity type = %v, want ID 7", et)
+	}
+	if attr == nil || attr.ID != 2 {
+		t.Fatalf("attribute = %v, want ID 2", attr)
+	}
+}
+
+// A missing entity is not an error: the Filo builtins treat it as "no match"
+// and return an empty value rather than aborting the script.
+func TestLookupEAVEntityTypeAndAttribute_EntityNotFound(t *testing.T) {
+	t.Parallel()
+	for name, s := range map[string]lookupStub{
+		"ErrNotFound": {etErr: ErrNotFound},
+		"nil entity":  {et: nil},
+	} {
+		et, attr, err := LookupEAVEntityTypeAndAttribute(s, "ghost", "sku")
+		if err != nil || et != nil || attr != nil {
+			t.Errorf("%s: got (%v, %v, %v), want all nil", name, et, attr, err)
+		}
+	}
+}
+
+// An existing entity whose attribute is missing still returns the entity, so
+// the caller can tell "no such entity" from "no such attribute".
+func TestLookupEAVEntityTypeAndAttribute_AttributeNotFound(t *testing.T) {
+	t.Parallel()
+	s := lookupStub{
+		et:    &EAVEntityType{ID: 7, MachineName: "product"},
+		attrs: []EAVAttribute{{ID: 1, MachineName: "sku"}},
+	}
+	et, attr, err := LookupEAVEntityTypeAndAttribute(s, "product", "missing")
+	if err != nil {
+		t.Fatalf("error: %v", err)
+	}
+	if et == nil || et.ID != 7 {
+		t.Fatalf("entity type = %v, want ID 7", et)
+	}
+	if attr != nil {
+		t.Fatalf("attribute = %v, want nil", attr)
+	}
+}
+
+func TestLookupEAVEntityTypeAndAttribute_StorageErrors(t *testing.T) {
+	t.Parallel()
+	boom := errors.New("boom")
+
+	_, _, err := LookupEAVEntityTypeAndAttribute(lookupStub{etErr: boom}, "product", "sku")
+	if !errors.Is(err, boom) {
+		t.Errorf("entity lookup error = %v, want boom", err)
+	}
+
+	s := lookupStub{et: &EAVEntityType{ID: 7}, attrErr: boom}
+	et, attr, err := LookupEAVEntityTypeAndAttribute(s, "product", "sku")
+	if !errors.Is(err, boom) {
+		t.Errorf("attribute lookup error = %v, want boom", err)
+	}
+	if et == nil || attr != nil {
+		t.Errorf("got (%v, %v), want entity and nil attribute", et, attr)
+	}
+}

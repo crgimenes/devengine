@@ -69,7 +69,7 @@ func TestExecutePosSaveErrorVariable(t *testing.T) {
 	entityType := &EAVEntityType{
 		ID:      1,
 		Name:    "Test",
-		PreSave: `(set error "Campo obrigatório não preenchido")`,
+		PreSave: `(set user_error "Campo obrigatório não preenchido")`,
 	}
 
 	values := EAVRecordValues{
@@ -171,7 +171,7 @@ func TestExecutePosSaveConditionalValidation(t *testing.T) {
 		Name: "Test",
 		PreSave: `
 			(if (< field:price 0)
-				(set error "Preço deve ser positivo"))
+				(set user_error "Preço deve ser positivo"))
 		`,
 	}
 

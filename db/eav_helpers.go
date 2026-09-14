@@ -76,6 +76,25 @@ func FormatEAVValue(kind string, values []EAVValue, attrID int64, fallback strin
 	return fallback
 }
 
+// EAVValueColumn maps an attribute's primitive kind to the eav_values column
+// that stores it. The returned name is one of a closed set, never caller
+// input, so it is safe to interpolate into a query.
+func EAVValueColumn(primitiveKind string) (string, error) {
+	switch primitiveKind {
+	case "BOOL":
+		return "v_bool", nil
+	case "INT":
+		return "v_int", nil
+	case "REAL":
+		return "v_real", nil
+	case "TEXT":
+		return "v_text", nil
+	case "DATETIME":
+		return "v_datetime", nil
+	}
+	return "", fmt.Errorf("%w: unsupported primitive_kind %q", ErrInvalidValue, primitiveKind)
+}
+
 // LookupEAVEntityTypeAndAttribute resolves an entity type (by machine_name)
 // and an attribute (by machine_name) in one call. Returns nil, nil, nil when
 // the entity or attribute does not exist (no error).

@@ -127,7 +127,7 @@ func TestValidateExprErrorGlobalWins(t *testing.T) {
 		MachineName:    "name",
 		EAVAttributeID: &attr.ID,
 		Label:          "Nome",
-		ValidateExpr:   `(set error "via global")`,
+		ValidateExpr:   `(set user_error "via global")`,
 	}
 	values := db.EAVRecordValues{"name": "x"}
 

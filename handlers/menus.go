@@ -869,7 +869,7 @@ func (h *Handlers) MenuItemAction(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Control variables
-	globals["error"] = filo.VString("")
+	globals["user_error"] = filo.VString("")
 	globals["message"] = filo.VString("")
 	globals["redirect_to"] = filo.VString("")
 
@@ -906,7 +906,7 @@ func (h *Handlers) MenuItemAction(w http.ResponseWriter, r *http.Request) {
 		response["error"] = runErr.Error()
 	} else {
 		// Read control variables from returned globals
-		if errVal, ok := newGlobals["error"]; ok {
+		if errVal, ok := newGlobals["user_error"]; ok {
 			if errVal.Kind == filo.KString && errVal.Str != "" {
 				response["error"] = errVal.Str
 			}

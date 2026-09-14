@@ -13,6 +13,7 @@ linters:
       exclude-functions:
         - (*database/sql.Rows).Close
         - (*database/sql.Tx).Rollback
+        - (github.com/crgimenes/devengine/db.Tx).Rollback
         - (*os.File).Close
         - (net/http.File).Close
         - (mime/multipart.File).Close

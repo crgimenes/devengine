@@ -257,7 +257,7 @@ func (c *Context) countWhere(_ context.Context, args []filo.Value) (filo.Value, 
 		return filo.VNum(0), nil
 	}
 
-	_, param, err := matchValueColumn(attr.PrimitiveKind, args[2])
+	param, err := coerceValue(attr.PrimitiveKind, args[2])
 	if err != nil {
 		return filo.Value{}, fmt.Errorf("eav-count-where: %w", err)
 	}
@@ -321,38 +321,37 @@ func (c *Context) resolveAttr(entityName, attrName string) (*db.EAVEntityType, *
 	return db.LookupEAVEntityTypeAndAttribute(c.storage, entityName, attrName)
 }
 
-// matchValueColumn returns the v_* column name and a Go-typed value that
-// fits the attribute's primitive kind, given the raw Filo value the caller
-// passed in.
-func matchValueColumn(primitive string, v filo.Value) (string, any, error) {
+// coerceValue converts a raw Filo value into the Go type the attribute's
+// primitive kind stores, rejecting a mismatch.
+func coerceValue(primitive string, v filo.Value) (any, error) {
 	switch primitive {
 	case "BOOL":
 		if v.Kind != filo.KBool {
-			return "", nil, fmt.Errorf("attribute is BOOL but value is %s", filoKind(v.Kind))
+			return nil, fmt.Errorf("attribute is BOOL but value is %s", filoKind(v.Kind))
 		}
-		return "v_bool", v.Bool, nil
+		return v.Bool, nil
 	case "INT":
 		if v.Kind != filo.KNumber {
-			return "", nil, fmt.Errorf("attribute is INT but value is %s", filoKind(v.Kind))
+			return nil, fmt.Errorf("attribute is INT but value is %s", filoKind(v.Kind))
 		}
-		return "v_int", int64(v.Num), nil
+		return int64(v.Num), nil
 	case "REAL":
 		if v.Kind != filo.KNumber {
-			return "", nil, fmt.Errorf("attribute is REAL but value is %s", filoKind(v.Kind))
+			return nil, fmt.Errorf("attribute is REAL but value is %s", filoKind(v.Kind))
 		}
-		return "v_real", v.Num, nil
+		return v.Num, nil
 	case "TEXT":
 		if v.Kind != filo.KString {
-			return "", nil, fmt.Errorf("attribute is TEXT but value is %s", filoKind(v.Kind))
+			return nil, fmt.Errorf("attribute is TEXT but value is %s", filoKind(v.Kind))
 		}
-		return "v_text", v.Str, nil
+		return v.Str, nil
 	case "DATETIME":
 		if v.Kind != filo.KString {
-			return "", nil, fmt.Errorf("attribute is DATETIME but value is %s", filoKind(v.Kind))
+			return nil, fmt.Errorf("attribute is DATETIME but value is %s", filoKind(v.Kind))
 		}
-		return "v_datetime", v.Str, nil
+		return v.Str, nil
 	}
-	return "", nil, fmt.Errorf("unknown primitive kind %q", primitive)
+	return nil, fmt.Errorf("unknown primitive kind %q", primitive)
 }
 
 func valueToFilo(primitive string, v db.EAVValue) filo.Value {

@@ -325,7 +325,7 @@ func TestSaveErrorSentinelSeparatesUserFromInfra(t *testing.T) {
 		}
 	}
 
-	seed("blocked", `(set error "bloqueado pelo script")`)
+	seed("blocked", `(set user_error "bloqueado pelo script")`)
 	seed("broken", `(((this is not filo`)
 
 	rr := doPostForm(t, mux, "/form/blocked", url.Values{"nome": {"x"}}, user)
