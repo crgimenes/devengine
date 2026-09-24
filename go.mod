@@ -1,15 +1,15 @@
 module github.com/crgimenes/devengine
 
-go 1.27
+go 1.27.1
 
 require (
-	github.com/crgimenes/filo v0.0.21
+	github.com/crgimenes/filo v0.0.23
 	github.com/gomarkdown/markdown v0.0.0-20260417124207-7d523f7318df
 	github.com/jackc/pgx/v5 v5.10.0
 	github.com/microcosm-cc/bluemonday v1.0.27
 	github.com/testcontainers/testcontainers-go v0.42.0
 	github.com/testcontainers/testcontainers-go/modules/postgres v0.42.0
-	golang.org/x/term v0.45.0
+	golang.org/x/term v0.46.0
 	golang.org/x/text v0.38.0
 	modernc.org/sqlite v1.52.0
 )
@@ -74,7 +74,7 @@ require (
 	golang.org/x/crypto v0.53.0 // indirect
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/sync v0.21.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	modernc.org/libc v1.73.3 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
