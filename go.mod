@@ -3,7 +3,7 @@ module github.com/crgimenes/devengine
 go 1.27.4
 
 require (
-	github.com/crgimenes/filo v0.1.3
+	github.com/crgimenes/filo v0.1.4
 	github.com/gomarkdown/markdown v0.0.0-20261109103609-13f93121d67a
 	github.com/jackc/pgx/v5 v5.13.0
 	github.com/microcosm-cc/bluemonday v1.0.27
@@ -76,7 +76,7 @@ require (
 	golang.org/x/sync v0.25.0 // indirect
 	golang.org/x/sys v0.50.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	modernc.org/libc v1.81.0 // indirect
+	modernc.org/libc v1.81.2 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
-	modernc.org/memory v1.12.1 // indirect
+	modernc.org/memory v1.13.0 // indirect
 )
