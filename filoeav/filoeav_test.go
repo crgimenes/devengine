@@ -161,6 +161,96 @@ func TestUnknownEntity(t *testing.T) {
 	}
 }
 
+func TestSetValue(t *testing.T) {
+	s := newTestStore(t)
+	defer s.Close()
+
+	eID, attrID := seedPerson(t, s)
+	ref := insertRecordWithName(t, s, eID, attrID, "Alice")
+
+	before, err := s.GetEAVRecordByRefID(ref)
+	if err != nil {
+		t.Fatalf("GetEAVRecordByRefID: %v", err)
+	}
+
+	c := NewContext(s)
+	ok, err := c.setValue(context.Background(), []filo.Value{
+		filo.VString("person"), filo.VString(ref), filo.VString("name"), filo.VString("Bob"),
+	})
+	if err != nil {
+		t.Fatalf("setValue: %v", err)
+	}
+	if !ok.Bool {
+		t.Error("setValue = false, want true")
+	}
+
+	v, err := c.getValue(context.Background(), []filo.Value{
+		filo.VString("person"), filo.VString(ref), filo.VString("name"),
+	})
+	if err != nil {
+		t.Fatalf("getValue: %v", err)
+	}
+	if v.Str != "Bob" {
+		t.Errorf("getValue after set = %q, want Bob", v.Str)
+	}
+
+	after, err := s.GetEAVRecordByRefID(ref)
+	if err != nil {
+		t.Fatalf("GetEAVRecordByRefID after set: %v", err)
+	}
+	if after.Rev != before.Rev+1 {
+		t.Errorf("rev = %d, want %d", after.Rev, before.Rev+1)
+	}
+}
+
+func TestSetValueTx(t *testing.T) {
+	s := newTestStore(t)
+	defer s.Close()
+
+	eID, attrID := seedPerson(t, s)
+	ref := insertRecordWithName(t, s, eID, attrID, "Alice")
+
+	before, err := s.GetEAVRecordByRefID(ref)
+	if err != nil {
+		t.Fatalf("GetEAVRecordByRefID: %v", err)
+	}
+
+	tx, err := s.BeginTransaction()
+	if err != nil {
+		t.Fatalf("BeginTransaction: %v", err)
+	}
+	c := NewContextTx(s, tx)
+	_, err = c.setValue(context.Background(), []filo.Value{
+		filo.VString("person"), filo.VString(ref), filo.VString("name"), filo.VString("Bob"),
+	})
+	if err != nil {
+		_ = tx.Rollback()
+		t.Fatalf("setValue in tx: %v", err)
+	}
+	err = tx.Commit()
+	if err != nil {
+		t.Fatalf("Commit: %v", err)
+	}
+
+	v, err := NewContext(s).getValue(context.Background(), []filo.Value{
+		filo.VString("person"), filo.VString(ref), filo.VString("name"),
+	})
+	if err != nil {
+		t.Fatalf("getValue: %v", err)
+	}
+	if v.Str != "Bob" {
+		t.Errorf("getValue after tx set = %q, want Bob", v.Str)
+	}
+
+	after, err := s.GetEAVRecordByRefID(ref)
+	if err != nil {
+		t.Fatalf("GetEAVRecordByRefID after set: %v", err)
+	}
+	if after.Rev != before.Rev+1 {
+		t.Errorf("rev = %d, want %d", after.Rev, before.Rev+1)
+	}
+}
+
 func TestRejectsBadArity(t *testing.T) {
 	s := newTestStore(t)
 	defer s.Close()

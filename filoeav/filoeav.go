@@ -28,10 +28,11 @@ import (
 	"github.com/crgimenes/filo"
 )
 
-// Execer runs a write statement. A transaction satisfies it so script
-// writes join the caller's transaction.
-type Execer interface {
-	Exec(query string, args ...any) error
+// TxWriter is the slice of db.Tx that eav-set-value needs to join the
+// caller's transaction. Satisfied by db.Tx.
+type TxWriter interface {
+	UpsertEAVValue(recordID, attributeID int64, vBool *bool, vInt *int64, vReal *float64, vText, vDatetime *string) error
+	BumpEAVRecordRev(recordID int64) error
 }
 
 // Storage is the slice of the db contract these builtins need.
@@ -43,12 +44,14 @@ type Storage interface {
 	ListEAVAttributesByEntityTypeID(entityTypeID int64) ([]db.EAVAttribute, error)
 	CountEAVRecords(entityTypeID int64) (int, error)
 	CountEAVRecordsWhere(entityTypeID, attributeID int64, primitiveKind string, value any) (int, error)
-	Execer // eav-set-value fallback when no transaction is given
+	// eav-set-value fallback when no transaction is given; upserts and bumps
+	// rev atomically, checking against the rev read in the same call.
+	UpsertEAVValueWithRev(recordID, attributeID int64, currentRev int, vBool *bool, vInt *int64, vReal *float64, vText, vDatetime *string) (int, error)
 }
 
 type Context struct {
 	storage Storage
-	exec    Execer // nil: writes go straight through storage
+	exec    TxWriter // nil: writes go straight through storage
 }
 
 func NewContext(storage Storage) *Context {
@@ -57,7 +60,7 @@ func NewContext(storage Storage) *Context {
 
 // NewContextTx routes eav-set-value writes through the given executor,
 // typically the surrounding action's transaction.
-func NewContextTx(storage Storage, exec Execer) *Context {
+func NewContextTx(storage Storage, exec TxWriter) *Context {
 	return &Context{storage: storage, exec: exec}
 }
 
@@ -109,27 +112,21 @@ func (c *Context) setValue(_ context.Context, args []filo.Value) (filo.Value, er
 		return filo.Value{}, fmt.Errorf("eav-set-value (%s.%s): %w", entityName, attrName, err)
 	}
 
-	exec := c.exec
-	if exec == nil {
-		exec = c.storage
+	if c.exec != nil {
+		err = c.exec.UpsertEAVValue(rec.ID, attr.ID, vBool, vInt, vReal, vText, vDatetime)
+		if err != nil {
+			return filo.Value{}, fmt.Errorf("eav-set-value: %w", err)
+		}
+		err = c.exec.BumpEAVRecordRev(rec.ID)
+		if err != nil {
+			return filo.Value{}, fmt.Errorf("eav-set-value: bump rev: %w", err)
+		}
+		return filo.VBool(true), nil
 	}
-	err = exec.Exec(`
-		INSERT INTO eav_values (record_id, attribute_id, v_bool, v_int, v_real, v_text, v_datetime)
-		VALUES (?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT(record_id, attribute_id) DO UPDATE SET
-			v_bool = excluded.v_bool,
-			v_int = excluded.v_int,
-			v_real = excluded.v_real,
-			v_text = excluded.v_text,
-			v_datetime = excluded.v_datetime,
-			updated_at = datetime('now')
-	`, rec.ID, attr.ID, vBool, vInt, vReal, vText, vDatetime)
+
+	_, err = c.storage.UpsertEAVValueWithRev(rec.ID, attr.ID, rec.Rev, vBool, vInt, vReal, vText, vDatetime)
 	if err != nil {
 		return filo.Value{}, fmt.Errorf("eav-set-value: %w", err)
-	}
-	err = exec.Exec(`UPDATE eav_records SET rev = rev + 1, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, rec.ID)
-	if err != nil {
-		return filo.Value{}, fmt.Errorf("eav-set-value: bump rev: %w", err)
 	}
 	return filo.VBool(true), nil
 }
