@@ -1,0 +1,47 @@
+name: test
+
+on: [push, pull_request, workflow_dispatch]
+
+jobs:
+  test:
+    name: ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        runner: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - run: go build ./...
+      - run: go vet ./...
+      # The db/postgres conformance tests run against a testcontainers
+      # Postgres: they run for real on ubuntu-latest (docker available) and
+      # skip themselves on macOS/Windows runners, which have no docker.
+      # -count=1 so a cached skip never stands in for the containerized run.
+      - name: Test
+        timeout-minutes: 15
+        run: go test -race -count=1 -timeout 600s ./...
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: go.mod
+      - name: gofmt
+        run: test -z "$(gofmt -l .)" || { gofmt -l .; exit 1; }
+      - name: go.mod tidy
+        run: |
+          go mod tidy -diff || { echo "go.mod/go.sum not tidy: run go mod tidy"; exit 1; }
+      - name: Install golangci-lint
+        run: go install github.com/golangci/golangci-lint/v2/cmd/golangci-lint@v2.15.0
+      - name: Lint (every GOOS)
+        run: |
+          for os in darwin linux windows; do
+            echo "== GOOS=$os =="
+            GOOS=$os $(go env GOPATH)/bin/golangci-lint run ./...
+          done
