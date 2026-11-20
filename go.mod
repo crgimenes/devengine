@@ -3,7 +3,7 @@ module github.com/crgimenes/devengine
 go 1.27.4
 
 require (
-	github.com/crgimenes/filo v0.1.4
+	github.com/crgimenes/filo v0.1.5
 	github.com/gomarkdown/markdown v0.0.0-20261117205700-e8c6d33a8b6c
 	github.com/jackc/pgx/v5 v5.13.0
 	github.com/microcosm-cc/bluemonday v1.0.27

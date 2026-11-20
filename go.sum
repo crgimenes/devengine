@@ -24,8 +24,8 @@ github.com/cpuguy83/dockercfg v0.3.2 h1:DlJTyZGBDlXqUZ2Dk2Q3xHs/FtnooJJVaad2S9GK
 github.com/cpuguy83/dockercfg v0.3.2/go.mod h1:sugsbF4//dDlL/i+S+rtpIWp+5h0BHJHfjj5/jFyUJc=
 github.com/creack/pty v1.1.24 h1:bJrF4RRfyJnbTJqzRLHzcGaZK1NeM5kTC9jGgovnR1s=
 github.com/creack/pty v1.1.24/go.mod h1:08sCNb52WyoAwi2QDyzUCTgcvVFhUzewun7wtTfvcwE=
-github.com/crgimenes/filo v0.1.4 h1:/v+6qTs3i48z5sQWAdvVvJWdQQTb3NwVWMNIX9ther8=
-github.com/crgimenes/filo v0.1.4/go.mod h1:at6YbdrYygETZYeRNlqb5MwDHudvAnCHRIlMnfhaM14=
+github.com/crgimenes/filo v0.1.5 h1:4QvSVV2Ga5SESoL/7drQsb2pPK2Pwwgt8ZCvlS1QxZ0=
+github.com/crgimenes/filo v0.1.5/go.mod h1:at6YbdrYygETZYeRNlqb5MwDHudvAnCHRIlMnfhaM14=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/distribution/reference v0.6.0 h1:0IXCQ5g4/QMHHkarYzh5l+u8T3t73zM5QvfrDyIgxBk=
 github.com/distribution/reference v0.6.0/go.mod h1:BbU0aIcezP1/5jX/8MP0YiH4SdvB5Y4f/wlDRiLyi3E=
