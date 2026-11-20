@@ -13,8 +13,8 @@ import (
 var testMigrationMu sync.Mutex
 
 // initTestDB opens a temp-file SQLite database and runs all engine migrations
-// against it. The returned *SQLite is isolated per test and cleaned up when
-// t.TempDir() goes away.
+// against it. The returned *SQLite is isolated per test; the caller must
+// Close it, or t.TempDir()'s cleanup fails on Windows (open file).
 func initTestDB(t *testing.T) *SQLite {
 	t.Helper()
 

@@ -162,6 +162,7 @@ func TestGetEAVValuesForRecordIDsBatches(t *testing.T) {
 // matches. Searching "Ana" finds the orders pointing at Ana Souza.
 func TestCursorFilterMatchesReferencedRecordText(t *testing.T) {
 	s := initTestDB(t)
+	defer s.Close()
 
 	clientes, err := s.CreateEAVEntityType("Cliente", "cliente", "", "", "")
 	if err != nil {
